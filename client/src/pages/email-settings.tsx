@@ -201,21 +201,33 @@ export default function EmailSettings() {
         }),
       });
 
-      const result = await response.json();
+      let result;
+      try {
+        result = await response.json();
+      } catch {
+        result = {};
+      }
 
       if (response.ok && result.success) {
         toast({
           title: "✅ מייל טסט נשלח!",
           description: `מייל נשלח בהצלחה אל ${testEmail}. בדוק את תיבת הדואר (וגם ספאם).`,
         });
+      } else if (response.status === 401) {
+        toast({
+          title: "❌ לא מורשה",
+          description: "נדרש להתחבר למערכת כדי לשלוח מייל טסט",
+          variant: "destructive",
+        });
       } else {
         toast({
           title: "❌ שליחת מייל נכשלה",
-          description: result.message || result.error || "שגיאה לא ידועה",
+          description: result.message || result.error || `שגיאת שרת: ${response.status}`,
           variant: "destructive",
         });
       }
     } catch (error) {
+      console.error('Error sending test email:', error);
       toast({
         title: "❌ שגיאה ברשת",
         description: "לא ניתן לשלוח מייל טסט - בעיית תקשורת עם השרת",
