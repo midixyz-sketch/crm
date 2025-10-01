@@ -61,6 +61,16 @@ export default function EmailSettings() {
     setIsLoading(true);
     setConnectionStatus('testing');
 
+    // Auto-detect SSL for standard ports
+    const saveOutgoingConfig = {
+      ...outgoingConfig,
+      secure: parseInt(outgoingConfig.port) === 465 ? true : outgoingConfig.secure
+    };
+    const saveIncomingConfig = {
+      ...incomingConfig,
+      secure: parseInt(incomingConfig.port) === 993 ? true : incomingConfig.secure
+    };
+
     try {
       const response = await fetch('/api/email/configure-separated', {
         method: 'POST',
@@ -68,8 +78,8 @@ export default function EmailSettings() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          incoming: incomingConfig,
-          outgoing: outgoingConfig
+          incoming: saveIncomingConfig,
+          outgoing: saveOutgoingConfig
         }),
       });
 
@@ -97,7 +107,17 @@ export default function EmailSettings() {
   const testConnection = async () => {
     setConnectionStatus('testing');
     
-    console.log('🔍 שולח בדיקה עם נתונים:', { incoming: incomingConfig, outgoing: outgoingConfig });
+    // Auto-detect SSL for port 465
+    const testOutgoingConfig = {
+      ...outgoingConfig,
+      secure: parseInt(outgoingConfig.port) === 465 ? true : outgoingConfig.secure
+    };
+    const testIncomingConfig = {
+      ...incomingConfig,
+      secure: parseInt(incomingConfig.port) === 993 ? true : incomingConfig.secure
+    };
+    
+    console.log('🔍 שולח בדיקה עם נתונים:', { incoming: testIncomingConfig, outgoing: testOutgoingConfig });
     
     try {
       const response = await fetch('/api/email/test-separated', {
@@ -106,8 +126,8 @@ export default function EmailSettings() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          incoming: incomingConfig,
-          outgoing: outgoingConfig
+          incoming: testIncomingConfig,
+          outgoing: testOutgoingConfig
         }),
       });
 
