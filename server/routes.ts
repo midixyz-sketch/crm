@@ -3269,6 +3269,151 @@ ${extractedData.achievements ? `הישגים ופעילות נוספת: ${cleanS
     }
   });
 
+  // Send test email
+  app.post('/api/email/send-test', isAuthenticated, async (req: any, res) => {
+    try {
+      const { recipientEmail, senderConfig } = req.body;
+
+      if (!recipientEmail) {
+        return res.status(400).json({ message: "נדרשת כתובת מייל לשליחת הטסט" });
+      }
+
+      console.log('🧪 שולח מייל טסט אל:', recipientEmail);
+      
+      let testTransporter;
+      
+      // If custom sender config is provided, use it; otherwise use existing config
+      if (senderConfig) {
+        const { host, port, secure, user, pass } = senderConfig;
+        console.log('🔧 משתמש בהגדרות מותאמות:', { host, port, secure, user });
+        
+        testTransporter = nodemailer.createTransport({
+          host,
+          port: parseInt(port),
+          secure: secure === true || parseInt(port) === 465,
+          auth: {
+            user,
+            pass,
+          },
+          tls: {
+            rejectUnauthorized: false
+          },
+          connectionTimeout: 10000,
+          greetingTimeout: 5000,
+          socketTimeout: 10000
+        });
+
+        // Verify connection first
+        try {
+          await testTransporter.verify();
+          console.log('✅ חיבור SMTP אומת בהצלחה');
+        } catch (verifyError) {
+          console.error('❌ אימות SMTP נכשל:', verifyError);
+          return res.status(500).json({ 
+            success: false, 
+            message: "בדיקת חיבור SMTP נכשלה", 
+            error: verifyError.message 
+          });
+        }
+
+        // Send test email
+        const mailOptions = {
+          from: user,
+          to: recipientEmail,
+          subject: '✅ מייל טסט מהמערכת - Test Email',
+          html: `
+            <div dir="rtl" style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+              <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; border-radius: 10px; color: white; text-align: center;">
+                <h1 style="margin: 0; font-size: 28px;">✅ מייל טסט</h1>
+              </div>
+              
+              <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-top: 20px;">
+                <p style="font-size: 16px; color: #333;">שלום,</p>
+                <p style="font-size: 16px; color: #333;">זהו מייל טסט ממערכת ניהול הגיוס.</p>
+                <p style="font-size: 16px; color: #333;">אם קיבלת מייל זה, החיבור לשרת המייל עובד תקין! ✨</p>
+              </div>
+
+              <div style="background: #e3f2fd; padding: 15px; border-radius: 8px; margin-top: 20px; border-right: 4px solid #2196f3;">
+                <h3 style="margin-top: 0; color: #1565c0;">פרטי השליחה:</h3>
+                <p style="margin: 5px 0; color: #424242;"><strong>נשלח מ:</strong> ${user}</p>
+                <p style="margin: 5px 0; color: #424242;"><strong>שרת SMTP:</strong> ${host}:${port}</p>
+                <p style="margin: 5px 0; color: #424242;"><strong>SSL/TLS:</strong> ${secure || parseInt(port) === 465 ? 'כן' : 'לא'}</p>
+                <p style="margin: 5px 0; color: #424242;"><strong>תאריך ושעה:</strong> ${new Date().toLocaleString('he-IL')}</p>
+              </div>
+
+              <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; text-align: center;">
+                <p style="color: #6b7280; font-size: 14px;">נשלח ממערכת ניהול גיוס H-Group</p>
+              </div>
+            </div>
+          `
+        };
+
+        console.log('📤 שולח מייל טסט עם האפשרויות:', { from: user, to: recipientEmail });
+        const result = await testTransporter.sendMail(mailOptions);
+        
+        console.log('✅ מייל טסט נשלח בהצלחה:', { messageId: result.messageId });
+        
+        res.json({ 
+          success: true, 
+          message: `מייל טסט נשלח בהצלחה אל ${recipientEmail}`,
+          messageId: result.messageId 
+        });
+      } else {
+        // Use existing system email configuration
+        console.log('📧 משתמש בהגדרות המערכת הקיימות');
+        const result = await sendEmail({
+          to: recipientEmail,
+          subject: '✅ מייל טסט מהמערכת - Test Email',
+          html: `
+            <div dir="rtl" style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+              <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; border-radius: 10px; color: white; text-align: center;">
+                <h1 style="margin: 0; font-size: 28px;">✅ מייל טסט</h1>
+              </div>
+              
+              <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-top: 20px;">
+                <p style="font-size: 16px; color: #333;">שלום,</p>
+                <p style="font-size: 16px; color: #333;">זהו מייל טסט ממערכת ניהול הגיוס.</p>
+                <p style="font-size: 16px; color: #333;">אם קיבלת מייל זה, החיבור לשרת המייל עובד תקין! ✨</p>
+              </div>
+
+              <div style="background: #e3f2fd; padding: 15px; border-radius: 8px; margin-top: 20px; border-right: 4px solid #2196f3;">
+                <h3 style="margin-top: 0; color: #1565c0;">פרטי השליחה:</h3>
+                <p style="margin: 5px 0; color: #424242;"><strong>תאריך ושעה:</strong> ${new Date().toLocaleString('he-IL')}</p>
+              </div>
+
+              <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; text-align: center;">
+                <p style="color: #6b7280; font-size: 14px;">נשלח ממערכת ניהול גיוס H-Group</p>
+              </div>
+            </div>
+          `
+        });
+
+        if (result.success) {
+          console.log('✅ מייל טסט נשלח בהצלחה:', { messageId: result.messageId });
+          res.json({ 
+            success: true, 
+            message: `מייל טסט נשלח בהצלחה אל ${recipientEmail}`,
+            messageId: result.messageId 
+          });
+        } else {
+          console.error('❌ שליחת מייל טסט נכשלה:', result.error);
+          res.status(500).json({ 
+            success: false, 
+            message: "שליחת מייל טסט נכשלה", 
+            error: result.error 
+          });
+        }
+      }
+    } catch (error) {
+      console.error('❌ שגיאה בשליחת מייל טסט:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: "שגיאה בשליחת מייל טסט", 
+        error: error.message 
+      });
+    }
+  });
+
   // Save recruitment sources
   app.post('/api/settings/recruitment-sources', isAuthenticated, async (req: any, res) => {
     try {
