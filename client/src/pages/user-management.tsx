@@ -11,8 +11,9 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { Trash2, UserPlus, Shield, Users, Plus, Mail, Settings, Lock, Eye, Edit, UserCheck, UserX, RotateCcw } from "lucide-react";
+import { Trash2, UserPlus, Shield, Users, Plus, Mail, Settings, Lock, Eye, Edit, UserCheck, UserX, RotateCcw, CheckCircle2, XCircle } from "lucide-react";
 import { LoginDetailsPopup } from "@/components/login-details-popup";
 
 interface DetailedPermissions {
@@ -59,6 +60,12 @@ export default function UserManagement() {
   // Get detailed permissions for selected user
   const { data: detailedPermissions, isLoading: permissionsLoadingDetail } = useQuery<DetailedPermissions>({
     queryKey: ['/api/permissions/detailed', selectedUserPermissions?.id],
+    enabled: !!selectedUserPermissions?.id && permissionsDialogOpen,
+  });
+
+  // Get direct permissions for selected user
+  const { data: directPermissions = [], isLoading: directPermissionsLoading } = useQuery<any[]>({
+    queryKey: ['/api/users', selectedUserPermissions?.id, 'permissions', 'direct'],
     enabled: !!selectedUserPermissions?.id && permissionsDialogOpen,
   });
 
@@ -246,6 +253,52 @@ export default function UserManagement() {
       toast({
         title: "שגיאה",
         description: errorMessage,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Grant permission mutation
+  const grantPermissionMutation = useMutation({
+    mutationFn: async ({ userId, permissionName }: { userId: string; permissionName: string }) => {
+      await apiRequest('POST', `/api/users/${userId}/permissions/grant`, { permissionName });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/users', selectedUserPermissions?.id, 'permissions', 'direct'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/permissions/detailed', selectedUserPermissions?.id] });
+      toast({
+        title: "ההרשאה הוענקה בהצלחה",
+        description: "ההרשאה נוספה למשתמש",
+      });
+    },
+    onError: (error: any) => {
+      console.error('Error granting permission:', error);
+      toast({
+        title: "שגיאה",
+        description: "לא ניתן היה להעניק את ההרשאה",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Revoke permission mutation
+  const revokePermissionMutation = useMutation({
+    mutationFn: async ({ userId, permissionName }: { userId: string; permissionName: string }) => {
+      await apiRequest('POST', `/api/users/${userId}/permissions/revoke`, { permissionName });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/users', selectedUserPermissions?.id, 'permissions', 'direct'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/permissions/detailed', selectedUserPermissions?.id] });
+      toast({
+        title: "ההרשאה נשללה בהצלחה",
+        description: "ההרשאה הוסרה מהמשתמש",
+      });
+    },
+    onError: (error: any) => {
+      console.error('Error revoking permission:', error);
+      toast({
+        title: "שגיאה",
+        description: "לא ניתן היה לשלול את ההרשאה",
         variant: "destructive",
       });
     },
@@ -654,6 +707,14 @@ export default function UserManagement() {
                 </div>
               </div>
             ) : detailedPermissions ? (
+              <>
+              <div className="bg-blue-50 p-3 rounded-lg mb-4">
+                <div className="flex items-center gap-2 text-sm">
+                  <Eye className="h-4 w-4 text-blue-600" />
+                  <span className="font-medium text-blue-900">הסבר:</span>
+                  <span className="text-blue-700">הרשאות מתפקיד מוצגות כרגיל. אפשר להוסיף או לשלול הרשאות ספציפיות באמצעות הכפתורים למטה.</span>
+                </div>
+              </div>
               <Tabs defaultValue="pages" className="w-full">
                 <TabsList className="grid w-full grid-cols-4">
                   <TabsTrigger value="pages">דפים</TabsTrigger>
@@ -753,6 +814,108 @@ export default function UserManagement() {
                   </div>
                 </TabsContent>
               </Tabs>
+              
+              {/* ניהול הרשאות ישירות */}
+              <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg border">
+                <h3 className="font-semibold mb-3 flex items-center gap-2">
+                  <Edit className="h-4 w-4" />
+                  ניהול הרשאות ישירות
+                </h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  הוסף הרשאות ספציפיות או שלול הרשאות שהמשתמש מקבל מתפקידו
+                </p>
+                
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">הוסף הרשאה ישירה</Label>
+                    <div className="flex gap-2">
+                      <Input 
+                        placeholder="שם הרשאה (לדוגמה: view_dashboard)"
+                        data-testid="input-grant-permission"
+                        id="grant-permission-input"
+                      />
+                      <Button 
+                        size="sm"
+                        onClick={() => {
+                          const input = document.getElementById('grant-permission-input') as HTMLInputElement;
+                          if (input.value && selectedUserPermissions) {
+                            grantPermissionMutation.mutate({
+                              userId: selectedUserPermissions.id,
+                              permissionName: input.value
+                            });
+                            input.value = '';
+                          }
+                        }}
+                        disabled={grantPermissionMutation.isPending}
+                        data-testid="button-grant-permission"
+                      >
+                        <CheckCircle2 className="h-4 w-4 ml-1" />
+                        {grantPermissionMutation.isPending ? "מוסיף..." : "הוסף"}
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">שלול הרשאה</Label>
+                    <div className="flex gap-2">
+                      <Input 
+                        placeholder="שם הרשאה לשלילה"
+                        data-testid="input-revoke-permission"
+                        id="revoke-permission-input"
+                      />
+                      <Button 
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => {
+                          const input = document.getElementById('revoke-permission-input') as HTMLInputElement;
+                          if (input.value && selectedUserPermissions) {
+                            revokePermissionMutation.mutate({
+                              userId: selectedUserPermissions.id,
+                              permissionName: input.value
+                            });
+                            input.value = '';
+                          }
+                        }}
+                        disabled={revokePermissionMutation.isPending}
+                        data-testid="button-revoke-permission"
+                      >
+                        <XCircle className="h-4 w-4 ml-1" />
+                        {revokePermissionMutation.isPending ? "שולל..." : "שלול"}
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* הצגת הרשאות ישירות קיימות */}
+                {!directPermissionsLoading && directPermissions && directPermissions.length > 0 && (
+                  <div className="mt-4">
+                    <h4 className="text-sm font-medium mb-2">הרשאות ישירות קיימות:</h4>
+                    <div className="grid grid-cols-2 gap-2">
+                      {directPermissions.map((perm: any) => (
+                        <div 
+                          key={perm.id} 
+                          className={`flex items-center justify-between p-2 rounded text-sm ${
+                            perm.isGranted 
+                              ? 'bg-green-100 dark:bg-green-900 border border-green-300' 
+                              : 'bg-red-100 dark:bg-red-900 border border-red-300'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2">
+                            {perm.isGranted ? (
+                              <CheckCircle2 className="h-3 w-3 text-green-700" />
+                            ) : (
+                              <XCircle className="h-3 w-3 text-red-700" />
+                            )}
+                            <span className="font-medium">{getPermissionDisplayName(perm.permissionName)}</span>
+                            <span className="text-xs text-muted-foreground">({perm.permissionName})</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+              </>
             ) : (
               <div className="text-center p-8">
                 <p className="text-muted-foreground">לא ניתן לטעון הרשאות</p>
