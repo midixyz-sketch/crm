@@ -50,6 +50,10 @@ export default function UserManagement() {
   // Role permissions management
   const [selectedRoleForEdit, setSelectedRoleForEdit] = useState<Role | null>(null);
   const [rolePermissionsDialogOpen, setRolePermissionsDialogOpen] = useState(false);
+  
+  // Permission management states
+  const [selectedPermissionToGrant, setSelectedPermissionToGrant] = useState<string>("");
+  const [selectedPermissionToRevoke, setSelectedPermissionToRevoke] = useState<string>("");
 
   // Get all users with their roles
   const { data: users = [], isLoading: usersLoading } = useQuery<UserWithRoles[]>({
@@ -68,6 +72,19 @@ export default function UserManagement() {
     queryKey: ['/api/users', selectedUserPermissions?.id, 'permissions', 'direct'],
     enabled: !!selectedUserPermissions?.id && permissionsDialogOpen,
   });
+
+  // Get all available permissions from detailed permissions endpoint
+  const { data: allPermissionsData } = useQuery<any>({
+    queryKey: ['/api/permissions/detailed'],
+    enabled: permissionsDialogOpen,
+  });
+
+  // Create a flat list of all available permissions
+  const allAvailablePermissions = allPermissionsData ? [
+    ...(allPermissionsData.pages || []),
+    ...(allPermissionsData.menus || []),
+    ...(allPermissionsData.components || [])
+  ] : [];
 
   // Assign role mutation
   const assignRoleMutation = useMutation({
@@ -829,24 +846,33 @@ export default function UserManagement() {
                   <div className="space-y-2">
                     <Label className="text-sm font-medium">הוסף הרשאה ישירה</Label>
                     <div className="flex gap-2">
-                      <Input 
-                        placeholder="שם הרשאה (לדוגמה: view_dashboard)"
-                        data-testid="input-grant-permission"
-                        id="grant-permission-input"
-                      />
+                      <Select
+                        value={selectedPermissionToGrant}
+                        onValueChange={setSelectedPermissionToGrant}
+                      >
+                        <SelectTrigger data-testid="select-grant-permission" className="flex-1">
+                          <SelectValue placeholder="בחר הרשאה להוספה" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {allAvailablePermissions.map((permission) => (
+                            <SelectItem key={permission} value={permission}>
+                              {getPermissionDisplayName(permission)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                       <Button 
                         size="sm"
                         onClick={() => {
-                          const input = document.getElementById('grant-permission-input') as HTMLInputElement;
-                          if (input.value && selectedUserPermissions) {
+                          if (selectedPermissionToGrant && selectedUserPermissions) {
                             grantPermissionMutation.mutate({
                               userId: selectedUserPermissions.id,
-                              permissionName: input.value
+                              permissionName: selectedPermissionToGrant
                             });
-                            input.value = '';
+                            setSelectedPermissionToGrant('');
                           }
                         }}
-                        disabled={grantPermissionMutation.isPending}
+                        disabled={grantPermissionMutation.isPending || !selectedPermissionToGrant}
                         data-testid="button-grant-permission"
                       >
                         <CheckCircle2 className="h-4 w-4 ml-1" />
@@ -858,25 +884,34 @@ export default function UserManagement() {
                   <div className="space-y-2">
                     <Label className="text-sm font-medium">שלול הרשאה</Label>
                     <div className="flex gap-2">
-                      <Input 
-                        placeholder="שם הרשאה לשלילה"
-                        data-testid="input-revoke-permission"
-                        id="revoke-permission-input"
-                      />
+                      <Select
+                        value={selectedPermissionToRevoke}
+                        onValueChange={setSelectedPermissionToRevoke}
+                      >
+                        <SelectTrigger data-testid="select-revoke-permission" className="flex-1">
+                          <SelectValue placeholder="בחר הרשאה לשלילה" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {allAvailablePermissions.map((permission) => (
+                            <SelectItem key={permission} value={permission}>
+                              {getPermissionDisplayName(permission)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                       <Button 
                         size="sm"
                         variant="destructive"
                         onClick={() => {
-                          const input = document.getElementById('revoke-permission-input') as HTMLInputElement;
-                          if (input.value && selectedUserPermissions) {
+                          if (selectedPermissionToRevoke && selectedUserPermissions) {
                             revokePermissionMutation.mutate({
                               userId: selectedUserPermissions.id,
-                              permissionName: input.value
+                              permissionName: selectedPermissionToRevoke
                             });
-                            input.value = '';
+                            setSelectedPermissionToRevoke('');
                           }
                         }}
-                        disabled={revokePermissionMutation.isPending}
+                        disabled={revokePermissionMutation.isPending || !selectedPermissionToRevoke}
                         data-testid="button-revoke-permission"
                       >
                         <XCircle className="h-4 w-4 ml-1" />
@@ -909,6 +944,22 @@ export default function UserManagement() {
                             <span className="font-medium">{getPermissionDisplayName(perm.permissionName)}</span>
                             <span className="text-xs text-muted-foreground">({perm.permissionName})</span>
                           </div>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => {
+                              if (selectedUserPermissions && confirm(`האם אתה בטוח שברצונך להסיר את ההרשאה "${getPermissionDisplayName(perm.permissionName)}"?`)) {
+                                removePermissionMutation.mutate({
+                                  userId: selectedUserPermissions.id,
+                                  permissionName: perm.permissionName
+                                });
+                              }
+                            }}
+                            disabled={removePermissionMutation.isPending}
+                            data-testid={`button-remove-permission-${perm.permissionName}`}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
                         </div>
                       ))}
                     </div>
