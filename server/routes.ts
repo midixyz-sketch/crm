@@ -4733,13 +4733,56 @@ ${recommendation}
       // עדכון הסיסמא במסד הנתונים
       await storage.updateUserPassword(userId, passwordHash);
       
+      // שליחת מייל עם הסיסמא החדשה
+      const loginUrl = `${req.protocol}://${req.get('host')}/login`;
+      let emailSent = false;
+      
+      try {
+        const userName = user.firstName && user.lastName 
+          ? `${user.firstName} ${user.lastName}`
+          : user.email;
+          
+        const emailResult = await sendEmail({
+          to: user.email,
+          subject: 'הסיסמא שלך אופסה - מערכת ניהול גיוס',
+          html: `
+            <div dir="rtl" style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+              <h2 style="color: #2563eb;">שלום ${userName},</h2>
+              <p>הסיסמא שלך במערכת ניהול הגיוס אופסה בהצלחה.</p>
+              
+              <div style="background-color: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                <h3 style="margin-top: 0;">פרטי כניסה חדשים:</h3>
+                <p><strong>שם משתמש:</strong> ${user.username || user.email}</p>
+                <p><strong>סיסמא חדשה:</strong> <code style="background-color: #e5e7eb; padding: 4px 8px; border-radius: 4px; font-size: 16px;">${newPassword}</code></p>
+              </div>
+              
+              <p>
+                <a href="${loginUrl}" style="display: inline-block; background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px;">
+                  כניסה למערכת
+                </a>
+              </p>
+              
+              <p style="color: #6b7280; font-size: 14px; margin-top: 30px;">
+                מומלץ לשנות את הסיסמא לאחר הכניסה הראשונה.<br>
+                אם לא ביקשת לאפס את הסיסמא, נא ליצור קשר עם מנהל המערכת.
+              </p>
+            </div>
+          `
+        });
+        
+        emailSent = emailResult.success;
+      } catch (emailError) {
+        console.error('שגיאה בשליחת מייל איפוס סיסמא:', emailError);
+      }
+      
       res.json({
         message: "הסיסמא אופסה בהצלחה",
+        emailSent,
         loginDetails: {
           username: user.username || user.email,
           password: newPassword,
           email: user.email,
-          loginUrl: `${req.protocol}://${req.get('host')}/login`
+          loginUrl
         }
       });
     } catch (error) {
