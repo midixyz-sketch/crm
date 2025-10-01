@@ -34,6 +34,13 @@ export default function UserManagement() {
     loginDetails: any;
     title?: string;
   }>({ isOpen: false, loginDetails: null });
+  
+  // Tabs state
+  const [activeTab, setActiveTab] = useState("users");
+  
+  // Role permissions management
+  const [selectedRoleForEdit, setSelectedRoleForEdit] = useState<Role | null>(null);
+  const [rolePermissionsDialogOpen, setRolePermissionsDialogOpen] = useState(false);
 
   // Get all users with their roles
   const { data: users = [], isLoading: usersLoading } = useQuery<UserWithRoles[]>({
@@ -342,11 +349,27 @@ export default function UserManagement() {
     <div className="container mx-auto p-4" dir="rtl">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-3xl font-bold mb-2">ניהול משתמשים</h1>
-          <p className="text-muted-foreground">נהל משתמשים ותפקידים במערכת</p>
+          <h1 className="text-3xl font-bold mb-2">ניהול משתמשים והרשאות</h1>
+          <p className="text-muted-foreground">נהל משתמשים, תפקידים והרשאות במערכת</p>
         </div>
-        <div className="flex items-center gap-4">
-          <Dialog open={isAddUserDialogOpen} onOpenChange={setIsAddUserDialogOpen}>
+      </div>
+
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+        <TabsList className="grid w-full grid-cols-2 lg:w-[600px]">
+          <TabsTrigger value="users" data-testid="tab-users">
+            <Users className="h-4 w-4 ml-2" />
+            משתמשים
+          </TabsTrigger>
+          <TabsTrigger value="roles" data-testid="tab-roles">
+            <Shield className="h-4 w-4 ml-2" />
+            ניהול תפקידים והרשאות
+          </TabsTrigger>
+        </TabsList>
+
+        {/* Users Tab */}
+        <TabsContent value="users" className="space-y-4">
+          <div className="flex items-center gap-4 justify-end">
+            <Dialog open={isAddUserDialogOpen} onOpenChange={setIsAddUserDialogOpen}>
               <DialogTrigger asChild>
                 <Button data-testid="button-add-user">
                   <Plus className="h-4 w-4 ml-2" />
@@ -425,11 +448,9 @@ export default function UserManagement() {
               </div>
             </DialogContent>
           </Dialog>
-          <Users className="h-8 w-8 text-muted-foreground" />
         </div>
-      </div>
 
-      <div className="grid gap-6">
+        <div className="grid gap-6">
         {users.map((user) => (
           <Card key={user.id} data-testid={`card-user-${user.id}`}>
             <CardHeader>
