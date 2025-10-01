@@ -99,11 +99,11 @@ export function requireRole(roleType: string) {
  */
 export function injectUserPermissions(req: Request, res: Response, next: NextFunction) {
   const sessionUser = req.user as any;
-  if (!sessionUser?.claims?.sub) {
+  if (!sessionUser?.id) {
     return next();
   }
 
-  const userId = sessionUser.claims.sub;
+  const userId = sessionUser.id;
   
   req.userPermissions = {
     hasPermission: (res: string, act: string) => storage.hasPermission(userId, res, act),

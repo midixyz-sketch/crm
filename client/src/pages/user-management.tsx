@@ -15,6 +15,14 @@ import { useToast } from "@/hooks/use-toast";
 import { Trash2, UserPlus, Shield, Users, Plus, Mail, Settings, Lock, Eye, Edit, UserCheck, UserX, RotateCcw } from "lucide-react";
 import { LoginDetailsPopup } from "@/components/login-details-popup";
 
+interface DetailedPermissions {
+  pages?: string[];
+  menus?: string[];
+  components?: string[];
+  canViewClientNames?: boolean;
+  allowedJobIds?: string[];
+}
+
 export default function UserManagement() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -49,7 +57,7 @@ export default function UserManagement() {
   });
 
   // Get detailed permissions for selected user
-  const { data: detailedPermissions, isLoading: permissionsLoadingDetail } = useQuery({
+  const { data: detailedPermissions, isLoading: permissionsLoadingDetail } = useQuery<DetailedPermissions>({
     queryKey: ['/api/permissions/detailed', selectedUserPermissions?.id],
     enabled: !!selectedUserPermissions?.id && permissionsDialogOpen,
   });
@@ -105,7 +113,7 @@ export default function UserManagement() {
   const resetPasswordMutation = useMutation({
     mutationFn: async (userId: string) => {
       const response = await apiRequest('POST', `/api/users/${userId}/reset-password`);
-      return response;
+      return response as { loginDetails: { email: string; password: string } };
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['/api/users/all'] });
@@ -753,14 +761,32 @@ export default function UserManagement() {
           </DialogContent>
         </Dialog>
 
-        {/* פופ אפ פרטי כניסה */}
-        <LoginDetailsPopup
-          isOpen={loginDetailsPopup.isOpen}
-          onClose={() => setLoginDetailsPopup({ isOpen: false, loginDetails: null })}
-          loginDetails={loginDetailsPopup.loginDetails}
-          title={loginDetailsPopup.title}
-        />
-      </div>
+        </div>
+        </TabsContent>
+
+        {/* Roles Tab - Coming Soon */}
+        <TabsContent value="roles" className="space-y-4">
+          <Card>
+            <CardContent className="pt-6">
+              <div className="text-center p-8">
+                <Shield className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                <h3 className="text-lg font-semibold mb-2">ניהול תפקידים והרשאות</h3>
+                <p className="text-muted-foreground">
+                  הדף בבנייה - בקרוב תוכל לערוך תפקידים ולהקצות הרשאות ספציפיות למשתמשים
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+
+      {/* פופ אפ פרטי כניסה */}
+      <LoginDetailsPopup
+        isOpen={loginDetailsPopup.isOpen}
+        onClose={() => setLoginDetailsPopup({ isOpen: false, loginDetails: null })}
+        loginDetails={loginDetailsPopup.loginDetails}
+        title={loginDetailsPopup.title}
+      />
     </div>
   );
 }
