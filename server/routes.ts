@@ -2986,8 +2986,8 @@ ${extractedData.achievements ? `הישגים ופעילות נוספת: ${cleanS
     }
   });
 
-  // Test separated email connections - FIXED VERSION
-  app.post('/api/email/test-separated-fixed', async (req: any, res) => {
+  // Test separated email connections
+  app.post('/api/email/test-separated', async (req: any, res) => {
     console.log('🌐 התקבלה בקשה לבדיקת חיבור נפרד');
     
     // Check authentication manually
