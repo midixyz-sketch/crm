@@ -2265,6 +2265,45 @@ export class DatabaseStorage implements IStorage {
     return false;
   }
 
+  async hasDetailedPermission(userId: string, permissionName: string): Promise<boolean> {
+    // קודם בדוק הרשאות ישירות של המשתמש
+    const directPermissions = await db.select().from(userPermissions)
+      .where(and(
+        eq(userPermissions.userId, userId),
+        eq(userPermissions.permissionName, permissionName)
+      ));
+    
+    // אם יש הרשאה ישירה, היא עוקפת הכל
+    if (directPermissions.length > 0) {
+      const directPerm = directPermissions[0];
+      return directPerm.isGranted; // true = מעניק, false = שולל
+    }
+
+    // אם אין הרשאה ישירה, בדוק לפי תפקידים
+    const userWithRoles = await this.getUserWithRoles(userId);
+    if (!userWithRoles) return false;
+
+    // בדוק אם זה super admin (יש לו הכל)
+    for (const userRole of userWithRoles.userRoles) {
+      if (userRole.role.type === 'super_admin') return true;
+    }
+
+    // ייבא את ההרשאות המפורטות
+    const { ROLE_PERMISSIONS } = await import('./detailedPermissions.js');
+    
+    // בדוק אם למשתמש יש תפקיד שמעניק את ההרשאה
+    for (const userRole of userWithRoles.userRoles) {
+      const roleType = userRole.role.type;
+      const rolePermissions = ROLE_PERMISSIONS[roleType as keyof typeof ROLE_PERMISSIONS];
+      
+      if (rolePermissions && rolePermissions.includes(permissionName)) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
   async hasRole(userId: string, roleType: string): Promise<boolean> {
     const userWithRoles = await this.getUserWithRoles(userId);
     if (!userWithRoles) return false;

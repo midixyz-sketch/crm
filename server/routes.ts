@@ -4748,6 +4748,106 @@ ${recommendation}
     }
   });
 
+  // User Permissions API - ניהול הרשאות ישירות למשתמשים
+  
+  // Get direct permissions for a user
+  app.get('/api/users/:userId/permissions/direct', isAuthenticated, async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const sessionUser = req.user as any;
+      
+      // בדיקת הרשאות - רק אדמינים יכולים לצפות בהרשאות של אחרים
+      const hasAdminRole = await storage.hasRole(sessionUser.id, 'admin') || 
+                          await storage.hasRole(sessionUser.id, 'super_admin');
+      
+      if (!hasAdminRole && sessionUser.id !== userId) {
+        return res.status(403).json({ message: "אין הרשאה לצפות בהרשאות של משתמש אחר" });
+      }
+      
+      const permissions = await storage.getUserDirectPermissions(userId);
+      res.json(permissions);
+    } catch (error) {
+      console.error('שגיאה בקבלת הרשאות משתמש:', error);
+      res.status(500).json({ message: 'שגיאה בקבלת הרשאות המשתמש' });
+    }
+  });
+
+  // Grant a permission to a user
+  app.post('/api/users/:userId/permissions/grant', isAuthenticated, async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const { permissionName, notes } = req.body;
+      const sessionUser = req.user as any;
+      
+      // בדיקת הרשאות - רק אדמינים יכולים להעניק הרשאות
+      const hasAdminRole = await storage.hasRole(sessionUser.id, 'admin') || 
+                          await storage.hasRole(sessionUser.id, 'super_admin');
+      
+      if (!hasAdminRole) {
+        return res.status(403).json({ message: "אין הרשאה להעניק הרשאות למשתמשים" });
+      }
+      
+      if (!permissionName) {
+        return res.status(400).json({ message: "שם הרשאה חסר" });
+      }
+      
+      await storage.grantUserPermission(userId, permissionName, sessionUser.id, notes);
+      res.json({ message: "ההרשאה הוענקה בהצלחה" });
+    } catch (error) {
+      console.error('שגיאה בהענקת הרשאה למשתמש:', error);
+      res.status(500).json({ message: 'שגיאה בהענקת ההרשאה' });
+    }
+  });
+
+  // Revoke a permission from a user
+  app.post('/api/users/:userId/permissions/revoke', isAuthenticated, async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const { permissionName, notes } = req.body;
+      const sessionUser = req.user as any;
+      
+      // בדיקת הרשאות - רק אדמינים יכולים לשלול הרשאות
+      const hasAdminRole = await storage.hasRole(sessionUser.id, 'admin') || 
+                          await storage.hasRole(sessionUser.id, 'super_admin');
+      
+      if (!hasAdminRole) {
+        return res.status(403).json({ message: "אין הרשאה לשלול הרשאות ממשתמשים" });
+      }
+      
+      if (!permissionName) {
+        return res.status(400).json({ message: "שם הרשאה חסר" });
+      }
+      
+      await storage.revokeUserPermission(userId, permissionName, sessionUser.id, notes);
+      res.json({ message: "ההרשאה נשללה בהצלחה" });
+    } catch (error) {
+      console.error('שגיאה בשלילת הרשאה ממשתמש:', error);
+      res.status(500).json({ message: 'שגיאה בשלילת ההרשאה' });
+    }
+  });
+
+  // Remove a direct permission completely
+  app.delete('/api/users/:userId/permissions/:permissionName', isAuthenticated, async (req, res) => {
+    try {
+      const { userId, permissionName } = req.params;
+      const sessionUser = req.user as any;
+      
+      // בדיקת הרשאות - רק אדמינים יכולים להסיר הרשאות
+      const hasAdminRole = await storage.hasRole(sessionUser.id, 'admin') || 
+                          await storage.hasRole(sessionUser.id, 'super_admin');
+      
+      if (!hasAdminRole) {
+        return res.status(403).json({ message: "אין הרשאה להסיר הרשאות ממשתמשים" });
+      }
+      
+      await storage.removeUserDirectPermission(userId, permissionName);
+      res.json({ message: "ההרשאה הוסרה בהצלחה" });
+    } catch (error) {
+      console.error('שגיאה בהסרת הרשאה ממשתמש:', error);
+      res.status(500).json({ message: 'שגיאה בהסרת ההרשאה' });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
