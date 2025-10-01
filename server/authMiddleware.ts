@@ -7,6 +7,7 @@ declare global {
     interface Request {
       userPermissions?: {
         hasPermission: (resource: string, action: string) => Promise<boolean>;
+        hasDetailedPermission: (permissionName: string) => Promise<boolean>;
         hasRole: (roleType: string) => Promise<boolean>;
         isSuperAdmin: () => Promise<boolean>;
         isAdmin: () => Promise<boolean>;
@@ -41,6 +42,7 @@ export function requirePermission(resource: string, action: string) {
       // Add permission helper functions to request
       req.userPermissions = {
         hasPermission: (res: string, act: string) => storage.hasPermission(userId, res, act),
+        hasDetailedPermission: (permName: string) => storage.hasDetailedPermission(userId, permName),
         hasRole: (roleType: string) => storage.hasRole(userId, roleType),
         isSuperAdmin: () => storage.hasRole(userId, 'super_admin'),
         isAdmin: () => storage.hasRole(userId, 'admin'),
@@ -79,6 +81,7 @@ export function requireRole(roleType: string) {
       // Add permission helper functions to request
       req.userPermissions = {
         hasPermission: (res: string, act: string) => storage.hasPermission(userId, res, act),
+        hasDetailedPermission: (permName: string) => storage.hasDetailedPermission(userId, permName),
         hasRole: (roleType: string) => storage.hasRole(userId, roleType),
         isSuperAdmin: () => storage.hasRole(userId, 'super_admin'),
         isAdmin: () => storage.hasRole(userId, 'admin'),
@@ -107,6 +110,7 @@ export function injectUserPermissions(req: Request, res: Response, next: NextFun
   
   req.userPermissions = {
     hasPermission: (res: string, act: string) => storage.hasPermission(userId, res, act),
+    hasDetailedPermission: (permName: string) => storage.hasDetailedPermission(userId, permName),
     hasRole: (roleType: string) => storage.hasRole(userId, roleType),
     isSuperAdmin: () => storage.hasRole(userId, 'super_admin'),
     isAdmin: () => storage.hasRole(userId, 'admin'),
