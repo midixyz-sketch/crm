@@ -10,6 +10,8 @@ export default function EmailSettings() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<'idle' | 'testing' | 'success' | 'error'>('idle');
+  const [isSendingTest, setIsSendingTest] = useState(false);
+  const [testEmail, setTestEmail] = useState('');
   
   const [incomingConfig, setIncomingConfig] = useState({
     host: '',
@@ -160,6 +162,67 @@ export default function EmailSettings() {
         description: "לא ניתן לבדוק את החיבור - בעיית תקשורת עם השרת",
         variant: "destructive",
       });
+    }
+  };
+
+  const sendTestEmail = async () => {
+    if (!testEmail.trim()) {
+      toast({
+        title: "❌ שגיאה",
+        description: "יש להזין כתובת מייל לשליחת הטסט",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSendingTest(true);
+    
+    // Auto-detect SSL for port 465
+    const testOutgoingConfig = {
+      ...outgoingConfig,
+      secure: parseInt(outgoingConfig.port) === 465 ? true : outgoingConfig.secure
+    };
+
+    try {
+      const response = await fetch('/api/email/send-test', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          recipientEmail: testEmail,
+          senderConfig: {
+            host: testOutgoingConfig.host,
+            port: testOutgoingConfig.port,
+            secure: testOutgoingConfig.secure,
+            user: testOutgoingConfig.user,
+            pass: testOutgoingConfig.pass
+          }
+        }),
+      });
+
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        toast({
+          title: "✅ מייל טסט נשלח!",
+          description: `מייל נשלח בהצלחה אל ${testEmail}. בדוק את תיבת הדואר (וגם ספאם).`,
+        });
+      } else {
+        toast({
+          title: "❌ שליחת מייל נכשלה",
+          description: result.message || result.error || "שגיאה לא ידועה",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "❌ שגיאה ברשת",
+        description: "לא ניתן לשלוח מייל טסט - בעיית תקשורת עם השרת",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSendingTest(false);
     }
   };
 
@@ -329,17 +392,66 @@ export default function EmailSettings() {
                       variant="outline" 
                       onClick={testConnection}
                       disabled={isLoading}
+                      data-testid="button-test-connection"
                     >
                       בדוק חיבור
                     </Button>
                     <Button 
                       type="submit" 
                       disabled={isLoading}
+                      data-testid="button-save-settings"
                     >
                       {isLoading ? "שומר..." : "שמור הגדרות"}
                     </Button>
                   </div>
                 </form>
+              </CardContent>
+            </Card>
+
+            {/* Send Test Email Card */}
+            <Card className="border-purple-200 bg-purple-50">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-purple-900">
+                  <Mail className="w-5 h-5" />
+                  שלח מייל טסט
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <p className="text-sm text-purple-700">
+                    שלח מייל טסט כדי לוודא שהגדרות ה-SMTP עובדות תקין. המייל יישלח באמצעות ההגדרות הנוכחיות.
+                  </p>
+                  
+                  <div className="flex gap-3">
+                    <div className="flex-1">
+                      <Label htmlFor="testEmail">כתובת מייל ליעד</Label>
+                      <Input
+                        id="testEmail"
+                        type="email"
+                        placeholder="your-email@example.com"
+                        value={testEmail}
+                        onChange={(e) => setTestEmail(e.target.value)}
+                        data-testid="input-test-email"
+                      />
+                    </div>
+                    <div className="flex items-end">
+                      <Button 
+                        onClick={sendTestEmail}
+                        disabled={isSendingTest || !testEmail.trim() || !outgoingConfig.host || !outgoingConfig.user}
+                        className="bg-purple-600 hover:bg-purple-700"
+                        data-testid="button-send-test-email"
+                      >
+                        {isSendingTest ? "שולח..." : "שלח מייל טסט"}
+                      </Button>
+                    </div>
+                  </div>
+
+                  {(!outgoingConfig.host || !outgoingConfig.user) && (
+                    <p className="text-sm text-amber-600">
+                      ⚠️ יש להזין תחילה את הגדרות תיבת הדואר היוצא למעלה
+                    </p>
+                  )}
+                </div>
               </CardContent>
             </Card>
           </div>
