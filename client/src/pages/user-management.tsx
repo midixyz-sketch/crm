@@ -289,10 +289,12 @@ export default function UserManagement() {
       });
     },
     onError: (error: any) => {
-      console.error('Error granting permission:', error);
+      console.error('❌ Error granting permission:', error);
+      console.error('Error message:', error?.message);
+      console.error('Error response:', error?.response);
       toast({
         title: "שגיאה",
-        description: "לא ניתן היה להעניק את ההרשאה",
+        description: error?.message || error?.response?.message || "לא ניתן היה להעניק את ההרשאה",
         variant: "destructive",
       });
     },
@@ -312,10 +314,12 @@ export default function UserManagement() {
       });
     },
     onError: (error: any) => {
-      console.error('Error revoking permission:', error);
+      console.error('❌ Error revoking permission:', error);
+      console.error('Error message:', error?.message);
+      console.error('Error response:', error?.response);
       toast({
         title: "שגיאה",
-        description: "לא ניתן היה לשלול את ההרשאה",
+        description: error?.message || error?.response?.message || "לא ניתן היה לשלול את ההרשאה",
         variant: "destructive",
       });
     },
