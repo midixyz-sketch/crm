@@ -90,6 +90,17 @@ export const rolePermissions = pgTable("role_permissions", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// User permissions - הרשאות ספציפיות ישירות למשתמשים
+export const userPermissions = pgTable("user_permissions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  permissionName: varchar("permission_name").notNull(), // שם ההרשאה (כמו 'view_dashboard', 'edit_candidates')
+  isGranted: boolean("is_granted").notNull().default(true), // true = ניתנה, false = נשללה
+  grantedBy: varchar("granted_by"), // מי נתן/שלל את ההרשאה
+  grantedAt: timestamp("granted_at").defaultNow(),
+  notes: text("notes"), // הערות על מדוע ניתנה/נשללה ההרשאה
+});
+
 // Message templates table
 export const messageTemplates = pgTable("message_templates", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),

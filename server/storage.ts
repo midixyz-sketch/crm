@@ -15,6 +15,7 @@ import {
   permissions,
   userRoles,
   rolePermissions,
+  userPermissions,
   type User,
   type UpsertUser,
   type UserWithRoles,
@@ -2169,6 +2170,76 @@ export class DatabaseStorage implements IStorage {
 
   async getRolePermissions(roleId: string): Promise<RolePermission[]> {
     return await db.select().from(rolePermissions).where(eq(rolePermissions.roleId, roleId));
+  }
+
+  // User Permissions - הרשאות ישירות למשתמשים
+  async grantUserPermission(userId: string, permissionName: string, grantedBy: string, notes?: string): Promise<void> {
+    // בדיקה אם ההרשאה כבר קיימת
+    const existing = await db.select().from(userPermissions)
+      .where(and(
+        eq(userPermissions.userId, userId),
+        eq(userPermissions.permissionName, permissionName)
+      ));
+    
+    if (existing.length > 0) {
+      // עדכון ההרשאה הקיימת
+      await db.update(userPermissions)
+        .set({ isGranted: true, grantedBy, grantedAt: new Date(), notes })
+        .where(and(
+          eq(userPermissions.userId, userId),
+          eq(userPermissions.permissionName, permissionName)
+        ));
+    } else {
+      // הוספת הרשאה חדשה
+      await db.insert(userPermissions).values({
+        userId,
+        permissionName,
+        isGranted: true,
+        grantedBy,
+        notes
+      });
+    }
+  }
+
+  async revokeUserPermission(userId: string, permissionName: string, grantedBy: string, notes?: string): Promise<void> {
+    // בדיקה אם ההרשאה כבר קיימת
+    const existing = await db.select().from(userPermissions)
+      .where(and(
+        eq(userPermissions.userId, userId),
+        eq(userPermissions.permissionName, permissionName)
+      ));
+    
+    if (existing.length > 0) {
+      // עדכון ההרשאה לשלילה
+      await db.update(userPermissions)
+        .set({ isGranted: false, grantedBy, grantedAt: new Date(), notes })
+        .where(and(
+          eq(userPermissions.userId, userId),
+          eq(userPermissions.permissionName, permissionName)
+        ));
+    } else {
+      // הוספת שלילת הרשאה
+      await db.insert(userPermissions).values({
+        userId,
+        permissionName,
+        isGranted: false,
+        grantedBy,
+        notes
+      });
+    }
+  }
+
+  async getUserDirectPermissions(userId: string): Promise<any[]> {
+    return await db.select().from(userPermissions)
+      .where(eq(userPermissions.userId, userId));
+  }
+
+  async removeUserDirectPermission(userId: string, permissionName: string): Promise<void> {
+    await db.delete(userPermissions)
+      .where(and(
+        eq(userPermissions.userId, userId),
+        eq(userPermissions.permissionName, permissionName)
+      ));
   }
 
   async hasPermission(userId: string, resource: string, action: string): Promise<boolean> {
