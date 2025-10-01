@@ -3004,14 +3004,17 @@ ${extractedData.achievements ? `הישגים ופעילות נוספת: ${cleanS
       console.log('📤 תיבת דואר יוצא:', JSON.stringify(outgoing, null, 2));
       const results = { incoming: false, outgoing: false, errors: [] as string[] };
       
-      // Test outgoing (SMTP) connection - EXACTLY as before
+      // Test outgoing (SMTP) connection
       try {
-        console.log(`📤 בודק SMTP: ${outgoing.host}:${outgoing.port}, secure: ${outgoing.secure}`);
+        const smtpPort = parseInt(outgoing.port);
+        const shouldUseSSL = smtpPort === 465 || outgoing.secure === true || outgoing.secure === 'true';
+        
+        console.log(`📤 בודק SMTP: ${outgoing.host}:${smtpPort}, secure: ${shouldUseSSL}`);
         
         const testTransporter = nodemailer.createTransport({
           host: outgoing.host,
-          port: parseInt(outgoing.port),
-          secure: outgoing.secure === true || outgoing.secure === 'true',
+          port: smtpPort,
+          secure: shouldUseSSL,
           auth: {
             user: outgoing.user,
             pass: outgoing.pass,

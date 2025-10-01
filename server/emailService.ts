@@ -23,10 +23,13 @@ async function loadEmailConfig() {
     if (smtpHost && emailUser && isValidPassword) {
       try {
         // cPanel SMTP configuration
+        const smtpPortNum = parseInt(smtpPort?.value || '587');
+        const shouldUseSSL = smtpPortNum === 465 || smtpSecure?.value === 'true';
+        
         transporter = nodemailer.createTransport({
           host: smtpHost.value,
-          port: parseInt(smtpPort?.value || '587'),
-          secure: smtpSecure?.value === 'true',
+          port: smtpPortNum,
+          secure: shouldUseSSL,
           auth: {
             user: emailUser.value,
             pass: emailPass.value,
