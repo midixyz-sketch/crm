@@ -379,10 +379,30 @@ export default function CandidateDetail() {
     setIsSendingReferral(true);
 
     try {
+      let emailsSent = 0;
+      let emailsFailed = 0;
+
       // Process each selected job
       for (const jobId of selectedJobIds) {
         const selectedJob = jobs.find((job: any) => job.id === jobId);
         if (!selectedJob) continue;
+
+        // Send email to employer
+        if (selectedJob.client?.email) {
+          try {
+            await apiRequest('POST', '/api/send-candidate-profile', {
+              candidateId: id,
+              jobId: jobId,
+              reviewerFeedback: recommendation,
+              recipientEmail: selectedJob.client.email,
+              recipientName: selectedJob.client.contactName,
+            });
+            emailsSent++;
+          } catch (emailError) {
+            console.error('Failed to send email for job:', jobId, emailError);
+            emailsFailed++;
+          }
+        }
 
         // Create event for the referral
         await apiRequest('POST', `/api/candidates/${id}/events`, {
@@ -403,10 +423,30 @@ export default function CandidateDetail() {
         queryClient.invalidateQueries({ queryKey: [`/api/candidates/${id}/events`] });
       }
       
-      toast({
-        title: "המועמד הופנה למשרות",
-        description: `חוות הדעת נשלחה למעסיקים עבור ${selectedJobIds.length} משרות`,
-      });
+      // Show appropriate success message
+      if (emailsSent > 0 && emailsFailed === 0) {
+        toast({
+          title: "המועמד נשלח למעסיקים! ✅",
+          description: `חוות הדעת נשלחה בהצלחה במייל עבור ${emailsSent} משרות`,
+        });
+      } else if (emailsSent > 0 && emailsFailed > 0) {
+        toast({
+          title: "נשלח חלקית ⚠️",
+          description: `${emailsSent} מיילים נשלחו בהצלחה, ${emailsFailed} נכשלו`,
+          variant: "default",
+        });
+      } else if (emailsFailed > 0) {
+        toast({
+          title: "שגיאה בשליחת מיילים ❌",
+          description: `לא ניתן לשלוח מיילים למעסיקים. אירועים נשמרו במערכת.`,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "המועמד הופנה למשרות",
+          description: `אירועים נשמרו במערכת עבור ${selectedJobIds.length} משרות`,
+        });
+      }
       
       setSelectedJobIds([]);
       setRecommendation("");
