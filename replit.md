@@ -32,6 +32,22 @@ Preferred communication style: Simple, everyday language.
 - **Session-based authentication** with PostgreSQL session storage
 - **User profile management** with automatic user creation/update
 
+## Authorization and Permissions System
+- **Three-layer permission architecture**:
+  1. **Role-based permissions**: Default permissions inherited from user roles (admin, recruiter, viewer, etc.)
+  2. **Direct permission grants**: Specific permissions granted to individual users (override role defaults)
+  3. **Direct permission revocations**: Specific permissions explicitly denied to users (highest priority)
+- **Permission precedence**: Direct deny > Direct grant > Role grant
+- **Detailed permission system**: Fine-grained access control for pages, menus, and components
+- **Dynamic user permissions**: Admins can grant/revoke specific permissions to users via UI
+- **Security features**:
+  - Admin-only permission management
+  - Self-modification prevention
+  - Permission name validation against allowlist
+  - Unique constraint on user-permission pairs
+  - UPSERT semantics for idempotent operations
+  - Audit logging with grantor tracking
+
 ## Database Design
 - **PostgreSQL** as the primary database
 - **Drizzle ORM** for type-safe database operations
@@ -41,6 +57,11 @@ Preferred communication style: Simple, everyday language.
 
 ### Core Entities:
 - **Users**: Authentication and profile management
+- **User Roles**: Many-to-many relationship mapping users to roles
+- **User Permissions**: Direct permission grants and revocations for individual users with audit trail
+- **Roles**: Predefined role definitions (admin, recruiter, viewer, etc.)
+- **Role Permissions**: Many-to-many relationship mapping roles to permissions
+- **Permissions**: System-wide permission definitions for fine-grained access control
 - **Candidates**: Comprehensive candidate profiles with resume storage
 - **Clients**: Company and contact management
 - **Jobs**: Job postings with client relationships
