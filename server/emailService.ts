@@ -151,6 +151,11 @@ interface EmailParams {
 }
 
 export async function sendEmail(params: EmailParams): Promise<{ success: boolean; error?: string }> {
+  console.log("🚀 ============================================");
+  console.log("🚀 sendEmail נקרא! משלים מייל אל:", params.to);
+  console.log("🚀 נושא:", params.subject);
+  console.log("🚀 ============================================");
+  
   // Ensure email configuration is loaded
   if (!emailConfigLoaded) {
     console.log("🔄 Email config not loaded, attempting to reload...");
@@ -162,9 +167,12 @@ export async function sendEmail(params: EmailParams): Promise<{ success: boolean
     await loadEmailConfig();
     
     if (!transporter) {
+      console.error("❌ אין transporter! לא ניתן לשלוח מייל");
       return { success: false, error: "Email credentials not configured - check system settings" };
     }
   }
+
+  console.log("✅ Transporter זמין - מתחיל שליחה...");
 
   try {
     // Get the email user from database settings
@@ -181,15 +189,21 @@ export async function sendEmail(params: EmailParams): Promise<{ success: boolean
       attachments: params.attachments,
     };
 
+    console.log("📤 שולח מייל עכשיו עם האפשרויות:", {
+      from: mailOptions.from,
+      to: mailOptions.to,
+      subject: mailOptions.subject
+    });
+
     const result = await transporter.sendMail(mailOptions);
-    console.log("📧 Email sent successfully:", {
+    console.log("📧 ✅✅✅ Email sent successfully:", {
       to: params.to,
       subject: params.subject,
       messageId: result.messageId
     });
     return { success: true, messageId: result.messageId };
   } catch (error) {
-    console.error('Email sending error:', error);
+    console.error('❌❌❌ Email sending error:', error);
     return { 
       success: false, 
       error: error instanceof Error ? error.message : 'Unknown email error'
