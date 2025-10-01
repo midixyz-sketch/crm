@@ -4750,18 +4750,28 @@ ${recommendation}
 
   // User Permissions API - ניהול הרשאות ישירות למשתמשים
   
+  // Helper function to validate permission name
+  const isValidPermissionName = (permissionName: string): boolean => {
+    const allPermissions = [
+      ...Object.values(PAGE_PERMISSIONS),
+      ...Object.values(MENU_PERMISSIONS),
+      ...Object.values(COMPONENT_PERMISSIONS)
+    ];
+    return allPermissions.includes(permissionName);
+  };
+  
   // Get direct permissions for a user
   app.get('/api/users/:userId/permissions/direct', isAuthenticated, async (req, res) => {
     try {
       const { userId } = req.params;
       const sessionUser = req.user as any;
       
-      // בדיקת הרשאות - רק אדמינים יכולים לצפות בהרשאות של אחרים
+      // בדיקת הרשאות - רק אדמינים יכולים לצפות בהרשאות
       const hasAdminRole = await storage.hasRole(sessionUser.id, 'admin') || 
                           await storage.hasRole(sessionUser.id, 'super_admin');
       
-      if (!hasAdminRole && sessionUser.id !== userId) {
-        return res.status(403).json({ message: "אין הרשאה לצפות בהרשאות של משתמש אחר" });
+      if (!hasAdminRole) {
+        return res.status(403).json({ message: "אין הרשאה לצפות בהרשאות משתמשים" });
       }
       
       const permissions = await storage.getUserDirectPermissions(userId);
@@ -4787,8 +4797,18 @@ ${recommendation}
         return res.status(403).json({ message: "אין הרשאה להעניק הרשאות למשתמשים" });
       }
       
+      // מניעת שינוי הרשאות עצמיות
+      if (sessionUser.id === userId) {
+        return res.status(403).json({ message: "לא ניתן לשנות את ההרשאות של עצמך" });
+      }
+      
+      // אימות שם הרשאה
       if (!permissionName) {
         return res.status(400).json({ message: "שם הרשאה חסר" });
+      }
+      
+      if (!isValidPermissionName(permissionName)) {
+        return res.status(400).json({ message: "שם הרשאה לא חוקי" });
       }
       
       await storage.grantUserPermission(userId, permissionName, sessionUser.id, notes);
@@ -4814,8 +4834,18 @@ ${recommendation}
         return res.status(403).json({ message: "אין הרשאה לשלול הרשאות ממשתמשים" });
       }
       
+      // מניעת שינוי הרשאות עצמיות
+      if (sessionUser.id === userId) {
+        return res.status(403).json({ message: "לא ניתן לשנות את ההרשאות של עצמך" });
+      }
+      
+      // אימות שם הרשאה
       if (!permissionName) {
         return res.status(400).json({ message: "שם הרשאה חסר" });
+      }
+      
+      if (!isValidPermissionName(permissionName)) {
+        return res.status(400).json({ message: "שם הרשאה לא חוקי" });
       }
       
       await storage.revokeUserPermission(userId, permissionName, sessionUser.id, notes);
@@ -4838,6 +4868,16 @@ ${recommendation}
       
       if (!hasAdminRole) {
         return res.status(403).json({ message: "אין הרשאה להסיר הרשאות ממשתמשים" });
+      }
+      
+      // מניעת שינוי הרשאות עצמיות
+      if (sessionUser.id === userId) {
+        return res.status(403).json({ message: "לא ניתן לשנות את ההרשאות של עצמך" });
+      }
+      
+      // אימות שם הרשאה
+      if (!isValidPermissionName(permissionName)) {
+        return res.status(400).json({ message: "שם הרשאה לא חוקי" });
       }
       
       await storage.removeUserDirectPermission(userId, permissionName);

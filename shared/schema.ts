@@ -10,6 +10,7 @@ import {
   integer,
   boolean,
   pgEnum,
+  unique,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -99,7 +100,10 @@ export const userPermissions = pgTable("user_permissions", {
   grantedBy: varchar("granted_by"), // מי נתן/שלל את ההרשאה
   grantedAt: timestamp("granted_at").defaultNow(),
   notes: text("notes"), // הערות על מדוע ניתנה/נשללה ההרשאה
-});
+}, (table) => ({
+  // Unique constraint - למנוע הרשאות כפולות לאותו משתמש ואותה הרשאה
+  uniqueUserPermission: unique().on(table.userId, table.permissionName)
+}));
 
 // Message templates table
 export const messageTemplates = pgTable("message_templates", {
