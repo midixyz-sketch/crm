@@ -69,7 +69,7 @@ export default function UserManagement() {
 
   // Get direct permissions for selected user
   const { data: directPermissions = [], isLoading: directPermissionsLoading } = useQuery<any[]>({
-    queryKey: ['/api/users', selectedUserPermissions?.id, 'permissions', 'direct'],
+    queryKey: [`/api/users/${selectedUserPermissions?.id}/permissions/direct`],
     enabled: !!selectedUserPermissions?.id && permissionsDialogOpen,
   });
 
@@ -284,8 +284,8 @@ export default function UserManagement() {
       await apiRequest('POST', `/api/users/${userId}/permissions/grant`, { permissionName });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/users', selectedUserPermissions?.id, 'permissions', 'direct'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/permissions/detailed', selectedUserPermissions?.id] });
+      queryClient.invalidateQueries({ queryKey: [`/api/users/${selectedUserPermissions?.id}/permissions/direct`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/permissions/detailed/${selectedUserPermissions?.id}`] });
       toast({
         title: "ההרשאה הוענקה בהצלחה",
         description: "ההרשאה נוספה למשתמש",
@@ -309,8 +309,8 @@ export default function UserManagement() {
       await apiRequest('POST', `/api/users/${userId}/permissions/revoke`, { permissionName });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/users', selectedUserPermissions?.id, 'permissions', 'direct'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/permissions/detailed', selectedUserPermissions?.id] });
+      queryClient.invalidateQueries({ queryKey: [`/api/users/${selectedUserPermissions?.id}/permissions/direct`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/permissions/detailed/${selectedUserPermissions?.id}`] });
       toast({
         title: "ההרשאה נשללה בהצלחה",
         description: "ההרשאה הוסרה מהמשתמש",
@@ -334,8 +334,8 @@ export default function UserManagement() {
       await apiRequest('DELETE', `/api/users/${userId}/permissions/${permissionName}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/users', selectedUserPermissions?.id, 'permissions', 'direct'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/permissions/detailed', selectedUserPermissions?.id] });
+      queryClient.invalidateQueries({ queryKey: [`/api/users/${selectedUserPermissions?.id}/permissions/direct`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/permissions/detailed/${selectedUserPermissions?.id}`] });
       toast({
         title: "ההרשאה הוסרה לחלוטין",
         description: "ההרשאה הישירה נמחקה",
