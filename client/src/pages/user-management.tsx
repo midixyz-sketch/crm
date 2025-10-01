@@ -136,8 +136,8 @@ export default function UserManagement() {
   // Reset password mutation
   const resetPasswordMutation = useMutation({
     mutationFn: async (userId: string) => {
-      const response = await apiRequest('POST', `/api/users/${userId}/reset-password`);
-      return response as { loginDetails: { email: string; password: string } };
+      const response = await apiRequest('POST', `/api/users/${userId}/reset-password`) as any;
+      return response as { loginDetails: { email: string; password: string }; emailSent: boolean };
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['/api/users/all'] });
@@ -146,9 +146,12 @@ export default function UserManagement() {
         loginDetails: data.loginDetails,
         title: "סיסמא חדשה נוצרה"
       });
+      const emailStatus = data.emailSent 
+        ? "הסיסמא החדשה נשלחה גם למייל של המשתמש" 
+        : "הסיסמא החדשה מוצגת בחלון (שליחת מייל נכשלה)";
       toast({
         title: "הסיסמא אופסה בהצלחה",
-        description: "הסיסמא החדשה מוצגת בחלון",
+        description: emailStatus,
       });
     },
     onError: (error: any) => {
@@ -164,10 +167,10 @@ export default function UserManagement() {
   // Add user mutation with password
   const addUserMutation = useMutation({
     mutationFn: async (userData: { email: string; firstName?: string; lastName?: string; roleId?: string }) => {
-      const response = await apiRequest('POST', '/api/users/create-with-password', userData);
+      const response = await apiRequest('POST', '/api/users/create-with-password', userData) as any;
       return response;
     },
-    onSuccess: (data) => {
+    onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ['/api/users/all'] });
       setIsAddUserDialogOpen(false);
       resetAddUserForm();
@@ -197,10 +200,10 @@ export default function UserManagement() {
   // Legacy add user mutation (old method)
   const addUserLegacyMutation = useMutation({
     mutationFn: async (userData: { email: string; firstName?: string; lastName?: string; roleId?: string }) => {
-      const response = await apiRequest('POST', '/api/users', userData);
+      const response = await apiRequest('POST', '/api/users', userData) as any;
       return response;
     },
-    onSuccess: (response) => {
+    onSuccess: (response: any) => {
       queryClient.invalidateQueries({ queryKey: ['/api/users/all'] });
       setIsAddUserDialogOpen(false);
       resetAddUserForm();
