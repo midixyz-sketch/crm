@@ -321,6 +321,29 @@ export default function UserManagement() {
     },
   });
 
+  // Remove permission mutation - מחיקה מוחלטת של הרשאה ישירה
+  const removePermissionMutation = useMutation({
+    mutationFn: async ({ userId, permissionName }: { userId: string; permissionName: string }) => {
+      await apiRequest('DELETE', `/api/users/${userId}/permissions/${permissionName}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/users', selectedUserPermissions?.id, 'permissions', 'direct'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/permissions/detailed', selectedUserPermissions?.id] });
+      toast({
+        title: "ההרשאה הוסרה לחלוטין",
+        description: "ההרשאה הישירה נמחקה",
+      });
+    },
+    onError: (error: any) => {
+      console.error('Error removing permission:', error);
+      toast({
+        title: "שגיאה",
+        description: "לא ניתן היה להסיר את ההרשאה",
+        variant: "destructive",
+      });
+    },
+  });
+
   
   if (!canManageUsers && !canManageRoles) {
     return (
