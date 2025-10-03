@@ -555,23 +555,24 @@ export async function reloadCpanelConfig() {
 async function processCVEmailAttachment(imap: any, seqno: number, headers: any, body: string): Promise<void> {
   console.log('🔍 מעבד קובץ CV מהמייל...');
   
-  try {
-    // Get the full email message with attachments
-    const f = imap.fetch(seqno, { 
-      bodies: '',
-      struct: true,
-      envelope: true
-    });
+  return new Promise((resolve, reject) => {
+    try {
+      // Get the full email message with attachments
+      const f = imap.fetch(seqno, { 
+        bodies: '',
+        struct: true,
+        envelope: true
+      });
 
-    f.on('message', (msg: any) => {
-      msg.on('body', (stream: any) => {
-        let fullEmail = '';
-        
-        stream.on('data', (chunk: any) => {
-          fullEmail += chunk.toString();
-        });
-        
-        stream.once('end', async () => {
+      f.on('message', (msg: any) => {
+        msg.on('body', (stream: any) => {
+          let fullEmail = '';
+          
+          stream.on('data', (chunk: any) => {
+            fullEmail += chunk.toString();
+          });
+          
+          stream.once('end', async () => {
           try {
             // Parse the full email with mailparser to extract attachments
             const parsed = await simpleParser(fullEmail);
@@ -689,16 +690,25 @@ async function processCVEmailAttachment(imap: any, seqno: number, headers: any, 
             } else {
               console.log('📧 המייל לא מכיל קבצים מצורפים');
             }
+            resolve();
           } catch (parseError) {
             console.error('❌ שגיאה בפענוח המייל:', parseError);
+            reject(parseError);
           }
         });
       });
     });
     
+    f.once('error', (err: any) => {
+      console.error('❌ שגיאה בקבלת המייל המלא:', err.message);
+      reject(err);
+    });
+    
   } catch (error) {
     console.error('❌ שגיאה בעיבוד קובץ CV מהמייל:', error);
+    reject(error);
   }
+  });
 }
 
 // Extract name from email address
