@@ -285,8 +285,17 @@ export async function checkCpanelEmails(): Promise<void> {
 
           if (!results || results.length === 0) {
             console.log('ℹ️ אין מיילים חדשים');
+            if (!resolved) {
+              resolved = true;
+              clearTimeout(timeout);
+              imap.end();
+              resolve();
+            }
           } else {
             console.log(`🆕 נמצאו ${results.length} מיילים חדשים`);
+            
+            // Collect all processing promises
+            const processingPromises: Promise<void>[] = [];
             
             // Process each new email
             const f = imap.fetch(results, {
@@ -317,9 +326,9 @@ export async function checkCpanelEmails(): Promise<void> {
                 });
               });
 
-              msg.once('end', async () => {
+              msg.once('end', () => {
                 processedCount++;
-                console.log(`✅ מייל ${seqno} עובד (${processedCount}/${totalEmails})`);
+                console.log(`✅ מייל ${seqno} נקרא (${processedCount}/${totalEmails})`);
                 
                 // Log email details for debugging
                 if (headers.from && headers.subject) {
@@ -329,25 +338,38 @@ export async function checkCpanelEmails(): Promise<void> {
                   // Process all emails with attachments (PDF, DOC, images, TXT)
                   console.log('🔍 בודק אם יש קבצים מצורפים...');
                   
-                  // Process email to check for attachments
-                  try {
-                    await processCVEmailAttachment(imap, seqno, headers, body);
-                    console.log(`✅ מייל ${seqno} עובד ומסומן כנקרא`);
-                  } catch (cvError) {
-                    console.error('❌ שגיאה בעיבוד המייל:', cvError);
-                  }
-                }
-
-                // If all emails processed, close connection
-                if (processedCount === totalEmails) {
-                  if (!resolved) {
-                    resolved = true;
-                    clearTimeout(timeout);
-                    imap.end();
-                    resolve();
-                  }
+                  // Create a processing promise and add it to the collection
+                  const processingPromise = (async () => {
+                    try {
+                      await processCVEmailAttachment(imap, seqno, headers, body);
+                      console.log(`✅ מייל ${seqno} עובד לגמרי`);
+                    } catch (cvError) {
+                      console.error('❌ שגיאה בעיבוד המייל:', cvError);
+                    }
+                  })();
+                  
+                  processingPromises.push(processingPromise);
                 }
               });
+            });
+
+            f.once('end', async () => {
+              console.log(`⏳ ממתין לסיום עיבוד ${processingPromises.length} מיילים...`);
+              
+              // Wait for ALL processing to complete before closing connection
+              try {
+                await Promise.all(processingPromises);
+                console.log('✅ כל המיילים עובדו בהצלחה');
+              } catch (err) {
+                console.error('❌ שגיאה בעיבוד מיילים:', err);
+              }
+              
+              if (!resolved) {
+                resolved = true;
+                clearTimeout(timeout);
+                imap.end();
+                resolve();
+              }
             });
 
             f.once('error', (err) => {
@@ -359,16 +381,6 @@ export async function checkCpanelEmails(): Promise<void> {
                 resolve();
               }
             });
-          }
-
-          // If no new emails to process, close connection
-          if (!results || results.length === 0) {
-            if (!resolved) {
-              resolved = true;
-              clearTimeout(timeout);
-              imap.end();
-              resolve();
-            }
           }
         });
       });
