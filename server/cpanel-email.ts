@@ -331,11 +331,14 @@ export async function checkCpanelEmails(): Promise<void> {
               const chunks: Buffer[] = []; // Keep as Buffer to preserve attachments
 
               msg.on('body', (stream, info) => {
+                console.log(`📨 התחיל לקרוא גוף המייל...`);
                 stream.on('data', (chunk) => {
                   // Keep as Buffer - do NOT convert to string
                   chunks.push(chunk);
+                  console.log(`📦 התקבל chunk בגודל ${chunk.length} בתים (סה"כ ${chunks.length} chunks)`);
                 });
                 stream.once('end', () => {
+                  console.log(`✅ גוף המייל התקבל בשלמות - ${chunks.length} chunks`);
                   // Body is fully received, will process in msg.once('end')
                 });
               });
