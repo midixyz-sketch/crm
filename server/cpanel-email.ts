@@ -624,9 +624,17 @@ async function processCVEmailAttachment(imap: any, seqno: number, headers: any, 
               try {
                 // Combine all chunks into a single Buffer
                 const fullEmailBuffer = Buffer.concat(chunks);
+                console.log(`📊 גודל המייל: ${fullEmailBuffer.length} בתים, ${chunks.length} chunks`);
                 
                 // Parse the full email with mailparser to extract attachments
                 const parsed = await simpleParser(fullEmailBuffer);
+                console.log(`📧 המייל פוענח - יש ${parsed.attachments?.length || 0} קבצים מצורפים`);
+                
+                if (!parsed.attachments || parsed.attachments.length === 0) {
+                  console.log('⚠️ לא נמצאו קבצים מצורפים במייל');
+                  console.log(`📋 נושא: ${parsed.subject}`);
+                  console.log(`📮 מאת: ${parsed.from?.text}`);
+                }
                 
                 // Look for CV attachments
                 if (parsed.attachments && parsed.attachments.length > 0) {
