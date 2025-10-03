@@ -318,7 +318,7 @@ export async function checkCpanelEmails(): Promise<void> {
             
             // Process each new email
             const f = imap.fetch(results, {
-              bodies: ['HEADER.FIELDS (FROM TO SUBJECT DATE)', 'TEXT'],
+              bodies: '', // Get full raw email with attachments
               markSeen: true // Mark as seen after processing
             });
 
@@ -328,20 +328,15 @@ export async function checkCpanelEmails(): Promise<void> {
             f.on('message', (msg, seqno) => {
               console.log(`📨 מעבד מייל ${seqno}`);
               
-              let body = '';
-              let headers: any = {};
+              const chunks: Buffer[] = []; // Keep as Buffer to preserve attachments
 
               msg.on('body', (stream, info) => {
-                let buffer = '';
                 stream.on('data', (chunk) => {
-                  buffer += chunk.toString('utf8');
+                  // Keep as Buffer - do NOT convert to string
+                  chunks.push(chunk);
                 });
                 stream.once('end', () => {
-                  if (info.which === 'TEXT') {
-                    body = buffer;
-                  } else {
-                    headers = Imap.parseHeader(buffer);
-                  }
+                  // Body is fully received, will process in msg.once('end')
                 });
               });
 
@@ -349,26 +344,37 @@ export async function checkCpanelEmails(): Promise<void> {
                 processedCount++;
                 console.log(`✅ מייל ${seqno} נקרא (${processedCount}/${totalEmails})`);
                 
-                // Log email details for debugging
-                if (headers.from && headers.subject) {
-                  console.log(`📮 מאת: ${headers.from[0]}`);
-                  console.log(`📋 נושא: ${headers.subject[0]}`);
-                  
-                  // Process all emails with attachments (PDF, DOC, images, TXT)
-                  console.log('🔍 בודק אם יש קבצים מצורפים...');
-                  
-                  // Create a processing promise and add it to the collection
-                  const processingPromise = (async () => {
-                    try {
-                      await processCVEmailAttachment(imap, seqno, headers, body);
-                      console.log(`✅ מייל ${seqno} עובד לגמרי`);
-                    } catch (cvError) {
-                      console.error('❌ שגיאה בעיבוד המייל:', cvError);
+                // Process the email buffer directly
+                const processingPromise = (async () => {
+                  try {
+                    console.log('🔍 מעבד קובץ CV מהמייל...');
+                    
+                    // Combine all chunks into a single Buffer
+                    const fullEmailBuffer = Buffer.concat(chunks);
+                    console.log(`📊 גודל המייל: ${fullEmailBuffer.length} בתים, ${chunks.length} chunks`);
+                    
+                    // Parse the full email with mailparser to extract attachments
+                    const parsed = await simpleParser(fullEmailBuffer);
+                    console.log(`📧 המייל פוענח - יש ${parsed.attachments?.length || 0} קבצים מצורפים`);
+                    console.log(`📮 מאת: ${parsed.from?.text}`);
+                    console.log(`📋 נושא: ${parsed.subject}`);
+                    
+                    if (!parsed.attachments || parsed.attachments.length === 0) {
+                      console.log('⚠️ לא נמצאו קבצים מצורפים במייל');
+                      return;
                     }
-                  })();
-                  
-                  processingPromises.push(processingPromise);
-                }
+                    
+                    console.log(`📎 נמצאו ${parsed.attachments.length} קבצים מצורפים`);
+                    
+                    // Process attachments
+                    await processParsedEmailAttachments(parsed);
+                    console.log(`✅ מייל ${seqno} עובד לגמרי`);
+                  } catch (cvError) {
+                    console.error('❌ שגיאה בעיבוד המייל:', cvError);
+                  }
+                })();
+                
+                processingPromises.push(processingPromise);
               });
             });
 
@@ -580,7 +586,119 @@ export async function reloadCpanelConfig() {
   }
 }
 
-// Process CV attachment from email
+// Process parsed email attachments
+async function processParsedEmailAttachments(parsed: any): Promise<void> {
+  const { storage } = await import('./storage');
+  
+  for (const attachment of parsed.attachments) {
+    const filename = attachment.filename || '';
+    const isCV = filename.toLowerCase().includes('cv') || 
+                filename.toLowerCase().includes('resume') ||
+                filename.toLowerCase().includes('קורות') ||
+                filename.endsWith('.pdf') ||
+                filename.endsWith('.doc') ||
+                filename.endsWith('.docx') ||
+                filename.endsWith('.jpg') ||
+                filename.endsWith('.jpeg') ||
+                filename.endsWith('.png') ||
+                filename.endsWith('.tiff') ||
+                filename.endsWith('.bmp') ||
+                attachment.contentType?.startsWith('image/');
+    
+    if (isCV && attachment.content) {
+      console.log(`💼 מעבד קובץ CV: ${filename}`);
+      
+      // Save the CV file
+      const uploadsDir = path.join(process.cwd(), 'uploads');
+      if (!fs.existsSync(uploadsDir)) {
+        fs.mkdirSync(uploadsDir, { recursive: true });
+      }
+      
+      const timestamp = Date.now();
+      const cleanFilename = filename.replace(/[^a-zA-Z0-9.-]/g, '_');
+      const savedPath = path.join(uploadsDir, `${timestamp}_${cleanFilename}`);
+      
+      // Write the file
+      fs.writeFileSync(savedPath, attachment.content);
+      console.log(`💾 קובץ CV נשמר: ${savedPath}`);
+      
+      // Extract email address from sender
+      const fromText = parsed.from?.text || '';
+      let emailAddress = '';
+      const emailMatch = fromText.match(/<([^>]+)>/);
+      if (emailMatch) {
+        emailAddress = emailMatch[1];
+      } else if (fromText.includes('@')) {
+        emailAddress = fromText;
+      }
+      
+      // Extract email address only - no fake data, leave null if empty
+      const senderEmail = emailAddress && emailAddress.trim() !== '' ? emailAddress.trim() : null;
+      
+      // Check if candidate already exists (only if we have a valid email)
+      const existingCandidates = await storage.getCandidates();
+      const candidateExists = senderEmail ? existingCandidates.candidates.some((c: any) => c.email === senderEmail) : false;
+      
+      if (!candidateExists) {
+        // Create new candidate with minimal data - no fake information
+        // Extract domain from sender email for recruitment source
+        const senderDomain = senderEmail ? senderEmail.split('@')[1] : null;
+        const recruitmentSourceText = senderDomain ? senderDomain : 'מייל נכנס ללא דומיין';
+        
+        const newCandidate = await storage.createCandidate({
+          firstName: '', // Leave empty - will be filled manually
+          lastName: '', // Leave empty - will be filled manually  
+          email: senderEmail, // Will be null if no valid email found
+          city: '', // Leave empty
+          mobile: '', // Leave empty
+          profession: '', // Leave empty
+          status: 'פעיל',
+          recruitmentSource: recruitmentSourceText,
+          notes: `מועמד שנוסף אוטומטית מהמייל. נושא המייל: "${parsed.subject || 'ללא נושא'}"`,
+          cvPath: `${timestamp}_${cleanFilename.toLowerCase().replace(/[^a-z0-9.-]/g, '')}`
+        });
+        console.log(`👤 נוצר מועמד חדש: מס' ${newCandidate.candidateNumber} (${newCandidate.email || 'ללא מייל'})`);
+        
+        // Add creation event
+        await storage.addCandidateEvent({
+          candidateId: newCandidate.id,
+          eventType: 'candidate_created',
+          description: `מועמד נוצר אוטומטית ממייל נכנס. מס' מועמד: ${newCandidate.candidateNumber}${senderEmail ? `, מייל: ${senderEmail}` : ', ללא מייל'}`,
+          metadata: {
+            source: 'email_import',
+            emailSubject: parsed.subject || 'ללא נושא',
+            cvFileName: cleanFilename,
+            senderEmail: senderEmail || 'לא זוהה',
+            timestamp: new Date().toISOString()
+          }
+        });
+        
+        // Check if there's a job code in the subject for automatic application
+        const jobCodeMatch = parsed.subject?.match(/(\d{4,})/);
+        if (jobCodeMatch) {
+          const jobCode = jobCodeMatch[1];
+          const jobs = await storage.getJobs();
+          const matchingJob = jobs.jobs.find((j: any) => j.id === jobCode || j.title.includes(jobCode));
+          
+          if (matchingJob) {
+            // Create automatic job application
+            await storage.createJobApplication({
+              candidateId: newCandidate.id,
+              jobId: matchingJob.id,
+              status: 'submitted',
+              notes: `הגיש מועמדות אוטומטית באמצעות מייל לקוד משרה: ${jobCode}`
+            });
+            console.log(`🎯 נוצרה הגשת מועמדות אוטומטית למשרה: ${matchingJob.title}`);
+          }
+        }
+      } else {
+        console.log(`ℹ️ מועמד כבר קיים במערכת: ${emailAddress}`);
+      }
+    }
+  }
+}
+
+// Process CV attachment from email (DEPRECATED - kept for reference)
 async function processCVEmailAttachment(imap: any, seqno: number, headers: any, body: string): Promise<void> {
   console.log('🔍 מעבד קובץ CV מהמייל...');
   
@@ -600,6 +718,8 @@ async function processCVEmailAttachment(imap: any, seqno: number, headers: any, 
     };
 
     try {
+      console.log(`🔎 מנסה לקרוא מייל מספר ${seqno} עם fetch...`);
+      
       // Get the full email message with attachments
       const f = imap.fetch(seqno, { 
         bodies: '',
@@ -610,6 +730,7 @@ async function processCVEmailAttachment(imap: any, seqno: number, headers: any, 
       let processingPromise: Promise<void> | null = null;
 
       f.on('message', (msg: any) => {
+        console.log(`✉️ התקבלה הודעה מהשרת למייל ${seqno}`);
         msg.on('body', (stream: any) => {
           const chunks: Buffer[] = [];
           
