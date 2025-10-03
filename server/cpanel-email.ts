@@ -240,7 +240,7 @@ export async function checkCpanelEmails(): Promise<void> {
         console.log('❌ Timeout בבדיקת מיילים');
         resolve();
       }
-    }, 25000);
+    }, 120000); // 2 minutes timeout for processing attachments
 
     imap.once('ready', () => {
       console.log('✅ מחובר לשרת cPanel');
