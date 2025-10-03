@@ -326,18 +326,15 @@ export async function checkCpanelEmails(): Promise<void> {
                   console.log(`📮 מאת: ${headers.from[0]}`);
                   console.log(`📋 נושא: ${headers.subject[0]}`);
                   
-                  // Check if this email contains potential CV
-                  const subject = headers.subject[0].toLowerCase();
-                  if (subject.includes('cv') || subject.includes('קורות') || subject.includes('resume')) {
-                    console.log('🎯 נמצא מייל עם קורות חיים!');
-                    
-                    // Process CV attachment
-                    try {
-                      await processCVEmailAttachment(imap, seqno, headers, body);
-                      console.log(`✅ מייל ${seqno} עובד ומסומן כנקרא`);
-                    } catch (cvError) {
-                      console.error('❌ שגיאה בעיבוד קובץ CV:', cvError);
-                    }
+                  // Process all emails with attachments (PDF, DOC, images, TXT)
+                  console.log('🔍 בודק אם יש קבצים מצורפים...');
+                  
+                  // Process email to check for attachments
+                  try {
+                    await processCVEmailAttachment(imap, seqno, headers, body);
+                    console.log(`✅ מייל ${seqno} עובד ומסומן כנקרא`);
+                  } catch (cvError) {
+                    console.error('❌ שגיאה בעיבוד המייל:', cvError);
                   }
                 }
 
