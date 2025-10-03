@@ -26,8 +26,7 @@ import { execSync } from 'child_process';
 import mime from 'mime-types';
 import { sendEmail, emailTemplates, sendWelcomeEmail, reloadEmailConfig } from './emailService';
 import { generateSecurePassword } from './passwordUtils';
-// cPanel email functionality disabled for standalone deployment
-// import { checkCpanelEmails, startCpanelEmailMonitoring } from './cpanel-email';
+import { checkCpanelEmails, startCpanelEmailMonitoring } from './cpanel-email';
 import nodemailer from 'nodemailer';
 import { 
   hasPermission, 
@@ -2854,10 +2853,9 @@ ${extractedData.achievements ? `הישגים ופעילות נוספת: ${cleanS
   // Manual check for incoming emails route
   app.post('/api/emails/check-incoming', isAuthenticated, async (req: any, res) => {
     try {
-      // cPanel email check disabled for standalone deployment
-      console.log('ℹ️ בדיקת מיילים cPanel מנוטרלת למערכת עצמאית');
-      // await checkCpanelEmails();
-      res.json({ success: true, message: "בדיקת מיילים נכנסים מנוטרלת למערכת עצמאית" });
+      console.log('📧 בודק מיילים נכנסים ידנית...');
+      await checkCpanelEmails();
+      res.json({ success: true, message: "בדיקת מיילים הושלמה בהצלחה" });
     } catch (error) {
       console.error("Error checking incoming emails:", error);
       res.status(500).json({ message: "Failed to check incoming emails" });
@@ -3855,8 +3853,9 @@ ${recommendation}
     }
   });
 
-  // cPanel email monitoring disabled for standalone deployment
-  console.log('ℹ️ מעקב מיילים cPanel מנוטרל למערכת עצמאית');
+  // Start cPanel email monitoring
+  console.log('🚀 מפעיל מעקב מיילים אוטומטי...');
+  startCpanelEmailMonitoring();
 
   // RBAC Routes - Role & Permission Management
   
