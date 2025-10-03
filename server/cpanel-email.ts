@@ -591,18 +591,22 @@ async function processCVEmailAttachment(imap: any, seqno: number, headers: any, 
 
       f.on('message', (msg: any) => {
         msg.on('body', (stream: any) => {
-          let fullEmail = '';
+          const chunks: Buffer[] = [];
           
           stream.on('data', (chunk: any) => {
-            fullEmail += chunk.toString();
+            // Keep as Buffer - do NOT convert to string
+            chunks.push(chunk);
           });
           
           stream.once('end', () => {
             // Create a processing promise that we'll await in the 'end' event
             processingPromise = (async () => {
               try {
+                // Combine all chunks into a single Buffer
+                const fullEmailBuffer = Buffer.concat(chunks);
+                
                 // Parse the full email with mailparser to extract attachments
-                const parsed = await simpleParser(fullEmail);
+                const parsed = await simpleParser(fullEmailBuffer);
                 
                 // Look for CV attachments
                 if (parsed.attachments && parsed.attachments.length > 0) {
