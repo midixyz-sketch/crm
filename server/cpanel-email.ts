@@ -553,6 +553,20 @@ async function processCVEmailAttachment(imap: any, seqno: number, headers: any, 
   console.log('🔍 מעבד קובץ CV מהמייל...');
   
   return new Promise((resolve, reject) => {
+    let resolved = false;
+    const safeResolve = () => {
+      if (!resolved) {
+        resolved = true;
+        resolve();
+      }
+    };
+    const safeReject = (err: any) => {
+      if (!resolved) {
+        resolved = true;
+        reject(err);
+      }
+    };
+
     try {
       // Get the full email message with attachments
       const f = imap.fetch(seqno, { 
@@ -560,6 +574,8 @@ async function processCVEmailAttachment(imap: any, seqno: number, headers: any, 
         struct: true,
         envelope: true
       });
+
+      let processingPromise: Promise<void> | null = null;
 
       f.on('message', (msg: any) => {
         msg.on('body', (stream: any) => {
@@ -569,142 +585,156 @@ async function processCVEmailAttachment(imap: any, seqno: number, headers: any, 
             fullEmail += chunk.toString();
           });
           
-          stream.once('end', async () => {
-          try {
-            // Parse the full email with mailparser to extract attachments
-            const parsed = await simpleParser(fullEmail);
-            
-            // Look for CV attachments
-            if (parsed.attachments && parsed.attachments.length > 0) {
-              console.log(`📎 נמצאו ${parsed.attachments.length} קבצים מצורפים`);
-              
-              for (const attachment of parsed.attachments) {
-                const filename = attachment.filename || '';
-                const isCV = filename.toLowerCase().includes('cv') || 
-                            filename.toLowerCase().includes('resume') ||
-                            filename.toLowerCase().includes('קורות') ||
-                            filename.endsWith('.pdf') ||
-                            filename.endsWith('.doc') ||
-                            filename.endsWith('.docx') ||
-                            filename.endsWith('.jpg') ||
-                            filename.endsWith('.jpeg') ||
-                            filename.endsWith('.png') ||
-                            filename.endsWith('.tiff') ||
-                            filename.endsWith('.bmp') ||
-                            attachment.contentType?.startsWith('image/');
+          stream.once('end', () => {
+            // Create a processing promise that we'll await in the 'end' event
+            processingPromise = (async () => {
+              try {
+                // Parse the full email with mailparser to extract attachments
+                const parsed = await simpleParser(fullEmail);
                 
-                if (isCV && attachment.content) {
-                  console.log(`💼 מעבד קובץ CV: ${filename}`);
+                // Look for CV attachments
+                if (parsed.attachments && parsed.attachments.length > 0) {
+                  console.log(`📎 נמצאו ${parsed.attachments.length} קבצים מצורפים`);
                   
-                  // Save the CV file
-                  const uploadsDir = path.join(process.cwd(), 'uploads');
-                  if (!fs.existsSync(uploadsDir)) {
-                    fs.mkdirSync(uploadsDir, { recursive: true });
-                  }
-                  
-                  const timestamp = Date.now();
-                  const cleanFilename = filename.replace(/[^a-zA-Z0-9.-]/g, '_');
-                  const savedPath = path.join(uploadsDir, `${timestamp}_${cleanFilename}`);
-                  
-                  // Write the file
-                  fs.writeFileSync(savedPath, attachment.content);
-                  console.log(`💾 קובץ CV נשמר: ${savedPath}`);
-                  
-                  // Extract email address from sender
-                  const fromEmail = headers.from[0];
-                  let emailAddress = '';
-                  const emailMatch = fromEmail.match(/<([^>]+)>/);
-                  if (emailMatch) {
-                    emailAddress = emailMatch[1];
-                  } else {
-                    emailAddress = fromEmail;
-                  }
-                  
-                  // Extract email address only - no fake data, leave null if empty
-                  const senderEmail = emailAddress && emailAddress.trim() !== '' ? emailAddress.trim() : null;
-                  
-                  // Check if candidate already exists (only if we have a valid email)
-                  const existingCandidates = await storage.getCandidates();
-                  const candidateExists = senderEmail ? existingCandidates.candidates.some((c: any) => c.email === senderEmail) : false;
-                  
-                  if (!candidateExists) {
-                    // Create new candidate with minimal data - no fake information
-                    // Extract domain from sender email for recruitment source
-                    const senderDomain = senderEmail ? senderEmail.split('@')[1] : null;
-                    const recruitmentSourceText = senderDomain ? senderDomain : 'מייל נכנס ללא דומיין';
+                  for (const attachment of parsed.attachments) {
+                    const filename = attachment.filename || '';
+                    const isCV = filename.toLowerCase().includes('cv') || 
+                                filename.toLowerCase().includes('resume') ||
+                                filename.toLowerCase().includes('קורות') ||
+                                filename.endsWith('.pdf') ||
+                                filename.endsWith('.doc') ||
+                                filename.endsWith('.docx') ||
+                                filename.endsWith('.jpg') ||
+                                filename.endsWith('.jpeg') ||
+                                filename.endsWith('.png') ||
+                                filename.endsWith('.tiff') ||
+                                filename.endsWith('.bmp') ||
+                                attachment.contentType?.startsWith('image/');
                     
-                    const newCandidate = await storage.createCandidate({
-        firstName: '', // Leave empty - will be filled manually
-        lastName: '', // Leave empty - will be filled manually  
-        email: senderEmail, // Will be null if no valid email found
-        city: '', // Leave empty
-        mobile: '', // Leave empty
-        profession: '', // Leave empty
-        status: 'פעיל',
-        recruitmentSource: recruitmentSourceText,
-        notes: `מועמד שנוסף אוטומטית מהמייל. נושא המייל: "${parsed.subject || 'ללא נושא'}"`,
-        cvPath: `${timestamp}-${cleanFilename.toLowerCase().replace(/[^a-z0-9.-]/g, '')}`
-      });
-                    console.log(`👤 נוצר מועמד חדש: מס' ${newCandidate.candidateNumber} (${newCandidate.email || 'ללא מייל'})`);
-                    
-                    // Add creation event
-                    await storage.addCandidateEvent({
-                      candidateId: newCandidate.id,
-                      eventType: 'candidate_created',
-                      description: `מועמד נוצר אוטומטית ממייל נכנס. מס' מועמד: ${newCandidate.candidateNumber}${senderEmail ? `, מייל: ${senderEmail}` : ', ללא מייל'}`,
-                      metadata: {
-                        source: 'email_import',
-                        emailSubject: parsed.subject || 'ללא נושא',
-                        cvFileName: cleanFilename,
-                        senderEmail: senderEmail || 'לא זוהה',
-                        timestamp: new Date().toISOString()
-                      }
-                    });
-                    
-                    // Check if there's a job code in the subject for automatic application
-                    const jobCodeMatch = parsed.subject?.match(/(\d{4,})/);
-                    if (jobCodeMatch) {
-                      const jobCode = jobCodeMatch[1];
-                      const jobs = await storage.getJobs();
-                      const matchingJob = jobs.jobs.find((j: any) => j.id === jobCode || j.title.includes(jobCode));
+                    if (isCV && attachment.content) {
+                      console.log(`💼 מעבד קובץ CV: ${filename}`);
                       
-                      if (matchingJob) {
-                        // Create automatic job application
-                        await storage.createJobApplication({
+                      // Save the CV file
+                      const uploadsDir = path.join(process.cwd(), 'uploads');
+                      if (!fs.existsSync(uploadsDir)) {
+                        fs.mkdirSync(uploadsDir, { recursive: true });
+                      }
+                      
+                      const timestamp = Date.now();
+                      const cleanFilename = filename.replace(/[^a-zA-Z0-9.-]/g, '_');
+                      const savedPath = path.join(uploadsDir, `${timestamp}_${cleanFilename}`);
+                      
+                      // Write the file
+                      fs.writeFileSync(savedPath, attachment.content);
+                      console.log(`💾 קובץ CV נשמר: ${savedPath}`);
+                      
+                      // Extract email address from sender
+                      const fromEmail = headers.from[0];
+                      let emailAddress = '';
+                      const emailMatch = fromEmail.match(/<([^>]+)>/);
+                      if (emailMatch) {
+                        emailAddress = emailMatch[1];
+                      } else {
+                        emailAddress = fromEmail;
+                      }
+                      
+                      // Extract email address only - no fake data, leave null if empty
+                      const senderEmail = emailAddress && emailAddress.trim() !== '' ? emailAddress.trim() : null;
+                      
+                      // Check if candidate already exists (only if we have a valid email)
+                      const existingCandidates = await storage.getCandidates();
+                      const candidateExists = senderEmail ? existingCandidates.candidates.some((c: any) => c.email === senderEmail) : false;
+                      
+                      if (!candidateExists) {
+                        // Create new candidate with minimal data - no fake information
+                        // Extract domain from sender email for recruitment source
+                        const senderDomain = senderEmail ? senderEmail.split('@')[1] : null;
+                        const recruitmentSourceText = senderDomain ? senderDomain : 'מייל נכנס ללא דומיין';
+                        
+                        const newCandidate = await storage.createCandidate({
+          firstName: '', // Leave empty - will be filled manually
+          lastName: '', // Leave empty - will be filled manually  
+          email: senderEmail, // Will be null if no valid email found
+          city: '', // Leave empty
+          mobile: '', // Leave empty
+          profession: '', // Leave empty
+          status: 'פעיל',
+          recruitmentSource: recruitmentSourceText,
+          notes: `מועמד שנוסף אוטומטית מהמייל. נושא המייל: "${parsed.subject || 'ללא נושא'}"`,
+          cvPath: `${timestamp}-${cleanFilename.toLowerCase().replace(/[^a-z0-9.-]/g, '')}`
+        });
+                        console.log(`👤 נוצר מועמד חדש: מס' ${newCandidate.candidateNumber} (${newCandidate.email || 'ללא מייל'})`);
+                        
+                        // Add creation event
+                        await storage.addCandidateEvent({
                           candidateId: newCandidate.id,
-                          jobId: matchingJob.id,
-                          status: 'submitted',
-                          notes: `הגיש מועמדות אוטומטית באמצעות מייל לקוד משרה: ${jobCode}`
+                          eventType: 'candidate_created',
+                          description: `מועמד נוצר אוטומטית ממייל נכנס. מס' מועמד: ${newCandidate.candidateNumber}${senderEmail ? `, מייל: ${senderEmail}` : ', ללא מייל'}`,
+                          metadata: {
+                            source: 'email_import',
+                            emailSubject: parsed.subject || 'ללא נושא',
+                            cvFileName: cleanFilename,
+                            senderEmail: senderEmail || 'לא זוהה',
+                            timestamp: new Date().toISOString()
+                          }
                         });
-                        console.log(`🎯 נוצרה הגשת מועמדות אוטומטית למשרה: ${matchingJob.title}`);
+                        
+                        // Check if there's a job code in the subject for automatic application
+                        const jobCodeMatch = parsed.subject?.match(/(\d{4,})/);
+                        if (jobCodeMatch) {
+                          const jobCode = jobCodeMatch[1];
+                          const jobs = await storage.getJobs();
+                          const matchingJob = jobs.jobs.find((j: any) => j.id === jobCode || j.title.includes(jobCode));
+                          
+                          if (matchingJob) {
+                            // Create automatic job application
+                            await storage.createJobApplication({
+                              candidateId: newCandidate.id,
+                              jobId: matchingJob.id,
+                              status: 'submitted',
+                              notes: `הגיש מועמדות אוטומטית באמצעות מייל לקוד משרה: ${jobCode}`
+                            });
+                            console.log(`🎯 נוצרה הגשת מועמדות אוטומטית למשרה: ${matchingJob.title}`);
+                          }
+                        }
+                      } else {
+                        console.log(`ℹ️ מועמד כבר קיים במערכת: ${emailAddress}`);
                       }
                     }
-                  } else {
-                    console.log(`ℹ️ מועמד כבר קיים במערכת: ${emailAddress}`);
                   }
+                } else {
+                  console.log('📧 המייל לא מכיל קבצים מצורפים');
                 }
+              } catch (parseError) {
+                console.error('❌ שגיאה בפענוח המייל:', parseError);
+                throw parseError;
               }
-            } else {
-              console.log('📧 המייל לא מכיל קבצים מצורפים');
-            }
-            resolve();
-          } catch (parseError) {
-            console.error('❌ שגיאה בפענוח המייל:', parseError);
-            reject(parseError);
-          }
+            })();
+          });
         });
       });
-    });
+      
+      // Wait for the fetch to complete AND for processing to finish
+      f.once('end', async () => {
+        try {
+          if (processingPromise) {
+            await processingPromise;
+          }
+          safeResolve();
+        } catch (err) {
+          safeReject(err);
+        }
+      });
+      
+      f.once('error', (err: any) => {
+        console.error('❌ שגיאה בקבלת המייל המלא:', err.message);
+        safeReject(err);
+      });
     
-    f.once('error', (err: any) => {
-      console.error('❌ שגיאה בקבלת המייל המלא:', err.message);
-      reject(err);
-    });
-    
-  } catch (error) {
-    console.error('❌ שגיאה בעיבוד קובץ CV מהמייל:', error);
-    reject(error);
-  }
+    } catch (error) {
+      console.error('❌ שגיאה בעיבוד קובץ CV מהמייל:', error);
+      safeReject(error);
+    }
   });
 }
 
