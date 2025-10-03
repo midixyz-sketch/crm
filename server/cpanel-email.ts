@@ -257,7 +257,7 @@ export async function checkCpanelEmails(): Promise<void> {
           return;
         }
 
-        console.log(`📧 בוחן ${box.messages.total} מיילים`);
+        console.log(`📧 בוחן ${box.messages.total} מיילים סה"כ, לא נקראו: ${box.messages.unseen || 0}`);
 
         if (box.messages.total === 0) {
           console.log('ℹ️ אין מיילים בתיבה');
@@ -270,28 +270,47 @@ export async function checkCpanelEmails(): Promise<void> {
           return;
         }
 
-        // Search for unread emails
-        imap.search(['UNSEEN'], (err, results) => {
-          if (err) {
-            console.error('❌ שגיאה בחיפוש מיילים:', err.message);
-            if (!resolved) {
-              resolved = true;
-              clearTimeout(timeout);
-              imap.end();
-              resolve();
+        // First, let's see the last few emails to debug
+        const lastEmailsCount = Math.min(3, box.messages.total);
+        const startSeq = Math.max(1, box.messages.total - lastEmailsCount + 1);
+        const debugFetch = imap.seq.fetch(`${startSeq}:${box.messages.total}`, {
+          bodies: 'HEADER.FIELDS (FROM DATE SUBJECT)',
+        });
+        
+        debugFetch.on('message', (msg, seqno) => {
+          msg.on('body', (stream) => {
+            let buffer = '';
+            stream.on('data', (chunk) => buffer += chunk.toString());
+            stream.once('end', () => {
+              const headers = Imap.parseHeader(buffer);
+              console.log(`📧 מייל #${seqno}: מאת ${headers.from?.[0] || 'לא ידוע'}, תאריך: ${headers.date?.[0] || 'לא ידוע'}`);
+            });
+          });
+        });
+        
+        debugFetch.once('end', () => {
+          // Now search for unread emails
+          imap.search(['UNSEEN'], (err, results) => {
+            if (err) {
+              console.error('❌ שגיאה בחיפוש מיילים:', err.message);
+              if (!resolved) {
+                resolved = true;
+                clearTimeout(timeout);
+                imap.end();
+                resolve();
+              }
+              return;
             }
-            return;
-          }
 
-          if (!results || results.length === 0) {
-            console.log('ℹ️ אין מיילים חדשים');
-            if (!resolved) {
-              resolved = true;
-              clearTimeout(timeout);
-              imap.end();
-              resolve();
-            }
-          } else {
+            if (!results || results.length === 0) {
+              console.log('ℹ️ אין מיילים חדשים');
+              if (!resolved) {
+                resolved = true;
+                clearTimeout(timeout);
+                imap.end();
+                resolve();
+              }
+            } else {
             console.log(`🆕 נמצאו ${results.length} מיילים חדשים`);
             
             // Collect all processing promises
@@ -381,7 +400,8 @@ export async function checkCpanelEmails(): Promise<void> {
                 resolve();
               }
             });
-          }
+            }
+          });
         });
       });
     });
