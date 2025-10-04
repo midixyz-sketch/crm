@@ -638,64 +638,61 @@ async function processParsedEmailAttachments(parsed: any): Promise<void> {
       // Extract email address only - no fake data, leave null if empty
       const senderEmail = emailAddress && emailAddress.trim() !== '' ? emailAddress.trim() : null;
       
-      // Check if candidate already exists (only if we have a valid email)
-      const existingCandidates = await storage.getCandidates();
-      const candidateExists = senderEmail ? existingCandidates.candidates.some((c: any) => c.email === senderEmail) : false;
+      // ALWAYS create a new candidate for each CV - removed duplicate check
+      // This allows job sites to send multiple CVs from the same email address
       
-      if (!candidateExists) {
-        // Create new candidate with minimal data - no fake information
-        // Extract domain from sender email for recruitment source
-        const senderDomain = senderEmail ? senderEmail.split('@')[1] : null;
-        const recruitmentSourceText = senderDomain ? senderDomain : 'מייל נכנס ללא דומיין';
-        
-        const newCandidate = await storage.createCandidate({
-          firstName: '', // Leave empty - will be filled manually
-          lastName: '', // Leave empty - will be filled manually  
-          email: senderEmail, // Will be null if no valid email found
-          city: '', // Leave empty
-          mobile: '', // Leave empty
-          profession: '', // Leave empty
-          status: 'פעיל',
-          recruitmentSource: recruitmentSourceText,
-          notes: `מועמד שנוסף אוטומטית מהמייל. נושא המייל: "${parsed.subject || 'ללא נושא'}"`,
-          cvPath: `${timestamp}_${cleanFilename.toLowerCase().replace(/[^a-z0-9.-]/g, '')}`
-        });
-        console.log(`👤 נוצר מועמד חדש: מס' ${newCandidate.candidateNumber} (${newCandidate.email || 'ללא מייל'})`);
-        
-        // Add creation event
-        await storage.addCandidateEvent({
-          candidateId: newCandidate.id,
-          eventType: 'candidate_created',
-          description: `מועמד נוצר אוטומטית ממייל נכנס. מס' מועמד: ${newCandidate.candidateNumber}${senderEmail ? `, מייל: ${senderEmail}` : ', ללא מייל'}`,
-          metadata: {
-            source: 'email_import',
-            emailSubject: parsed.subject || 'ללא נושא',
-            cvFileName: cleanFilename,
-            senderEmail: senderEmail || 'לא זוהה',
-            timestamp: new Date().toISOString()
-          }
-        });
-        
-        // Check if there's a job code in the subject for automatic application
-        const jobCodeMatch = parsed.subject?.match(/(\d{4,})/);
-        if (jobCodeMatch) {
-          const jobCode = jobCodeMatch[1];
-          const jobs = await storage.getJobs();
-          const matchingJob = jobs.jobs.find((j: any) => j.id === jobCode || j.title.includes(jobCode));
-          
-          if (matchingJob) {
-            // Create automatic job application
-            await storage.createJobApplication({
-              candidateId: newCandidate.id,
-              jobId: matchingJob.id,
-              status: 'submitted',
-              notes: `הגיש מועמדות אוטומטית באמצעות מייל לקוד משרה: ${jobCode}`
-            });
-            console.log(`🎯 נוצרה הגשת מועמדות אוטומטית למשרה: ${matchingJob.title}`);
-          }
+      // Extract domain from sender email for recruitment source
+      const senderDomain = senderEmail ? senderEmail.split('@')[1] : null;
+      const recruitmentSourceText = senderDomain ? senderDomain : 'מייל נכנס ללא דומיין';
+      
+      const newCandidate = await storage.createCandidate({
+        firstName: '', // Leave empty - will be filled manually
+        lastName: '', // Leave empty - will be filled manually  
+        email: senderEmail, // Will be null if no valid email found
+        city: '', // Leave empty
+        mobile: '', // Leave empty
+        profession: '', // Leave empty
+        status: 'פעיל',
+        recruitmentSource: recruitmentSourceText,
+        notes: `מועמד שנוסף אוטומטית מהמייל. נושא המייל: "${parsed.subject || 'ללא נושא'}"`,
+        cvPath: `${timestamp}_${cleanFilename.toLowerCase().replace(/[^a-z0-9.-]/g, '')}`
+      });
+      console.log(`👤 נוצר מועמד חדש: מס' ${newCandidate.candidateNumber} (${newCandidate.email || 'ללא מייל'})`);
+      
+      // Add creation event
+      await storage.addCandidateEvent({
+        candidateId: newCandidate.id,
+        eventType: 'candidate_created',
+        description: `מועמד נוצר אוטומטית ממייל נכנס. מס' מועמד: ${newCandidate.candidateNumber}${senderEmail ? `, מייל: ${senderEmail}` : ', ללא מייל'}`,
+        metadata: {
+          source: 'email_import',
+          emailSubject: parsed.subject || 'ללא נושא',
+          cvFileName: cleanFilename,
+          senderEmail: senderEmail || 'לא זוהה',
+          timestamp: new Date().toISOString()
         }
-      } else {
-        console.log(`ℹ️ מועמד כבר קיים במערכת: ${emailAddress}`);
+      });
+      
+      // Check if there's a job code in the subject for automatic application
+      const jobCodeMatch = parsed.subject?.match(/(\d{4,})/);
+      if (jobCodeMatch) {
+        const jobCode = jobCodeMatch[1];
+        const jobs = await storage.getJobs();
+        // Match by jobCode field, not by id or title
+        const matchingJob = jobs.jobs.find((j: any) => j.jobCode === jobCode);
+        
+        if (matchingJob) {
+          // Create automatic job application
+          await storage.createJobApplication({
+            candidateId: newCandidate.id,
+            jobId: matchingJob.id,
+            status: 'submitted',
+            notes: `הגיש מועמדות אוטומטית באמצעות מייל לקוד משרה: ${jobCode}`
+          });
+          console.log(`🎯 נוצרה הגשת מועמדות אוטומטית למשרה: ${matchingJob.title}`);
+        } else {
+          console.log(`⚠️ לא נמצאה משרה עם קוד: ${jobCode}`);
+        }
       }
     }
   }
