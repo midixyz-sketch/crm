@@ -618,7 +618,8 @@ async function processParsedEmailAttachments(parsed: any): Promise<void> {
       }
       
       const timestamp = Date.now();
-      const cleanFilename = filename.replace(/[^a-zA-Z0-9.-]/g, '_');
+      // Only remove filesystem-unsafe characters, keep Hebrew and other Unicode characters
+      const cleanFilename = filename.replace(/[\/\\:*?"<>|]/g, '_');
       const savedPath = path.join(uploadsDir, `${timestamp}_${cleanFilename}`);
       
       // Write the file
@@ -655,7 +656,7 @@ async function processParsedEmailAttachments(parsed: any): Promise<void> {
         status: 'פעיל',
         recruitmentSource: recruitmentSourceText,
         notes: `מועמד שנוסף אוטומטית מהמייל. נושא המייל: "${parsed.subject || 'ללא נושא'}"`,
-        cvPath: `${timestamp}_${cleanFilename.toLowerCase().replace(/[^a-z0-9.-]/g, '')}`
+        cvPath: `${timestamp}_${cleanFilename}`
       });
       console.log(`👤 נוצר מועמד חדש: מס' ${newCandidate.candidateNumber} (${newCandidate.email || 'ללא מייל'})`);
       
