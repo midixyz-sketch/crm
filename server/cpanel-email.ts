@@ -549,6 +549,7 @@ export async function reloadCpanelConfig() {
     if (imapHost?.value && imapUser?.value && imapPass?.value) {
       // Update CPANEL_CONFIGS with correct INCOMING/OUTGOING settings
       CPANEL_CONFIGS[0] = {
+        name: 'cPanel Database Config',
         smtp: {
           host: smtpHost?.value || 'mail.h-group.org.il',
           port: parseInt(smtpPort?.value || '465'),
