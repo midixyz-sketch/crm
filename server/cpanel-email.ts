@@ -1,6 +1,6 @@
 import Imap from 'imap';
 import nodemailer from 'nodemailer';
-import { storage } from './storage';
+import { storage, extractTextFromCVFile } from './storage';
 import { insertCandidateSchema } from '../shared/schema';
 import fs from 'fs';
 import path from 'path';
@@ -589,6 +589,83 @@ export async function reloadCpanelConfig() {
   }
 }
 
+// Parse candidate data from CV text
+function parseCVData(cvText: string): {
+  firstName: string;
+  lastName: string;
+  email: string | null;
+  mobile: string | null;
+  phone: string | null;
+  profession: string | null;
+} {
+  const result = {
+    firstName: '',
+    lastName: '',
+    email: null as string | null,
+    mobile: null as string | null,
+    phone: null as string | null,
+    profession: null as string | null
+  };
+
+  if (!cvText || cvText.trim().length === 0) {
+    return result;
+  }
+
+  // Extract email (look for email pattern)
+  const emailPattern = /([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9._-]+)/gi;
+  const emailMatches = cvText.match(emailPattern);
+  if (emailMatches && emailMatches.length > 0) {
+    result.email = emailMatches[0].trim();
+  }
+
+  // Extract phone numbers (Israeli formats: 05X-XXXXXXX, 972-5X-XXXXXXX, etc.)
+  const phonePattern = /(?:(?:\+?972|0)[-\s]?)?([5][0-9])[-\s]?([0-9]{3})[-\s]?([0-9]{4})/g;
+  const phoneMatches = cvText.match(phonePattern);
+  if (phoneMatches && phoneMatches.length > 0) {
+    // Clean and format first phone number found
+    const firstPhone = phoneMatches[0].replace(/[-\s]/g, '');
+    result.mobile = firstPhone;
+    
+    // If there's a second phone, store it
+    if (phoneMatches.length > 1) {
+      const secondPhone = phoneMatches[1].replace(/[-\s]/g, '');
+      result.phone = secondPhone;
+    }
+  }
+
+  // Extract name - look for common patterns in CVs
+  // Hebrew: שם: X, Name: X, or first line after email/phone
+  const namePatterns = [
+    /(?:שם|name|שם מלא|full name)[\s:]+([א-תa-zA-Z]+)\s+([א-תa-zA-Z]+)/i,
+    /^([א-תa-zA-Z]+)\s+([א-תa-zA-Z]+)/m
+  ];
+
+  for (const pattern of namePatterns) {
+    const nameMatch = cvText.match(pattern);
+    if (nameMatch && nameMatch[1] && nameMatch[2]) {
+      result.firstName = nameMatch[1].trim();
+      result.lastName = nameMatch[2].trim();
+      break;
+    }
+  }
+
+  // Extract profession - look for common profession keywords
+  const professionPatterns = [
+    /(?:תפקיד|משרה|profession|position|title|מקצוע)[\s:]+([^\n]+)/i,
+    /(?:מפתח|developer|מהנדס|engineer|מתכנת|programmer|מנהל|manager)[\s]+([^\n]+)/i
+  ];
+
+  for (const pattern of professionPatterns) {
+    const profMatch = cvText.match(pattern);
+    if (profMatch && profMatch[1]) {
+      result.profession = profMatch[1].trim().substring(0, 100); // Limit length
+      break;
+    }
+  }
+
+  return result;
+}
+
 // Process parsed email attachments
 async function processParsedEmailAttachments(parsed: any): Promise<void> {
   const { storage } = await import('./storage');
@@ -626,39 +703,69 @@ async function processParsedEmailAttachments(parsed: any): Promise<void> {
       fs.writeFileSync(savedPath, attachment.content);
       console.log(`💾 קובץ CV נשמר: ${savedPath}`);
       
-      // Extract email address from sender
-      const fromText = parsed.from?.text || '';
-      let emailAddress = '';
-      const emailMatch = fromText.match(/<([^>]+)>/);
-      if (emailMatch) {
-        emailAddress = emailMatch[1];
-      } else if (fromText.includes('@')) {
-        emailAddress = fromText;
+      // Extract text from CV file
+      console.log(`🔍 מחלץ נתונים מקובץ CV...`);
+      let cvText = '';
+      let extractedData = {
+        firstName: '',
+        lastName: '',
+        email: null as string | null,
+        mobile: null as string | null,
+        phone: null as string | null,
+        profession: null as string | null
+      };
+      
+      try {
+        cvText = await extractTextFromCVFile(`${timestamp}_${cleanFilename}`);
+        console.log(`📄 חולץ ${cvText.length} תווים מהקובץ`);
+        
+        if (cvText && cvText.length > 0) {
+          extractedData = parseCVData(cvText);
+          console.log(`✅ נתונים שחולצו מהCV:`, {
+            name: extractedData.firstName && extractedData.lastName ? 
+              `${extractedData.firstName} ${extractedData.lastName}` : 'לא נמצא',
+            email: extractedData.email || 'לא נמצא',
+            mobile: extractedData.mobile || 'לא נמצא',
+            profession: extractedData.profession || 'לא נמצא'
+          });
+        } else {
+          console.log(`⚠️ לא הצלחנו לחלץ טקסט מהקובץ`);
+        }
+      } catch (extractError) {
+        console.error(`❌ שגיאה בחילוץ נתונים מהCV:`, extractError);
       }
       
-      // Extract email address only - no fake data, leave null if empty
-      const senderEmail = emailAddress && emailAddress.trim() !== '' ? emailAddress.trim() : null;
-      
-      // ALWAYS create a new candidate for each CV - removed duplicate check
-      // This allows job sites to send multiple CVs from the same email address
+      // Extract sender email as fallback for recruitment source
+      const fromText = parsed.from?.text || '';
+      let senderEmail: string | null = null;
+      const emailMatch = fromText.match(/<([^>]+)>/);
+      if (emailMatch) {
+        senderEmail = emailMatch[1];
+      } else if (fromText.includes('@')) {
+        senderEmail = fromText;
+      }
       
       // Extract domain from sender email for recruitment source
       const senderDomain = senderEmail ? senderEmail.split('@')[1] : null;
       const recruitmentSourceText = senderDomain ? senderDomain : 'מייל נכנס ללא דומיין';
       
+      // Use extracted data from CV, fallback to empty if not found
+      // NOTE: We use extracted email from CV, NOT sender's email
       const newCandidate = await storage.createCandidate({
-        firstName: '', // Leave empty - will be filled manually
-        lastName: '', // Leave empty - will be filled manually  
-        email: senderEmail, // Will be null if no valid email found
-        city: '', // Leave empty
-        mobile: '', // Leave empty
-        profession: '', // Leave empty
+        firstName: extractedData.firstName || '', 
+        lastName: extractedData.lastName || '',
+        email: extractedData.email, // Use CV email, not sender email
+        city: '', // Leave empty - not extracted yet
+        mobile: extractedData.mobile || '',
+        phone: extractedData.phone || '',
+        profession: extractedData.profession || '',
         status: 'פעיל',
         recruitmentSource: recruitmentSourceText,
-        notes: `מועמד שנוסף אוטומטית מהמייל. נושא המייל: "${parsed.subject || 'ללא נושא'}"`,
-        cvPath: `${timestamp}_${cleanFilename}`
+        notes: `מועמד שנוסף אוטומטית מהמייל. נושא המייל: "${parsed.subject || 'ללא נושא'}"${senderEmail ? `\nנשלח מ: ${senderEmail}` : ''}`,
+        cvPath: `${timestamp}_${cleanFilename}`,
+        cvContent: cvText // Save extracted text for search
       });
-      console.log(`👤 נוצר מועמד חדש: מס' ${newCandidate.candidateNumber} (${newCandidate.email || 'ללא מייל'})`);
+      console.log(`👤 נוצר מועמד חדש: מס' ${newCandidate.candidateNumber}${extractedData.firstName ? ` (${extractedData.firstName} ${extractedData.lastName})` : ''}`);
       
       // Add creation event
       await storage.addCandidateEvent({
