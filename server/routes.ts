@@ -691,8 +691,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const buffer = fs.readFileSync(filePath);
       let mimeType = 'application/octet-stream';
       
+      // Get file extension for image detection
+      const ext = path.extname(filePath).toLowerCase();
+      
+      // Check for image types first (by extension)
+      if (ext === '.jpg' || ext === '.jpeg') {
+        mimeType = 'image/jpeg';
+      } else if (ext === '.png') {
+        mimeType = 'image/png';
+      } else if (ext === '.gif') {
+        mimeType = 'image/gif';
+      } else if (ext === '.bmp') {
+        mimeType = 'image/bmp';
+      } else if (ext === '.tiff' || ext === '.tif') {
+        mimeType = 'image/tiff';
+      } else if (ext === '.webp') {
+        mimeType = 'image/webp';
+      }
       // Check for PDF signature
-      if (buffer.length >= 4 && buffer.toString('ascii', 0, 4) === '%PDF') {
+      else if (buffer.length >= 4 && buffer.toString('ascii', 0, 4) === '%PDF') {
         mimeType = 'application/pdf';
       }
       // Check for ZIP/Office document signatures (DOCX, etc.)
@@ -1385,8 +1402,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const buffer = fs.readFileSync(filePath);
       let mimeType = 'application/octet-stream';
       
+      // Get file extension for image detection
+      const ext = path.extname(filePath).toLowerCase();
+      
+      // Check for image types first (by extension)
+      if (ext === '.jpg' || ext === '.jpeg') {
+        mimeType = 'image/jpeg';
+      } else if (ext === '.png') {
+        mimeType = 'image/png';
+      } else if (ext === '.gif') {
+        mimeType = 'image/gif';
+      } else if (ext === '.bmp') {
+        mimeType = 'image/bmp';
+      } else if (ext === '.tiff' || ext === '.tif') {
+        mimeType = 'image/tiff';
+      } else if (ext === '.webp') {
+        mimeType = 'image/webp';
+      }
       // Check for PDF signature
-      if (buffer.length >= 4 && buffer.toString('ascii', 0, 4) === '%PDF') {
+      else if (buffer.length >= 4 && buffer.toString('ascii', 0, 4) === '%PDF') {
         mimeType = 'application/pdf';
       }
       // Check for ZIP/Office document signatures (DOCX, etc.)
