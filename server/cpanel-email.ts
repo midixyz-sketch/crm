@@ -1,4 +1,102 @@
- X, Name: X, or first line after email/phone
+import Imap from 'imap';
+import { simpleParser } from 'mailparser';
+import * as fs from 'fs';
+import * as path from 'path';
+import { exec } from 'child_process';
+import { promisify } from 'util';
+import mammoth from 'mammoth';
+import Tesseract from 'tesseract.js';
+
+const execPromise = promisify(exec);
+
+// Extract text from uploaded CV file (PDF, DOC, or image with OCR)
+async function extractTextFromCVFile(filename: string): Promise<string> {
+  const filePath = path.join(process.cwd(), 'uploads', filename);
+  const ext = path.extname(filename).toLowerCase();
+  
+  try {
+    if (ext === '.pdf') {
+      console.log(`📄 מחלץ טקסט מ-PDF: ${filename}`);
+      const { stdout } = await execPromise(`pdftotext "${filePath}" -`);
+      return stdout;
+    } else if (ext === '.doc' || ext === '.docx') {
+      console.log(`📝 מחלץ טקסט מ-DOC: ${filename}`);
+      const result = await mammoth.extractRawText({ path: filePath });
+      return result.value;
+    } else if (['.jpg', '.jpeg', '.png', '.tiff', '.bmp'].includes(ext)) {
+      console.log(`🖼️ מחלץ טקסט מתמונה עם OCR: ${filename}`);
+      const { data: { text } } = await Tesseract.recognize(filePath, 'heb+eng');
+      return text;
+    }
+    return '';
+  } catch (error) {
+    console.error(`❌ שגיאה בחילוץ טקסט מקובץ ${filename}:`, error);
+    return '';
+  }
+}
+
+// Parse CV text to extract structured data
+function parseCVData(cvText: string): {
+  firstName: string;
+  lastName: string;
+  email: string | null;
+  mobile: string | null;
+  phone: string | null;
+  profession: string | null;
+} {
+  const result = {
+    firstName: '',
+    lastName: '',
+    email: null as string | null,
+    mobile: null as string | null,
+    phone: null as string | null,
+    profession: null as string | null
+  };
+
+  // Extract email - IMPROVED REGEX with multiple patterns
+  const emailPatterns = [
+    // Standard email format - most common
+    /\b[a-zA-Z0-9][a-zA-Z0-9._-]*@[a-zA-Z0-9][a-zA-Z0-9._-]*\.[a-zA-Z]{2,}\b/gi,
+    // Email with Hebrew context
+    /(?:מייל|דוא"ל|email|e-mail)[\s:]+([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z]{2,})/gi,
+    // Email in parentheses or brackets
+    /[\(\[]([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z]{2,})[\)\]]/gi
+  ];
+
+  for (const pattern of emailPatterns) {
+    const matches = Array.from(cvText.matchAll(pattern));
+    for (const match of matches) {
+      const email = (match[1] || match[0]).trim().toLowerCase();
+      // Validate it looks like a real email
+      if (email && email.includes('@') && email.includes('.') && email.length > 5) {
+        result.email = email;
+        break;
+      }
+    }
+    if (result.email) break;
+  }
+
+  // Extract Israeli mobile phone (05X-XXX-XXXX or 05XXXXXXXX)
+  const mobilePatterns = [
+    /\b05[0-9][-\s]?[0-9]{3}[-\s]?[0-9]{4}\b/g,
+    /(?:נייד|סלולרי|mobile|cell)[\s:]+([0-9]{10})/gi
+  ];
+  
+  for (const pattern of mobilePatterns) {
+    const mobileMatch = cvText.match(pattern);
+    if (mobileMatch) {
+      result.mobile = mobileMatch[0].replace(/[-\s]/g, '');
+      break;
+    }
+  }
+
+  // Extract landline phone (0[2-4,8-9]-XXX-XXXX)
+  const phoneMatch = cvText.match(/\b0[2-4,8-9][-\s]?[0-9]{3}[-\s]?[0-9]{4}\b/);
+  if (phoneMatch) {
+    result.phone = phoneMatch[0].replace(/[-\s]/g, '');
+  }
+
+  // Extract name - look for patterns
   const namePatterns = [
     /(?:שם|name|שם מלא|full name)[\s:]+([א-תa-zA-Z]+)\s+([א-תa-zA-Z]+)/i,
     /^([א-תa-zA-Z]+)\s+([א-תa-zA-Z]+)/m
@@ -13,7 +111,7 @@
     }
   }
 
-  // Extract profession - look for common profession keywords
+  // Extract profession
   const professionPatterns = [
     /(?:תפקיד|משרה|profession|position|title|מקצוע)[\s:]+([^\n]+)/i,
     /(?:מפתח|developer|מהנדס|engineer|מתכנת|programmer|מנהל|manager)[\s]+([^\n]+)/i
@@ -22,7 +120,7 @@
   for (const pattern of professionPatterns) {
     const profMatch = cvText.match(pattern);
     if (profMatch && profMatch[1]) {
-      result.profession = profMatch[1].trim().substring(0, 100); // Limit length
+      result.profession = profMatch[1].trim().substring(0, 100);
       break;
     }
   }
@@ -279,6 +377,7 @@ async function processCVEmailAttachment(imap: any, seqno: number, headers: any, 
                       const senderEmail = emailAddress && emailAddress.trim() !== '' ? emailAddress.trim() : null;
                       
                       // Check if candidate already exists (only if we have a valid email)
+                      const { storage } = await import('./storage');
                       const existingCandidates = await storage.getCandidates();
                       const candidateExists = senderEmail ? existingCandidates.candidates.some((c: any) => c.email === senderEmail) : false;
                       
@@ -388,4 +487,213 @@ function extractNameFromEmail(email: string): string {
     .join(' ');
   
   return name || 'מועמד חדש';
+}
+
+export async function checkCpanelEmails() {
+  console.log('📧 בודק מיילים חדשים בcPanel...');
+  
+  const config = {
+    user: 'cv@h-group.org.il',
+    password: 'CV@mail2025',
+    host: 'mail.h-group.org.il',
+    port: 993,
+    tls: true,
+    tlsOptions: { rejectUnauthorized: false }
+  };
+
+  return new Promise<void>((resolve) => {
+    const imap = new Imap(config);
+    let resolved = false;
+    const timeout = setTimeout(() => {
+      if (!resolved) {
+        resolved = true;
+        console.log('⏱️ פג זמן חיבור cPanel');
+        imap.end();
+        resolve();
+      }
+    }, 30000);
+
+    imap.once('ready', () => {
+      imap.openBox('INBOX', false, (err, box) => {
+        if (err) {
+          console.error('❌ שגיאה בפתיחת תיבת דואר:', err.message);
+          if (!resolved) {
+            resolved = true;
+            clearTimeout(timeout);
+            imap.end();
+            resolve();
+          }
+          return;
+        }
+
+        console.log(`📧 בוחן ${box.messages.total} מיילים סה"כ, לא נקראו: ${box.messages.unseen}`);
+        
+        if (box.messages.unseen === 0) {
+          console.log('ℹ️ אין מיילים חדשים');
+          if (!resolved) {
+            resolved = true;
+            clearTimeout(timeout);
+            imap.end();
+            resolve();
+          }
+          return;
+        }
+
+        console.log(`🆕 נמצאו ${box.messages.unseen} מיילים חדשים`);
+
+        imap.search(['UNSEEN'], (err, results) => {
+          if (err) {
+            console.error('❌ שגיאה בחיפוש מיילים:', err.message);
+            if (!resolved) {
+              resolved = true;
+              clearTimeout(timeout);
+              imap.end();
+              resolve();
+            }
+            return;
+          }
+
+          if (!results || results.length === 0) {
+            console.log('ℹ️ אין מיילים חדשים');
+            if (!resolved) {
+              resolved = true;
+              clearTimeout(timeout);
+              imap.end();
+              resolve();
+            }
+            return;
+          }
+
+          const lastN = results.slice(-10);
+          console.log(`📧 מעבד ${lastN.length} מיילים אחרונים לא נקראו`);
+          
+          const f = imap.fetch(lastN, {
+            bodies: '',
+            struct: true,
+            markSeen: true
+          });
+
+          let processedCount = 0;
+          const totalEmails = lastN.length;
+          const processingPromises: Promise<void>[] = [];
+
+          f.on('message', (msg, seqno) => {
+            console.log(`📨 מעבד מייל ${seqno}`);
+            const chunks: Buffer[] = [];
+
+            msg.on('body', (stream) => {
+              console.log(`📨 התחיל לקרוא גוף המייל...`);
+              stream.on('data', (chunk) => {
+                chunks.push(chunk);
+                console.log(`📦 התקבל chunk בגודל ${chunk.length} בתים (סה"כ ${chunks.length} chunks)`);
+              });
+
+              stream.once('end', () => {
+                console.log(`✅ גוף המייל התקבל בשלמות - ${chunks.length} chunks`);
+                // Body is fully received, will process in msg.once('end')
+              });
+            });
+
+            msg.once('end', () => {
+              processedCount++;
+              console.log(`✅ מייל ${seqno} נקרא (${processedCount}/${totalEmails})`);
+              
+              // Process the email buffer directly
+              const processingPromise = (async () => {
+                try {
+                  console.log('🔍 מעבד קובץ CV מהמייל...');
+                  
+                  // Combine all chunks into a single Buffer
+                  const fullEmailBuffer = Buffer.concat(chunks);
+                  console.log(`📊 גודל המייל: ${fullEmailBuffer.length} בתים, ${chunks.length} chunks`);
+                  
+                  // Parse the full email with mailparser to extract attachments
+                  const parsed = await simpleParser(fullEmailBuffer);
+                  console.log(`📧 המייל פוענח - יש ${parsed.attachments?.length || 0} קבצים מצורפים`);
+                  console.log(`📮 מאת: ${parsed.from?.text}`);
+                  console.log(`📋 נושא: ${parsed.subject}`);
+                  
+                  if (!parsed.attachments || parsed.attachments.length === 0) {
+                    console.log('⚠️ לא נמצאו קבצים מצורפים במייל');
+                    return;
+                  }
+                  
+                  console.log(`📎 נמצאו ${parsed.attachments.length} קבצים מצורפים`);
+                  
+                  // Process attachments
+                  await processParsedEmailAttachments(parsed);
+                  console.log(`✅ מייל ${seqno} עובד לגמרי`);
+                } catch (cvError) {
+                  console.error('❌ שגיאה בעיבוד המייל:', cvError);
+                }
+              })();
+              
+              processingPromises.push(processingPromise);
+            });
+          });
+
+          f.once('end', async () => {
+            console.log(`⏳ ממתין לסיום עיבוד ${processingPromises.length} מיילים...`);
+            
+            // Wait for ALL processing to complete before closing connection
+            try {
+              await Promise.all(processingPromises);
+              console.log('✅ כל המיילים עובדו בהצלחה');
+            } catch (err) {
+              console.error('❌ שגיאה בעיבוד מיילים:', err);
+            }
+            
+            if (!resolved) {
+              resolved = true;
+              clearTimeout(timeout);
+              imap.end();
+              resolve();
+            }
+          });
+
+          f.once('error', (err) => {
+            console.error('❌ שגיאה בקבלת מיילים:', err.message);
+            if (!resolved) {
+              resolved = true;
+              clearTimeout(timeout);
+              imap.end();
+              resolve();
+            }
+          });
+        });
+      });
+    });
+
+    imap.once('error', (err: any) => {
+      console.error('❌ שגיאת חיבור cPanel:', err.message);
+      if (!resolved) {
+        resolved = true;
+        clearTimeout(timeout);
+        resolve();
+      }
+    });
+
+    imap.once('end', () => {
+      console.log('📧 חיבור cPanel נסגר');
+      if (!resolved) {
+        resolved = true;
+        clearTimeout(timeout);
+        resolve();
+      }
+    });
+
+    imap.connect();
+  });
+}
+
+export function startCpanelEmailMonitoring() {
+  console.log('🚀 מפעיל מעקב מיילים cPanel');
+  
+  // Check immediately
+  checkCpanelEmails().catch(console.error);
+  
+  // Then check every 5 minutes
+  setInterval(() => {
+    checkCpanelEmails().catch(console.error);
+  }, 5 * 60 * 1000);
 }
