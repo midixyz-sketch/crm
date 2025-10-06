@@ -40,7 +40,12 @@ export const getQueryFn: <T>(options: {
       // Add each parameter to URLSearchParams
       Object.entries(queryParams).forEach(([key, value]) => {
         if (value !== undefined && value !== null && value !== '') {
-          params.append(key, String(value));
+          // Handle arrays by joining with commas
+          if (Array.isArray(value) && value.length > 0) {
+            params.append(key, value.join(','));
+          } else if (!Array.isArray(value)) {
+            params.append(key, String(value));
+          }
         }
       });
       

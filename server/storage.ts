@@ -398,11 +398,35 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Candidate operations
-  async getCandidates(limit = 50, offset = 0, search?: string, dateFilter?: string): Promise<{ candidates: Candidate[]; total: number }> {
+  async getCandidates(
+    limit = 50, 
+    offset = 0, 
+    search?: string, 
+    dateFilter?: string,
+    statuses?: string,
+    dateFrom?: string,
+    dateTo?: string
+  ): Promise<{ candidates: Candidate[]; total: number }> {
     let conditions = [];
     
     if (search) {
       conditions.push(sql`${candidates.firstName} || ' ' || ${candidates.lastName} ILIKE ${`%${search}%`} OR ${candidates.email} ILIKE ${`%${search}%`} OR ${candidates.profession} ILIKE ${`%${search}%`}`);
+    }
+    
+    // Filter by status
+    if (statuses && statuses.trim()) {
+      const statusList = statuses.split(',').map(s => s.trim()).filter(Boolean);
+      if (statusList.length > 0) {
+        conditions.push(sql`${candidates.status} IN (${sql.join(statusList.map(s => sql`${s}`), sql`, `)})`);
+      }
+    }
+    
+    // Filter by date range
+    if (dateFrom && dateFrom.trim()) {
+      conditions.push(sql`DATE(${candidates.createdAt}) >= ${dateFrom}`);
+    }
+    if (dateTo && dateTo.trim()) {
+      conditions.push(sql`DATE(${candidates.createdAt}) <= ${dateTo}`);
     }
     
     if (dateFilter && dateFilter !== 'all') {
@@ -443,9 +467,19 @@ export class DatabaseStorage implements IStorage {
     };
   }
 
-  async getCandidatesEnriched(limit = 50, offset = 0, search?: string, dateFilter?: string, referralFilter?: string, clientSearch?: string): Promise<{ candidates: any[]; total: number }> {
+  async getCandidatesEnriched(
+    limit = 50, 
+    offset = 0, 
+    search?: string, 
+    dateFilter?: string,
+    statuses?: string,
+    clientIds?: string,
+    userIds?: string,
+    dateFrom?: string,
+    dateTo?: string
+  ): Promise<{ candidates: any[]; total: number }> {
     // Get basic candidates data
-    const { candidates: basicCandidates, total } = await this.getCandidates(limit, offset, search, dateFilter);
+    const { candidates: basicCandidates, total } = await this.getCandidates(limit, offset, search, dateFilter, statuses, dateFrom, dateTo);
     
     // Enrich each candidate with additional computed data
     const enrichedCandidates = await Promise.all(
@@ -504,6 +538,7 @@ export class DatabaseStorage implements IStorage {
         const latestReferralClient = await db
           .select({
             companyName: clients.companyName,
+            clientId: clients.id,
             sentAt: jobApplications.appliedAt
           })
           .from(jobApplications)
@@ -518,6 +553,21 @@ export class DatabaseStorage implements IStorage {
           .orderBy(desc(jobApplications.appliedAt))
           .limit(1);
 
+        // Get creator user info from candidate events
+        const creatorEvent = await db
+          .select({
+            userId: candidateEvents.metadata
+          })
+          .from(candidateEvents)
+          .where(
+            and(
+              eq(candidateEvents.candidateId, candidate.id),
+              eq(candidateEvents.eventType, 'status_change')
+            )
+          )
+          .orderBy(desc(candidateEvents.createdAt))
+          .limit(1);
+
         return {
           ...candidate,
           lastJobTitle: latestJobApp[0]?.jobTitle || null,
@@ -525,8 +575,10 @@ export class DatabaseStorage implements IStorage {
           recruitmentSource: candidate.recruitmentSource || null,
           lastReferralDate: latestReferralEvent[0]?.createdAt || null,
           lastReferralClient: latestReferralClient[0]?.companyName || null,
+          lastReferralClientId: latestReferralClient[0]?.clientId || null,
           lastStatusChange: latestStatusEvent[0]?.createdAt || null,
           lastStatusDescription: latestStatusEvent[0]?.description || null,
+          creatorUserId: creatorEvent[0]?.userId || null,
           creatorUsername: null
         };
       })
@@ -535,19 +587,24 @@ export class DatabaseStorage implements IStorage {
     // Apply client-side filtering after enrichment
     let filteredCandidates = enrichedCandidates;
 
-    // Filter by referral status
-    if (referralFilter === 'referred') {
-      filteredCandidates = filteredCandidates.filter(c => c.lastReferralDate !== null);
-    } else if (referralFilter === 'not_referred') {
-      filteredCandidates = filteredCandidates.filter(c => c.lastReferralDate === null);
+    // Filter by client IDs
+    if (clientIds && clientIds.trim()) {
+      const clientIdList = clientIds.split(',').map(id => id.trim()).filter(Boolean);
+      if (clientIdList.length > 0) {
+        filteredCandidates = filteredCandidates.filter(c => 
+          c.lastReferralClientId && clientIdList.includes(c.lastReferralClientId)
+        );
+      }
     }
 
-    // Filter by client search
-    if (clientSearch && clientSearch.trim()) {
-      const searchLower = clientSearch.toLowerCase().trim();
-      filteredCandidates = filteredCandidates.filter(c => 
-        c.lastReferralClient && c.lastReferralClient.toLowerCase().includes(searchLower)
-      );
+    // Filter by user IDs (creator/modifier)
+    if (userIds && userIds.trim()) {
+      const userIdList = userIds.split(',').map(id => id.trim()).filter(Boolean);
+      if (userIdList.length > 0) {
+        filteredCandidates = filteredCandidates.filter(c => 
+          c.creatorUserId && userIdList.includes(c.creatorUserId)
+        );
+      }
     }
 
     return {

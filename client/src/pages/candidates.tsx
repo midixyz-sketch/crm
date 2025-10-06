@@ -17,7 +17,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import CandidateForm from "@/components/forms/candidate-form";
 import SearchFilter from "@/components/search-filter";
 import { EmailDialog } from "@/components/email-dialog";
-import { Plus, Search, Phone, Mail, FileText, Edit, Trash2, Send, Users } from "lucide-react";
+import { MultiSelect } from "@/components/ui/multi-select";
+import { Plus, Search, Phone, Mail, FileText, Edit, Trash2, Send, Users, Calendar } from "lucide-react";
 import type { Candidate, EnrichedCandidate } from "@shared/schema";
 
 export default function Candidates() {
@@ -92,6 +93,11 @@ export default function Candidates() {
   const navigate = (path: string) => setLocation(path);
   const [search, setSearch] = useState("");
   const [dateFilter, setDateFilter] = useState("");
+  const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
+  const [selectedClients, setSelectedClients] = useState<string[]>([]);
+  const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
   const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [emailDialog, setEmailDialog] = useState<{
@@ -122,10 +128,50 @@ export default function Candidates() {
     }
   }, [isAuthenticated, isLoading, toast]);
 
-  const { data: candidatesData, isLoading: candidatesLoading } = useQuery<{ candidates: EnrichedCandidate[]; total: number }>({
-    queryKey: ["/api/candidates/enriched", { search, dateFilter }],
+  // Load clients
+  const { data: clientsData } = useQuery<{ clients: any[] }>({
+    queryKey: ["/api/clients"],
     enabled: isAuthenticated,
   });
+
+  // Load users
+  const { data: usersData } = useQuery<any[]>({
+    queryKey: ["/api/users/all"],
+    enabled: isAuthenticated,
+  });
+
+  const { data: candidatesData, isLoading: candidatesLoading } = useQuery<{ candidates: EnrichedCandidate[]; total: number }>({
+    queryKey: ["/api/candidates/enriched", { 
+      search, 
+      dateFilter, 
+      statuses: selectedStatuses, 
+      clients: selectedClients, 
+      users: selectedUsers,
+      dateFrom,
+      dateTo
+    }],
+    enabled: isAuthenticated,
+  });
+
+  // Status options
+  const statusOptions = [
+    { label: "נשלח למעסיק", value: "sent_to_employer" },
+    { label: "נדחה", value: "rejected" },
+    { label: "לא מתאים", value: "not_relevant" },
+    { label: "ממתין", value: "pending" },
+  ];
+
+  // Client options
+  const clientOptions = (clientsData?.clients || []).map((client: any) => ({
+    label: client.companyName,
+    value: client.id,
+  }));
+
+  // User options
+  const userOptions = (usersData || []).map((user: any) => ({
+    label: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email || user.username,
+    value: user.id,
+  }));
 
   const deleteCandidate = useMutation({
     mutationFn: async (id: string) => {
@@ -210,9 +256,9 @@ export default function Candidates() {
         <Users className="h-6 w-6" />
         <h1 className="text-2xl font-bold">מועמדים</h1>
       </div>
-          <div className="mb-6 flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
-            <div className="flex flex-col sm:flex-row gap-4 flex-1">
-              <div className="relative flex-1 max-w-md">
+          <div className="mb-6 flex flex-col gap-4">
+            <div className="flex flex-col sm:flex-row gap-4 flex-wrap">
+              <div className="relative flex-1 min-w-[200px]">
                 <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                 <Input
                   placeholder="חיפוש מועמדים..."
@@ -222,24 +268,63 @@ export default function Candidates() {
                   data-testid="input-search-candidates"
                 />
               </div>
+              
               <div className="min-w-[200px]">
-                <Select value={dateFilter} onValueChange={setDateFilter}>
-                  <SelectTrigger data-testid="select-date-filter">
-                    <SelectValue placeholder="סינון לפי תאריך" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">כל התאריכים</SelectItem>
-                    <SelectItem value="today">היום</SelectItem>
-                    <SelectItem value="yesterday">אתמול</SelectItem>
-                    <SelectItem value="this_week">השבוע</SelectItem>
-                    <SelectItem value="this_month">החודש</SelectItem>
-                  </SelectContent>
-                </Select>
+                <MultiSelect
+                  options={statusOptions}
+                  selected={selectedStatuses}
+                  onChange={setSelectedStatuses}
+                  placeholder="סטטוס"
+                  data-testid="select-status-filter"
+                />
               </div>
-              <SearchFilter />
+
+              <div className="min-w-[200px]">
+                <MultiSelect
+                  options={clientOptions}
+                  selected={selectedClients}
+                  onChange={setSelectedClients}
+                  placeholder="לקוח"
+                  data-testid="select-client-filter"
+                />
+              </div>
+
+              <div className="min-w-[200px]">
+                <MultiSelect
+                  options={userOptions}
+                  selected={selectedUsers}
+                  onChange={setSelectedUsers}
+                  placeholder="רכז"
+                  data-testid="select-user-filter"
+                />
+              </div>
+
+              <div className="flex gap-2 items-center min-w-[200px]">
+                <Input
+                  type="date"
+                  value={dateFrom}
+                  onChange={(e) => setDateFrom(e.target.value)}
+                  placeholder="מתאריך"
+                  className="text-sm"
+                  data-testid="input-date-from"
+                />
+                <span className="text-gray-500">-</span>
+                <Input
+                  type="date"
+                  value={dateTo}
+                  onChange={(e) => setDateTo(e.target.value)}
+                  placeholder="עד תאריך"
+                  className="text-sm"
+                  data-testid="input-date-to"
+                />
+              </div>
             </div>
             
-            <PermissionWrapper permission="create_candidates">
+            <div className="flex justify-between items-center">
+              <div className="text-sm text-gray-600 dark:text-gray-400">
+                {candidatesData?.total ? `${candidatesData.total} מועמדים` : ""}
+              </div>
+              <PermissionWrapper permission="create_candidates">
               <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
                 <DialogTrigger asChild>
                   <AddButton 
@@ -273,6 +358,7 @@ export default function Candidates() {
                 </DialogContent>
               </Dialog>
             </PermissionWrapper>
+            </div>
           </div>
 
           {candidatesLoading ? (
