@@ -130,14 +130,13 @@ export async function extractTextFromCVFile(cvPath: string): Promise<string> {
       console.log(`📄 מחלץ טקסט מ-PDF: ${cvPath}`);
       
       try {
-        // Import pdf-parse properly for both CommonJS and ES modules
-        const pdfParseModule = await import('pdf-parse');
-        const pdfParse = typeof pdfParseModule.default === 'function' 
-          ? pdfParseModule.default 
-          : typeof pdfParseModule === 'function' 
-            ? pdfParseModule 
-            : (pdfParseModule as any).default;
-            
+        // Use dynamic import with proper CommonJS handling
+        const pdfParse = (await import('pdf-parse')).default;
+        
+        if (typeof pdfParse !== 'function') {
+          throw new Error('pdf-parse module not loaded correctly');
+        }
+        
         const pdfData = await pdfParse(fileBuffer);
         const extractedText = pdfData.text || '';
         
@@ -150,41 +149,13 @@ export async function extractTextFromCVFile(cvPath: string): Promise<string> {
                            !extractedText.includes('/Type/Catalog');
         
         if (!hasRealText) {
-          console.log('⚠️ PDF נראה כמו מבנה בינארי, מנסה OCR...');
-          // Try OCR as fallback for image-based PDFs
-          try {
-            const { data: { text } } = await Tesseract.recognize(fileBuffer, 'heb+eng+ara', {
-              logger: m => {
-                if (m.status === 'recognizing text') {
-                  console.log(`📝 OCR על PDF: ${Math.round(m.progress * 100)}%`);
-                }
-              }
-            });
-            const cleanedOcrText = text.replace(/\s+/g, ' ').trim();
-            if (cleanedOcrText.length > 50) {
-              console.log(`✅ OCR הצליח: ${cleanedOcrText.length} תווים`);
-              return cleanedOcrText;
-            }
-          } catch (ocrError) {
-            console.log('⚠️ OCR נכשל גם כן');
-          }
+          console.log('⚠️ PDF נראה כמו מבנה בינארי - חילוץ נכשל');
+          return '';
         }
         
         return extractedText;
       } catch (error) {
         console.error('שגיאה בחילוץ PDF:', error);
-        // Try OCR as last resort for image-based PDFs
-        try {
-          console.log('🔄 מנסה OCR כפתרון חלופי...');
-          const { data: { text } } = await Tesseract.recognize(fileBuffer, 'heb+eng+ara');
-          const cleanedText = text.replace(/\s+/g, ' ').trim();
-          if (cleanedText.length > 20) {
-            console.log(`✅ OCR חלופי הצליח: ${cleanedText.length} תווים`);
-            return cleanedText;
-          }
-        } catch (ocrError) {
-          console.log('⚠️ OCR חלופי נכשל');
-        }
         return '';
       }
     }
