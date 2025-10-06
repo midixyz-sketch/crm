@@ -443,7 +443,7 @@ export class DatabaseStorage implements IStorage {
     };
   }
 
-  async getCandidatesEnriched(limit = 50, offset = 0, search?: string, dateFilter?: string): Promise<{ candidates: any[]; total: number }> {
+  async getCandidatesEnriched(limit = 50, offset = 0, search?: string, dateFilter?: string, referralFilter?: string, clientSearch?: string): Promise<{ candidates: any[]; total: number }> {
     // Get basic candidates data
     const { candidates: basicCandidates, total } = await this.getCandidates(limit, offset, search, dateFilter);
     
@@ -500,12 +500,31 @@ export class DatabaseStorage implements IStorage {
           .orderBy(desc(candidateEvents.createdAt))
           .limit(1);
 
+        // Get latest referral client name (from job applications sent to client)
+        const latestReferralClient = await db
+          .select({
+            companyName: clients.companyName,
+            sentAt: jobApplications.appliedAt
+          })
+          .from(jobApplications)
+          .leftJoin(jobs, eq(jobApplications.jobId, jobs.id))
+          .leftJoin(clients, eq(jobs.clientId, clients.id))
+          .where(
+            and(
+              eq(jobApplications.candidateId, candidate.id),
+              eq(jobApplications.sentToClient, true)
+            )
+          )
+          .orderBy(desc(jobApplications.appliedAt))
+          .limit(1);
+
         return {
           ...candidate,
           lastJobTitle: latestJobApp[0]?.jobTitle || null,
           lastAppliedAt: latestJobApp[0]?.appliedAt || null,
           recruitmentSource: candidate.recruitmentSource || null,
           lastReferralDate: latestReferralEvent[0]?.createdAt || null,
+          lastReferralClient: latestReferralClient[0]?.companyName || null,
           lastStatusChange: latestStatusEvent[0]?.createdAt || null,
           lastStatusDescription: latestStatusEvent[0]?.description || null,
           creatorUsername: null
@@ -513,9 +532,27 @@ export class DatabaseStorage implements IStorage {
       })
     );
 
+    // Apply client-side filtering after enrichment
+    let filteredCandidates = enrichedCandidates;
+
+    // Filter by referral status
+    if (referralFilter === 'referred') {
+      filteredCandidates = filteredCandidates.filter(c => c.lastReferralDate !== null);
+    } else if (referralFilter === 'not_referred') {
+      filteredCandidates = filteredCandidates.filter(c => c.lastReferralDate === null);
+    }
+
+    // Filter by client search
+    if (clientSearch && clientSearch.trim()) {
+      const searchLower = clientSearch.toLowerCase().trim();
+      filteredCandidates = filteredCandidates.filter(c => 
+        c.lastReferralClient && c.lastReferralClient.toLowerCase().includes(searchLower)
+      );
+    }
+
     return {
-      candidates: enrichedCandidates,
-      total
+      candidates: filteredCandidates,
+      total: filteredCandidates.length
     };
   }
 

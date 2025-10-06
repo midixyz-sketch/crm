@@ -617,6 +617,7 @@ export type EnrichedCandidate = Candidate & {
   lastJobTitle?: string | null;
   lastAppliedAt?: Date | null;
   lastReferralDate?: Date | null;
+  lastReferralClient?: string | null;
   lastStatusChange?: Date | null;
   lastStatusDescription?: string | null;
   creatorUsername?: string | null;
