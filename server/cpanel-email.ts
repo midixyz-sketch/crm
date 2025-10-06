@@ -5,6 +5,7 @@ import { insertCandidateSchema } from "../shared/schema";
 import fs from "fs";
 import path from "path";
 import { simpleParser } from "mailparser";
+import { PhoneNumberUtil, PhoneNumberFormat } from 'google-libphonenumber';
 
 // cPanel Email Configuration - Multiple attempts for different cPanel setups
 const CPANEL_CONFIGS = [
@@ -619,6 +620,16 @@ export async function reloadCpanelConfig() {
 }
 
 // Parse candidate data from CV text
+// Common Hebrew first and last names for validation
+const HEBREW_FIRST_NAMES = new Set([
+  'אבי', 'אבישי', 'אדם', 'אהרון', 'אוהד', 'אור', 'אורי', 'אושר', 'איתי', 'איתן', 'אלי', 'אליה', 'אלעד', 'אמיר', 'אסף', 'אריאל', 'ארז', 'בועז', 'ברק', 'גיא', 'גל', 'גלעד', 'דוד', 'דולב', 'דור', 'דני', 'הדר', 'יאיר', 'יובל', 'יוגב', 'יוחאי', 'יוסי', 'יונתן', 'יותם', 'ירון', 'לירון', 'מאור', 'מיכאל', 'משה', 'נדב', 'ניר', 'נתן', 'עדי', 'עומר', 'עידן', 'עמית', 'ערן', 'רועי', 'רון', 'רונן', 'שי', 'שחר', 'תום', 'תומר',
+  'אביבה', 'אביגיל', 'אדר', 'אהובה', 'אורלי', 'אורנה', 'איילת', 'אילנה', 'אלונה', 'ענבל', 'בר', 'ברכה', 'גלי', 'דנה', 'דפנה', 'הדר', 'הילה', 'ורד', 'חן', 'טל', 'יעל', 'כרמל', 'לאה', 'ליאור', 'לימור', 'מיכל', 'מירב', 'נועה', 'נטע', 'ניצן', 'סיגל', 'עדי', 'עדן', 'ענת', 'רונית', 'רחל', 'רינת', 'שיר', 'שירה', 'שרה', 'תמר'
+]);
+
+const HEBREW_LAST_NAMES = new Set([
+  'כהן', 'לוי', 'מזרחי', 'פרץ', 'ביטון', 'חן', 'אבוקסיס', 'פרידמן', 'אוחיון', 'דוד', 'אזולאי', 'אברהם', 'שמש', 'ששון', 'מלכה', 'אלבז', 'בן דוד', 'עמר', 'טל', 'בר', 'גבאי', 'מור', 'עזרא', 'אשכנזי', 'ברק', 'שלום', 'דהן', 'בנימין', 'מנשה', 'יוסף', 'חיים', 'שמואל', 'אהרון', 'יעקב', 'שטרית', 'בוסקילה', 'חדד', 'משה', 'עובדיה', 'ניסים', 'שושני', 'בוחבוט', 'שטרן', 'רוזנברג', 'גולדשטיין', 'גרינברג', 'קפלן', 'שניידר', 'לנדאו', 'ברנשטיין'
+]);
+
 function parseCVData(cvText: string): {
   firstName: string;
   lastName: string;
@@ -640,58 +651,198 @@ function parseCVData(cvText: string): {
     return result;
   }
 
-  // Extract email (look for email pattern)
-  const emailPattern = /([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9._-]+)/gi;
-  const emailMatches = cvText.match(emailPattern);
+  // Normalize text - remove extra spaces, fix RTL issues
+  const normalizedText = cvText
+    .replace(/\s+/g, ' ')
+    .replace(/[\u200E\u200F]/g, '') // Remove RTL/LTR marks
+    .trim();
+
+  // Extract email with improved pattern
+  const emailPattern = /\b[a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z]{2,}\b/gi;
+  const emailMatches = normalizedText.match(emailPattern);
   if (emailMatches && emailMatches.length > 0) {
-    result.email = emailMatches[0].trim();
-  }
-
-  // Extract phone numbers (Israeli formats: 05X-XXXXXXX, 972-5X-XXXXXXX, etc.)
-  const phonePattern =
-    /(?:(?:\+?972|0)[-\s]?)?([5][0-9])[-\s]?([0-9]{3})[-\s]?([0-9]{4})/g;
-  const phoneMatches = cvText.match(phonePattern);
-  if (phoneMatches && phoneMatches.length > 0) {
-    // Clean and format first phone number found
-    const firstPhone = phoneMatches[0].replace(/[-\s]/g, "");
-    result.mobile = firstPhone;
-
-    // If there's a second phone, store it
-    if (phoneMatches.length > 1) {
-      const secondPhone = phoneMatches[1].replace(/[-\s]/g, "");
-      result.phone = secondPhone;
+    // Filter out common false positives and get the first valid email
+    const validEmails = emailMatches.filter(email => 
+      !email.toLowerCase().includes('example') && 
+      !email.toLowerCase().includes('test') &&
+      email.includes('.')
+    );
+    if (validEmails.length > 0) {
+      result.email = validEmails[0].trim();
     }
   }
 
-  // Extract name - look for common patterns in CVs
-  // Hebrew: שם: X, Name: X, or first line after email/phone
-  const namePatterns = [
-    /(?:שם|name|שם מלא|full name)[\s:]+([א-תa-zA-Z]+)\s+([א-תa-zA-Z]+)/i,
-    /^([א-תa-zA-Z]+)\s+([א-תa-zA-Z]+)/m,
+  // Extract phone numbers using google-libphonenumber for accuracy
+  const phoneUtil = PhoneNumberUtil.getInstance();
+  const extractedPhones: string[] = [];
+  
+  // Multiple patterns for Israeli and international phones
+  const phonePatterns = [
+    /\+?972[-\s]?0?[2-9]\d{1}[-\s]?\d{3}[-\s]?\d{4}/g,  // Israeli international
+    /0[2-9]\d{1}[-\s]?\d{3}[-\s]?\d{4}/g,  // Israeli local
+    /\+?\d{1,4}[-\s]?\(?\d{1,4}\)?[-\s]?\d{1,4}[-\s]?\d{1,9}/g  // Generic international
   ];
 
-  for (const pattern of namePatterns) {
-    const nameMatch = cvText.match(pattern);
-    if (nameMatch && nameMatch[1] && nameMatch[2]) {
-      result.firstName = nameMatch[1].trim();
-      result.lastName = nameMatch[2].trim();
+  for (const pattern of phonePatterns) {
+    const matches = normalizedText.match(pattern);
+    if (matches) {
+      for (const match of matches) {
+        try {
+          // Try to parse as Israeli number first
+          const cleanNumber = match.replace(/[-\s()]/g, '');
+          let parsedNumber;
+          
+          try {
+            parsedNumber = phoneUtil.parse(cleanNumber, 'IL');
+          } catch {
+            // Try without country code
+            parsedNumber = phoneUtil.parse(cleanNumber, '');
+          }
+          
+          if (phoneUtil.isValidNumber(parsedNumber)) {
+            const formatted = phoneUtil.format(parsedNumber, PhoneNumberFormat.E164);
+            if (!extractedPhones.includes(formatted)) {
+              extractedPhones.push(formatted);
+            }
+          }
+        } catch (e) {
+          // If libphonenumber fails, keep original if it looks like a phone
+          const cleanNumber = match.replace(/[-\s()]/g, '');
+          if (cleanNumber.length >= 9 && cleanNumber.length <= 15 && /^\d+$/.test(cleanNumber)) {
+            if (!extractedPhones.includes(cleanNumber)) {
+              extractedPhones.push(cleanNumber);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  if (extractedPhones.length > 0) {
+    result.mobile = extractedPhones[0];
+    if (extractedPhones.length > 1) {
+      result.phone = extractedPhones[1];
+    }
+  }
+
+  // Extract name with improved Hebrew support
+  const lines = normalizedText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+  
+  // Try multiple extraction strategies
+  const nameExtractionStrategies = [
+    // Strategy 1: Look for name label patterns (Hebrew and English)
+    () => {
+      const labelPatterns = [
+        /(?:שם מלא|שם|name|full name|الاسم)[\s:]+([א-תa-zA-Z]+)\s+([א-תa-zA-Z]+)/i,
+        /(?:שם פרטי|first name|الاسم الأول)[\s:]+([א-תa-zA-Z]+)[\s\S]*?(?:שם משפחה|last name|اسم العائلة)[\s:]+([א-תa-zA-Z]+)/i,
+      ];
+      
+      for (const pattern of labelPatterns) {
+        const match = normalizedText.match(pattern);
+        if (match && match[1] && match[2]) {
+          return { firstName: match[1].trim(), lastName: match[2].trim() };
+        }
+      }
+      return null;
+    },
+    
+    // Strategy 2: Look for two Hebrew words that match known names
+    () => {
+      const hebrewWordPairs = normalizedText.match(/([א-ת]+)\s+([א-ת]+)/g);
+      if (hebrewWordPairs) {
+        for (const pair of hebrewWordPairs) {
+          const [first, last] = pair.split(/\s+/);
+          if (HEBREW_FIRST_NAMES.has(first) || HEBREW_LAST_NAMES.has(last)) {
+            return { firstName: first, lastName: last };
+          }
+        }
+      }
+      return null;
+    },
+    
+    // Strategy 3: First line with two Hebrew words (common CV format)
+    () => {
+      for (const line of lines) {
+        // Skip lines that look like headers or labels
+        if (line.includes(':') || line.includes('קורות') || line.includes('CV') || line.includes('RESUME')) {
+          continue;
+        }
+        
+        const match = line.match(/^([א-ת]+)\s+([א-ת]+)$/);
+        if (match && match[1] && match[2]) {
+          // Check if words are reasonable length (2-15 chars)
+          if (match[1].length >= 2 && match[1].length <= 15 && 
+              match[2].length >= 2 && match[2].length <= 15) {
+            return { firstName: match[1].trim(), lastName: match[2].trim() };
+          }
+        }
+      }
+      return null;
+    },
+    
+    // Strategy 4: English name patterns
+    () => {
+      const englishPattern = /^([A-Z][a-z]+)\s+([A-Z][a-z]+)$/m;
+      for (const line of lines) {
+        if (line.includes(':') || line.includes('CV') || line.includes('RESUME')) {
+          continue;
+        }
+        const match = line.match(englishPattern);
+        if (match && match[1] && match[2]) {
+          return { firstName: match[1].trim(), lastName: match[2].trim() };
+        }
+      }
+      return null;
+    },
+    
+    // Strategy 5: Any two consecutive words (2-4 chars each, Hebrew or English)
+    () => {
+      const anyNamePattern = /\b([א-תa-zA-Z]{2,15})\s+([א-תa-zA-Z]{2,15})\b/;
+      const match = normalizedText.match(anyNamePattern);
+      if (match && match[1] && match[2]) {
+        // Avoid common words
+        const commonWords = ['קורות', 'חיים', 'resume', 'curriculum', 'vitae', 'personal', 'details', 'information'];
+        const first = match[1].toLowerCase();
+        const last = match[2].toLowerCase();
+        if (!commonWords.includes(first) && !commonWords.includes(last)) {
+          return { firstName: match[1].trim(), lastName: match[2].trim() };
+        }
+      }
+      return null;
+    }
+  ];
+
+  // Try each strategy until we find a name
+  for (const strategy of nameExtractionStrategies) {
+    const nameResult = strategy();
+    if (nameResult) {
+      result.firstName = nameResult.firstName;
+      result.lastName = nameResult.lastName;
+      console.log(`✅ שם חולץ בהצלחה: ${result.firstName} ${result.lastName}`);
       break;
     }
   }
 
-  // Extract profession - look for common profession keywords
+  // Extract profession with improved patterns
   const professionPatterns = [
-    /(?:תפקיד|משרה|profession|position|title|מקצוע)[\s:]+([^\n]+)/i,
-    /(?:מפתח|developer|מהנדס|engineer|מתכנת|programmer|מנהל|manager)[\s]+([^\n]+)/i,
+    /(?:תפקיד|משרה|profession|position|title|מקצוע|job title|الوظيفة)[\s:]+([^\n]+)/i,
+    /(?:מפתח|developer|מהנדס|engineer|מתכנת|programmer|מנהל|manager|מעצב|designer)[\s]+([^\n]{0,50})/i,
   ];
 
   for (const pattern of professionPatterns) {
-    const profMatch = cvText.match(pattern);
+    const profMatch = normalizedText.match(pattern);
     if (profMatch && profMatch[1]) {
-      result.profession = profMatch[1].trim().substring(0, 100); // Limit length
+      result.profession = profMatch[1].trim().substring(0, 100);
       break;
     }
   }
+
+  console.log(`📊 נתוני CV שחולצו:`, {
+    name: `${result.firstName} ${result.lastName}`,
+    email: result.email,
+    phones: [result.mobile, result.phone].filter(Boolean),
+    profession: result.profession
+  });
 
   return result;
 }
