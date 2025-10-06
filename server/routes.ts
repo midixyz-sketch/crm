@@ -992,7 +992,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const search = req.query.search as string;
       const dateFilter = req.query.dateFilter as string;
       const statuses = req.query.statuses as string; // comma-separated
-      const clients = req.query.clients as string; // comma-separated
+      const jobs = req.query.jobs as string; // comma-separated
       const users = req.query.users as string; // comma-separated
       const dateFrom = req.query.dateFrom as string;
       const dateTo = req.query.dateTo as string;
@@ -1003,7 +1003,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         search, 
         dateFilter,
         statuses,
-        clients,
+        jobs,
         users,
         dateFrom,
         dateTo

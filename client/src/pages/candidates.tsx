@@ -94,7 +94,7 @@ export default function Candidates() {
   const [search, setSearch] = useState("");
   const [dateFilter, setDateFilter] = useState("");
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
-  const [selectedClients, setSelectedClients] = useState<string[]>([]);
+  const [selectedJobs, setSelectedJobs] = useState<string[]>([]);
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
@@ -128,9 +128,9 @@ export default function Candidates() {
     }
   }, [isAuthenticated, isLoading, toast]);
 
-  // Load clients
-  const { data: clientsData } = useQuery<{ clients: any[] }>({
-    queryKey: ["/api/clients"],
+  // Load jobs
+  const { data: jobsData } = useQuery<{ jobs: any[] }>({
+    queryKey: ["/api/jobs"],
     enabled: isAuthenticated,
   });
 
@@ -145,7 +145,7 @@ export default function Candidates() {
       search, 
       dateFilter, 
       statuses: selectedStatuses, 
-      clients: selectedClients, 
+      jobs: selectedJobs, 
       users: selectedUsers,
       dateFrom,
       dateTo
@@ -161,10 +161,10 @@ export default function Candidates() {
     { label: "ממתין", value: "pending" },
   ];
 
-  // Client options
-  const clientOptions = (clientsData?.clients || []).map((client: any) => ({
-    label: client.companyName,
-    value: client.id,
+  // Job options
+  const jobOptions = (jobsData?.jobs || []).map((job: any) => ({
+    label: job.title,
+    value: job.id,
   }));
 
   // User options
@@ -281,11 +281,11 @@ export default function Candidates() {
 
               <div className="min-w-[200px]">
                 <MultiSelect
-                  options={clientOptions}
-                  selected={selectedClients}
-                  onChange={setSelectedClients}
-                  placeholder="לקוח"
-                  data-testid="select-client-filter"
+                  options={jobOptions}
+                  selected={selectedJobs}
+                  onChange={setSelectedJobs}
+                  placeholder="שם המשרה"
+                  data-testid="select-job-filter"
                 />
               </div>
 

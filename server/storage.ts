@@ -473,7 +473,7 @@ export class DatabaseStorage implements IStorage {
     search?: string, 
     dateFilter?: string,
     statuses?: string,
-    clientIds?: string,
+    jobIds?: string,
     userIds?: string,
     dateFrom?: string,
     dateTo?: string
@@ -488,6 +488,7 @@ export class DatabaseStorage implements IStorage {
         const latestJobApp = await db
           .select({
             jobTitle: jobs.title,
+            jobId: jobApplications.jobId,
             appliedAt: jobApplications.appliedAt,
             status: jobApplications.status
           })
@@ -575,6 +576,7 @@ export class DatabaseStorage implements IStorage {
         return {
           ...candidate,
           lastJobTitle: latestJobApp[0]?.jobTitle || null,
+          lastJobId: latestJobApp[0]?.jobId || null,
           lastAppliedAt: latestJobApp[0]?.appliedAt || null,
           recruitmentSource: candidate.recruitmentSource || null,
           lastReferralDate: latestReferralEvent[0]?.createdAt || null,
@@ -591,12 +593,12 @@ export class DatabaseStorage implements IStorage {
     // Apply client-side filtering after enrichment
     let filteredCandidates = enrichedCandidates;
 
-    // Filter by client IDs
-    if (clientIds && clientIds.trim()) {
-      const clientIdList = clientIds.split(',').map(id => id.trim()).filter(Boolean);
-      if (clientIdList.length > 0) {
+    // Filter by job IDs
+    if (jobIds && jobIds.trim()) {
+      const jobIdList = jobIds.split(',').map(id => id.trim()).filter(Boolean);
+      if (jobIdList.length > 0) {
         filteredCandidates = filteredCandidates.filter(c => 
-          c.lastReferralClientId && clientIdList.includes(c.lastReferralClientId)
+          c.lastJobId && jobIdList.includes(c.lastJobId)
         );
       }
     }
