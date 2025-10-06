@@ -69,13 +69,42 @@ Preferred communication style: Simple, everyday language.
 - **Tasks**: Task management for recruitment workflows
 - **Sessions**: Secure session storage
 
-## File Management
-- **Resume upload** support for PDF and DOC formats
+## File Management & CV Extraction System
+- **Resume upload** support for PDF, DOC/DOCX, and image formats (JPG, PNG, GIF, BMP, TIFF, WebP)
 - **File validation** with size and type restrictions
 - **Local file storage** with organized directory structure
 - **File metadata** tracking in database
-- **Automatic CV processing** from incoming emails with attachment extraction
-- **Email integration** with cPanel IMAP for automatic candidate creation
+- **Email integration** with cPanel IMAP for automatic candidate creation from cv@h-group.org.il
+
+### Advanced CV Data Extraction (October 2025 Improvements)
+- **Format-aware text extraction**:
+  - **PDF**: `pdf-parse` library for accurate text extraction with layout preservation
+  - **DOCX**: Mammoth library for clean text extraction from Word documents
+  - **Images**: Tesseract.js OCR with Hebrew, English, and Arabic language support
+  - Fallback strategies for corrupted or complex files
+  
+- **Hebrew-aware name extraction** with 5-strategy multi-pass system:
+  1. Label-based patterns (שם מלא, שם, name, etc.)
+  2. Hebrew name dictionary matching (100+ common Israeli first/last names)
+  3. First-line Hebrew name detection
+  4. English name patterns (capitalized names)
+  5. Generic two-word fallback with common word filtering
+  
+- **International phone number parsing**:
+  - Google libphonenumber library for accurate validation
+  - E.164 format standardization
+  - Israeli (+972) and international number support
+  - Multiple regex patterns with fallback extraction
+  
+- **Enhanced email extraction**:
+  - Improved regex patterns for accuracy
+  - False positive filtering (test/example emails)
+  - Domain validation
+  
+- **Text normalization**:
+  - RTL/LTR mark removal
+  - Whitespace normalization
+  - Multi-line text handling
 
 # External Dependencies
 
