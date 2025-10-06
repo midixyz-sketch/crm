@@ -5,7 +5,7 @@ import { insertCandidateSchema } from "../shared/schema";
 import fs from "fs";
 import path from "path";
 import { simpleParser } from "mailparser";
-import { PhoneNumberUtil, PhoneNumberFormat } from 'google-libphonenumber';
+import libphonenumber from 'google-libphonenumber';
 
 // cPanel Email Configuration - Multiple attempts for different cPanel setups
 const CPANEL_CONFIGS = [
@@ -673,7 +673,8 @@ function parseCVData(cvText: string): {
   }
 
   // Extract phone numbers using google-libphonenumber for accuracy
-  const phoneUtil = PhoneNumberUtil.getInstance();
+  const phoneUtil = libphonenumber.PhoneNumberUtil.getInstance();
+  const PhoneNumberFormat = libphonenumber.PhoneNumberFormat;
   const extractedPhones: string[] = [];
   
   // Multiple patterns for Israeli and international phones
