@@ -63,7 +63,6 @@ import * as path from 'path';
 import mammoth from 'mammoth';
 import { execSync } from 'child_process';
 import Tesseract from 'tesseract.js';
-import pdfParse from 'pdf-parse';
 
 // CV Search types
 export interface SearchResult {
@@ -131,7 +130,8 @@ export async function extractTextFromCVFile(cvPath: string): Promise<string> {
       console.log(`📄 מחלץ טקסט מ-PDF: ${cvPath}`);
       
       try {
-        // שימוש ב-pdf-parse לחילוץ טקסט
+        // שימוש ב-pdf-parse לחילוץ טקסט (dynamic import for CommonJS module)
+        const pdfParse = (await import('pdf-parse')).default;
         const pdfData = await pdfParse(fileBuffer);
         const extractedText = pdfData.text || '';
         
