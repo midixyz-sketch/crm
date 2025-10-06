@@ -63,6 +63,7 @@ import * as path from 'path';
 import mammoth from 'mammoth';
 import { execSync } from 'child_process';
 import Tesseract from 'tesseract.js';
+import pdfParse from 'pdf-parse';
 
 // CV Search types
 export interface SearchResult {
@@ -128,35 +129,29 @@ export async function extractTextFromCVFile(cvPath: string): Promise<string> {
       return result.value || '';
     } else if (isPDF) {
       console.log(`📄 מחלץ טקסט מ-PDF: ${cvPath}`);
-      const tempFilePath = `/tmp/${Date.now()}.pdf`;
-      const textFilePath = `/tmp/${Date.now()}.txt`;
       
       try {
-        // כתיבת הקובץ למקום זמני
-        fs.writeFileSync(tempFilePath, fileBuffer);
+        // שימוש ב-pdf-parse לחילוץ טקסט
+        const pdfData = await pdfParse(fileBuffer);
+        const extractedText = pdfData.text || '';
         
-        // חילוץ טקסט בעזרת pdftotext
-        try {
-          execSync(`pdftotext "${tempFilePath}" "${textFilePath}"`);
-          const extractedText = fs.readFileSync(textFilePath, 'utf8');
-          
-          // ניקוי קבצים זמניים
-          if (fs.existsSync(tempFilePath)) fs.unlinkSync(tempFilePath);
-          if (fs.existsSync(textFilePath)) fs.unlinkSync(textFilePath);
-          
-          return extractedText || '';
-        } catch (pdfError) {
-          console.log('📑 pdftotext לא זמין, מנסה עם strings');
-          const stringsOutput = execSync(`strings "${tempFilePath}"`).toString('utf8');
-          
-          // ניקוי קבצים זמניים
-          if (fs.existsSync(tempFilePath)) fs.unlinkSync(tempFilePath);
-          
-          return stringsOutput || '';
-        }
+        console.log(`✅ PDF parsed: ${extractedText.length} תווים חולצו`);
+        console.log(`📄 דוגמה מהטקסט: "${extractedText.substring(0, 100)}..."`);
+        
+        return extractedText;
       } catch (error) {
         console.error('שגיאה בחילוץ PDF:', error);
-        return '';
+        // Fallback to strings command if pdf-parse fails
+        try {
+          const tempFilePath = `/tmp/${Date.now()}.pdf`;
+          fs.writeFileSync(tempFilePath, fileBuffer);
+          const stringsOutput = execSync(`strings "${tempFilePath}"`).toString('utf8');
+          if (fs.existsSync(tempFilePath)) fs.unlinkSync(tempFilePath);
+          return stringsOutput || '';
+        } catch (fallbackError) {
+          console.error('שגיאה גם ב-fallback:', fallbackError);
+          return '';
+        }
       }
     }
     
