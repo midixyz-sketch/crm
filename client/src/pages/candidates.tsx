@@ -92,7 +92,6 @@ export default function Candidates() {
   const navigate = (path: string) => setLocation(path);
   const [search, setSearch] = useState("");
   const [dateFilter, setDateFilter] = useState("");
-  const [clientSearch, setClientSearch] = useState("");
   const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [emailDialog, setEmailDialog] = useState<{
@@ -124,7 +123,7 @@ export default function Candidates() {
   }, [isAuthenticated, isLoading, toast]);
 
   const { data: candidatesData, isLoading: candidatesLoading } = useQuery<{ candidates: EnrichedCandidate[]; total: number }>({
-    queryKey: ["/api/candidates/enriched", { search, dateFilter, clientSearch }],
+    queryKey: ["/api/candidates/enriched", { search, dateFilter }],
     enabled: isAuthenticated,
   });
 
@@ -236,15 +235,6 @@ export default function Candidates() {
                     <SelectItem value="this_month">החודש</SelectItem>
                   </SelectContent>
                 </Select>
-              </div>
-              <div className="min-w-[200px]">
-                <Input
-                  placeholder="חיפוש לקוח..."
-                  value={clientSearch}
-                  onChange={(e) => setClientSearch(e.target.value)}
-                  className="w-full"
-                  data-testid="input-client-search"
-                />
               </div>
               <SearchFilter />
             </div>
