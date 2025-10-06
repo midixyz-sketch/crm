@@ -130,14 +130,21 @@ export async function extractTextFromCVFile(cvPath: string): Promise<string> {
       console.log(`📄 מחלץ טקסט מ-PDF: ${cvPath}`);
       
       try {
-        // Use dynamic import with proper CommonJS handling
-        const pdfParse = (await import('pdf-parse')).default;
+        // pdf-parse is a CommonJS module that exports the function directly
+        // We need to use require for proper CommonJS compatibility
+        const pdfParseModule = await import('pdf-parse');
+        // Try both default and direct export
+        const pdfParse = pdfParseModule.default || pdfParseModule;
         
-        if (typeof pdfParse !== 'function') {
+        // For CommonJS modules in TypeScript, the function might be exported as-is
+        const parseFn = typeof pdfParse === 'function' ? pdfParse : (pdfParse as any).pdf;
+        
+        if (typeof parseFn !== 'function') {
+          console.error('pdf-parse function not found, module structure:', Object.keys(pdfParseModule));
           throw new Error('pdf-parse module not loaded correctly');
         }
         
-        const pdfData = await pdfParse(fileBuffer);
+        const pdfData = await parseFn(fileBuffer);
         const extractedText = pdfData.text || '';
         
         console.log(`✅ PDF parsed successfully: ${extractedText.length} תווים חולצו`);
