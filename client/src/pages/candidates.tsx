@@ -92,6 +92,8 @@ export default function Candidates() {
   const navigate = (path: string) => setLocation(path);
   const [search, setSearch] = useState("");
   const [dateFilter, setDateFilter] = useState("");
+  const [referralFilter, setReferralFilter] = useState("all"); // all, referred, not_referred
+  const [clientSearch, setClientSearch] = useState("");
   const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [emailDialog, setEmailDialog] = useState<{
@@ -123,7 +125,7 @@ export default function Candidates() {
   }, [isAuthenticated, isLoading, toast]);
 
   const { data: candidatesData, isLoading: candidatesLoading } = useQuery<{ candidates: EnrichedCandidate[]; total: number }>({
-    queryKey: ["/api/candidates/enriched", { search, dateFilter }],
+    queryKey: ["/api/candidates/enriched", { search, dateFilter, referralFilter, clientSearch }],
     enabled: isAuthenticated,
   });
 
@@ -235,6 +237,27 @@ export default function Candidates() {
                     <SelectItem value="this_month">החודש</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+              <div className="min-w-[200px]">
+                <Select value={referralFilter} onValueChange={setReferralFilter}>
+                  <SelectTrigger data-testid="select-referral-filter">
+                    <SelectValue placeholder="סינון לפי הפניות" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">כל המועמדים</SelectItem>
+                    <SelectItem value="referred">הוצגו ללקוחות</SelectItem>
+                    <SelectItem value="not_referred">לא הוצגו ללקוחות</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="min-w-[200px]">
+                <Input
+                  placeholder="חיפוש לקוח..."
+                  value={clientSearch}
+                  onChange={(e) => setClientSearch(e.target.value)}
+                  className="w-full"
+                  data-testid="input-client-search"
+                />
               </div>
               <SearchFilter />
             </div>

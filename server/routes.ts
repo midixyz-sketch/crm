@@ -991,8 +991,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const offset = parseInt(req.query.offset as string) || 0;
       const search = req.query.search as string;
       const dateFilter = req.query.dateFilter as string;
+      const referralFilter = req.query.referralFilter as string;
+      const clientSearch = req.query.clientSearch as string;
       
-      const result = await storage.getCandidatesEnriched(limit, offset, search, dateFilter);
+      const result = await storage.getCandidatesEnriched(limit, offset, search, dateFilter, referralFilter, clientSearch);
       res.json(result);
     } catch (error) {
       console.error("Error fetching enriched candidates:", error);
