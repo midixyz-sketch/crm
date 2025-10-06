@@ -214,32 +214,28 @@ export async function sendEmail(params: EmailParams): Promise<{ success: boolean
 // Email templates
 export const emailTemplates = {
   candidateProfile: (candidate: any) => ({
-    subject: `פרופיל מועמד: ${candidate.firstName} ${candidate.lastName}`,
+    subject: `קורות חיים - ${candidate.firstName} ${candidate.lastName}`,
     html: `
       <div dir="rtl" style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <h2 style="color: #2563eb; border-bottom: 2px solid #e5e7eb; padding-bottom: 10px;">
-          פרופיל מועמד: ${candidate.firstName} ${candidate.lastName}
+          שלום רב,
         </h2>
         
-        <div style="background: #f9fafb; padding: 20px; border-radius: 8px; margin: 20px 0;">
-          <h3 style="color: #374151; margin-top: 0;">פרטים אישיים</h3>
-          <p><strong>שם מלא:</strong> ${candidate.firstName} ${candidate.lastName}</p>
-          <p><strong>אימייל:</strong> ${candidate.email}</p>
-          <p><strong>נייד:</strong> ${candidate.mobile || 'לא צוין'}</p>
-          <p><strong>עיר:</strong> ${candidate.city}</p>
-          ${candidate.profession ? `<p><strong>מקצוע:</strong> ${candidate.profession}</p>` : ''}
-          ${candidate.experience ? `<p><strong>ניסיון:</strong> ${candidate.experience} שנים</p>` : ''}
-        </div>
+        <p style="font-size: 16px; line-height: 1.6; color: #374151; margin: 20px 0;">
+          מצורף קורות חיים של מועמד/ת למשרה.
+        </p>
+        
+        <p style="font-size: 16px; line-height: 1.6; color: #374151; margin: 20px 0;">
+          נשמח לשמוע חוות דעתך.
+        </p>
 
-        ${candidate.notes ? `
-          <div style="background: #fef3c7; padding: 15px; border-radius: 8px; margin: 20px 0;">
-            <h3 style="color: #92400e; margin-top: 0;">הערות</h3>
-            <p>${candidate.notes}</p>
-          </div>
-        ` : ''}
+        <p style="font-size: 16px; line-height: 1.6; color: #374151; margin: 20px 0;">
+          בברכה,<br>
+          צוות H-Group
+        </p>
 
         <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; text-align: center;">
-          <p style="color: #6b7280; font-size: 14px;">נשלח ממערכת ניהול גיוס</p>
+          <p style="color: #6b7280; font-size: 14px;">נשלח ממערכת ניהול גיוס H-Group</p>
         </div>
       </div>
     `
