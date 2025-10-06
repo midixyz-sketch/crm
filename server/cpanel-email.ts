@@ -796,14 +796,31 @@ function parseCVData(cvText: string): {
       return null;
     },
     
-    // Strategy 4: English name patterns
+    // Strategy 4: English name patterns (both Title Case and UPPERCASE)
     () => {
-      const englishPattern = /^([A-Z][a-z]+)\s+([A-Z][a-z]+)$/m;
+      // Try all caps first (RAVID LEVI format)
+      const upperCasePattern = /^([A-Z]{2,15})\s+([A-Z]{2,15})$/m;
+      for (const line of lines) {
+        if (line.includes(':') || line.includes('CURRICULUM') || line.includes('VITAE')) {
+          continue;
+        }
+        const match = line.match(upperCasePattern);
+        if (match && match[1] && match[2]) {
+          // Check it's not a header like "PROFESSIONAL EXPERIENCE"
+          const commonHeaders = ['PERSONAL', 'PROFESSIONAL', 'WORK', 'EDUCATION', 'SKILLS', 'EXPERIENCE', 'CONTACT', 'SUMMARY', 'OBJECTIVE'];
+          if (!commonHeaders.includes(match[1]) && !commonHeaders.includes(match[2])) {
+            return { firstName: match[1].trim(), lastName: match[2].trim() };
+          }
+        }
+      }
+      
+      // Then try Title Case (Ravid Levi format)
+      const titleCasePattern = /^([A-Z][a-z]+)\s+([A-Z][a-z]+)$/m;
       for (const line of lines) {
         if (line.includes(':') || line.includes('CV') || line.includes('RESUME')) {
           continue;
         }
-        const match = line.match(englishPattern);
+        const match = line.match(titleCasePattern);
         if (match && match[1] && match[2]) {
           return { firstName: match[1].trim(), lastName: match[2].trim() };
         }
@@ -839,17 +856,25 @@ function parseCVData(cvText: string): {
     }
   }
 
-  // Extract profession with improved patterns
+  // Extract profession with improved patterns (avoid PDF garbage)
   const professionPatterns = [
-    /(?:תפקיד|משרה|profession|position|title|מקצוע|job title|الوظيفة)[\s:]+([^\n]+)/i,
-    /(?:מפתח|developer|מהנדס|engineer|מתכנת|programmer|מנהל|manager|מעצב|designer)[\s]+([^\n]{0,50})/i,
+    /(?:תפקיד|משרה|profession|position|title|מקצוע|job title|الوظيفة)[\s:]+([^\n<>{}]+)/i,
+    /(?:מפתח|developer|מהנדס|engineer|מתכנת|programmer|מנהל|manager|מעצב|designer)[\s]+([^\n<>{}]{0,50})/i,
   ];
 
   for (const pattern of professionPatterns) {
     const profMatch = normalizedText.match(pattern);
     if (profMatch && profMatch[1]) {
-      result.profession = profMatch[1].trim().substring(0, 100);
-      break;
+      const profession = profMatch[1].trim();
+      // Make sure it's not PDF garbage (no binary markers or XML-like tags)
+      if (!profession.includes('>>') && 
+          !profession.includes('endobj') && 
+          !profession.includes('<</') &&
+          !profession.includes('/Type/') &&
+          profession.length < 100) {
+        result.profession = profession.substring(0, 100);
+        break;
+      }
     }
   }
 
