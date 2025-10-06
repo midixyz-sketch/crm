@@ -1192,7 +1192,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         description: `מועמד נוצר ידנית על ידי ${candidateData.recruitmentSource || 'משתמש'}`,
         metadata: {
           source: 'manual_entry',
-          createdBy: candidateData.recruitmentSource,
+          createdBy: req.user?.id || null,
+          createdByUsername: candidateData.recruitmentSource,
           cvUploaded: !!candidateData.cvPath,
           timestamp: new Date().toISOString()
         }
@@ -1723,11 +1724,12 @@ ${extractedData.achievements ? `הישגים ופעילות נוספת: ${cleanS
             // הוספת אירוע יצירה אוטומטית מקורות חיים
             await storage.addCandidateEvent({
               candidateId: candidate.id,
-              eventType: 'cv_uploaded',
+              eventType: 'created',
               description: `מועמד נוצר אוטומטית מהעלאת קורות חיים`,
               metadata: {
                 source: 'cv_upload',
-                createdBy: candidateData.recruitmentSource,
+                createdBy: req.user?.id || null,
+                createdByUsername: candidateData.recruitmentSource,
                 cvPath: candidateData.cvPath,
                 autoExtracted: true,
                 timestamp: new Date().toISOString()
@@ -2042,6 +2044,19 @@ ${extractedData.achievements ? `הישגים ופעילות נוספת: ${cleanS
             status: 'new_application',
             source: 'landing_page',
             recruitmentSource: 'דף פרסום'
+          });
+          
+          // Add created event for landing page candidate
+          await storage.addCandidateEvent({
+            candidateId: candidate.id,
+            eventType: 'created',
+            description: 'מועמד נוצר דרך דף פרסום',
+            metadata: {
+              source: 'landing_page',
+              createdBy: null,
+              createdByUsername: 'דף פרסום',
+              timestamp: new Date().toISOString()
+            }
           });
         }
       } catch (error) {

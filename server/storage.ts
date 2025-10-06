@@ -556,18 +556,22 @@ export class DatabaseStorage implements IStorage {
         // Get creator user info from candidate events
         const creatorEvent = await db
           .select({
-            userId: candidateEvents.metadata
+            metadata: candidateEvents.metadata
           })
           .from(candidateEvents)
           .where(
             and(
               eq(candidateEvents.candidateId, candidate.id),
-              eq(candidateEvents.eventType, 'status_change')
+              eq(candidateEvents.eventType, 'created')
             )
           )
           .orderBy(desc(candidateEvents.createdAt))
           .limit(1);
 
+        // Extract createdBy from metadata (it's stored as metadata.createdBy)
+        const metadata = creatorEvent[0]?.metadata as any;
+        const createdBy = metadata?.createdBy || null;
+        
         return {
           ...candidate,
           lastJobTitle: latestJobApp[0]?.jobTitle || null,
@@ -578,7 +582,7 @@ export class DatabaseStorage implements IStorage {
           lastReferralClientId: latestReferralClient[0]?.clientId || null,
           lastStatusChange: latestStatusEvent[0]?.createdAt || null,
           lastStatusDescription: latestStatusEvent[0]?.description || null,
-          creatorUserId: creatorEvent[0]?.userId || null,
+          creatorUserId: createdBy,
           creatorUsername: null
         };
       })
