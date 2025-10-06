@@ -131,7 +131,8 @@ export async function extractTextFromCVFile(cvPath: string): Promise<string> {
       
       try {
         // שימוש ב-pdf-parse לחילוץ טקסט (dynamic import for CommonJS module)
-        const pdfParse = (await import('pdf-parse')).default;
+        const pdfParseModule = await import('pdf-parse');
+        const pdfParse = pdfParseModule.default || pdfParseModule;
         const pdfData = await pdfParse(fileBuffer);
         const extractedText = pdfData.text || '';
         

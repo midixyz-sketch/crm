@@ -673,8 +673,15 @@ function parseCVData(cvText: string): {
   }
 
   // Extract phone numbers using google-libphonenumber for accuracy
-  const phoneUtil = libphonenumber.PhoneNumberUtil.getInstance();
-  const PhoneNumberFormat = libphonenumber.PhoneNumberFormat;
+  let phoneUtil, PhoneNumberFormat;
+  try {
+    phoneUtil = libphonenumber.PhoneNumberUtil.getInstance();
+    PhoneNumberFormat = libphonenumber.PhoneNumberFormat;
+  } catch (e) {
+    console.warn('⚠️ libphonenumber לא זמין, משתמש בחילוץ בסיסי');
+    phoneUtil = null;
+    PhoneNumberFormat = null;
+  }
   const extractedPhones: string[] = [];
   
   // Multiple patterns for Israeli and international phones
@@ -689,31 +696,39 @@ function parseCVData(cvText: string): {
     if (matches) {
       for (const match of matches) {
         try {
-          // Try to parse as Israeli number first
           const cleanNumber = match.replace(/[-\s()]/g, '');
-          let parsedNumber;
           
-          try {
-            parsedNumber = phoneUtil.parse(cleanNumber, 'IL');
-          } catch {
-            // Try without country code
-            parsedNumber = phoneUtil.parse(cleanNumber, '');
-          }
-          
-          if (phoneUtil.isValidNumber(parsedNumber)) {
-            const formatted = phoneUtil.format(parsedNumber, PhoneNumberFormat.E164);
-            if (!extractedPhones.includes(formatted)) {
-              extractedPhones.push(formatted);
+          // Try libphonenumber if available
+          if (phoneUtil && PhoneNumberFormat) {
+            try {
+              let parsedNumber;
+              try {
+                parsedNumber = phoneUtil.parse(cleanNumber, 'IL');
+              } catch {
+                // Try without country code
+                parsedNumber = phoneUtil.parse(cleanNumber, '');
+              }
+              
+              if (phoneUtil.isValidNumber(parsedNumber)) {
+                const formatted = phoneUtil.format(parsedNumber, PhoneNumberFormat.E164);
+                if (!extractedPhones.includes(formatted)) {
+                  extractedPhones.push(formatted);
+                }
+                continue; // Successfully parsed, skip to next
+              }
+            } catch (e) {
+              // libphonenumber failed, fall through to basic validation
             }
           }
-        } catch (e) {
-          // If libphonenumber fails, keep original if it looks like a phone
-          const cleanNumber = match.replace(/[-\s()]/g, '');
+          
+          // Basic validation fallback
           if (cleanNumber.length >= 9 && cleanNumber.length <= 15 && /^\d+$/.test(cleanNumber)) {
             if (!extractedPhones.includes(cleanNumber)) {
               extractedPhones.push(cleanNumber);
             }
           }
+        } catch (e) {
+          console.warn('⚠️ שגיאה בחילוץ מספר טלפון:', e);
         }
       }
     }
