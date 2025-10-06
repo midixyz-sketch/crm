@@ -287,23 +287,18 @@ export default function Candidates() {
           ) : (
             <>
               {candidatesData?.candidates && candidatesData.candidates.length > 0 ? (
-                <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-x-auto w-full">
-                  <div className="w-full min-w-[1400px]">
+                <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden w-full">
+                  <div className="overflow-x-auto">
                     <Table>
                       <TableHeader>
                         <TableRow className="bg-gray-50 dark:bg-gray-900">
-                          <TableHead className="text-right font-medium text-gray-700 dark:text-gray-300 min-w-[160px]">שם המועמד</TableHead>
-                          <TableHead className="text-right font-medium text-gray-700 dark:text-gray-300 min-w-[100px]">עיר</TableHead>
-                          <TableHead className="text-right font-medium text-gray-700 dark:text-gray-300 min-w-[120px]">עדכון אחרון</TableHead>
-                          <TableHead className="text-right font-medium text-gray-700 dark:text-gray-300 min-w-[150px]">מתעניין במשרה אחרון</TableHead>
-                          <TableHead className="text-right font-medium text-gray-700 dark:text-gray-300 min-w-[140px]">מקור גיוס אחרון</TableHead>
-                          <TableHead className="text-right font-medium text-gray-700 dark:text-gray-300 min-w-[130px]">מס' נייד</TableHead>
-                          <TableHead className="text-right font-medium text-gray-700 dark:text-gray-300 min-w-[200px]">דוא״ל</TableHead>
-                          <TableHead className="text-right font-medium text-gray-700 dark:text-gray-300 min-w-[120px]">הפניה אחרונה</TableHead>
-                          <TableHead className="text-right font-medium text-gray-700 dark:text-gray-300 min-w-[140px]">שינוי סטטוס אחרון</TableHead>
-                          <TableHead className="text-right font-medium text-gray-700 dark:text-gray-300 min-w-[120px]">סטטוס</TableHead>
-                          <TableHead className="text-right font-medium text-gray-700 dark:text-gray-300 min-w-[100px]">מס' מועמד</TableHead>
-                          <TableHead className="text-right font-medium text-gray-700 dark:text-gray-300 min-w-[140px]">פעולות</TableHead>
+                          <TableHead className="text-right font-medium text-gray-700 dark:text-gray-300 w-[140px]">שם המועמד</TableHead>
+                          <TableHead className="text-right font-medium text-gray-700 dark:text-gray-300 w-[100px]">עדכון</TableHead>
+                          <TableHead className="text-right font-medium text-gray-700 dark:text-gray-300 w-[120px]">משרה אחרונה</TableHead>
+                          <TableHead className="text-right font-medium text-gray-700 dark:text-gray-300 w-[110px]">נייד</TableHead>
+                          <TableHead className="text-right font-medium text-gray-700 dark:text-gray-300 w-[160px]">דוא״ל</TableHead>
+                          <TableHead className="text-right font-medium text-gray-700 dark:text-gray-300 w-[100px]">סטטוס</TableHead>
+                          <TableHead className="text-right font-medium text-gray-700 dark:text-gray-300 w-[100px]">פעולות</TableHead>
                         </TableRow>
                       </TableHeader>
                     <TableBody>
@@ -320,52 +315,21 @@ export default function Candidates() {
                             </p>
                           </TableCell>
                           <TableCell>
-                            {candidate.city || "-"}
-                          </TableCell>
-                          <TableCell>
                             {candidate.updatedAt ? new Date(candidate.updatedAt).toLocaleDateString('he-IL') : "-"}
                           </TableCell>
                           <TableCell>
                             {candidate.lastJobTitle || "-"}
                           </TableCell>
-                          <TableCell>
-                            <Badge variant={candidate.source === 'landing_page' ? 'default' : candidate.source === 'email' ? 'secondary' : 'outline'}>
-                              {candidate.source === 'landing_page' ? 'דף פרסום' :
-                               candidate.source === 'email' ? 'מייל' :
-                               candidate.source === 'manual' ? candidate.recruitmentSource :
-                               candidate.source === 'cv_upload' ? 'העלאת קורות חיים' :
-                               candidate.recruitmentSource}
-                            </Badge>
-                          </TableCell>
                           <TableCell data-testid={`text-candidate-mobile-${candidate.id}`}>
-                            {candidate.mobile ? (
-                              <div className="flex items-center">
-                                <Phone className="h-3 w-3 ml-1" />
-                                {candidate.mobile}
-                              </div>
-                            ) : "-"}
+                            {candidate.mobile || "-"}
                           </TableCell>
                           <TableCell data-testid={`text-candidate-email-${candidate.id}`}>
-                            <div className="flex items-center">
-                              <Mail className="h-3 w-3 ml-1" />
-                              {candidate.email}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            {candidate.lastReferralDate ? new Date(candidate.lastReferralDate).toLocaleDateString('he-IL') : "-"}
-                          </TableCell>
-                          <TableCell>
-                            {candidate.lastStatusChange ? new Date(candidate.lastStatusChange).toLocaleDateString('he-IL') : "-"}
+                            {candidate.email || "-"}
                           </TableCell>
                           <TableCell>
                             <Badge className={getStatusColor(candidate.status || 'available')}>
                               {getStatusText(candidate.status || 'available')}
                             </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <span className="text-sm font-mono text-gray-700 dark:text-gray-300">
-                              {candidate.candidateNumber || "-"}
-                            </span>
                           </TableCell>
                           <TableCell>
                             <div className="flex space-x-1 space-x-reverse" onClick={(e) => e.stopPropagation()}>
