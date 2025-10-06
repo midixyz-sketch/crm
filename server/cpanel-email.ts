@@ -685,8 +685,11 @@ function parseCVData(cvText: string): {
   const extractedPhones: string[] = [];
   
   // Multiple patterns for Israeli and international phones
+  // Prioritize Israeli mobile (05X) over landlines
   const phonePatterns = [
-    /\+?972[-\s]?0?[2-9]\d{1}[-\s]?\d{3}[-\s]?\d{4}/g,  // Israeli international
+    /\+?972[-\s]?0?5\d{1}[-\s]?\d{3}[-\s]?\d{4}/g,  // Israeli mobile with country code
+    /05\d{1}[-\s]?\d{3}[-\s]?\d{4}/g,  // Israeli mobile local (05X-XXX-XXXX)
+    /\+?972[-\s]?0?[2-9]\d{1}[-\s]?\d{3}[-\s]?\d{4}/g,  // Other Israeli phones
     /0[2-9]\d{1}[-\s]?\d{3}[-\s]?\d{4}/g,  // Israeli local
     /\+?\d{1,4}[-\s]?\(?\d{1,4}\)?[-\s]?\d{1,4}[-\s]?\d{1,9}/g  // Generic international
   ];
