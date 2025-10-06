@@ -2787,27 +2787,27 @@ ${extractedData.achievements ? `הישגים ופעילות נוספת: ${cleanS
             המלצה על מועמד למשרה: ${job.title}
           </h2>
           
+          <p style="font-size: 16px; line-height: 1.6; color: #374151; margin: 20px 0;">
+            שלום רב,
+          </p>
+          
+          <p style="font-size: 16px; line-height: 1.6; color: #374151; margin: 20px 0;">
+            מצורף קורות חיים של מועמד/ת למשרה.
+          </p>
+          
           <div style="background: #f0f9ff; padding: 20px; border-radius: 8px; margin: 20px 0;">
             <h3 style="color: #0369a1; margin-top: 0;">חוות דעת מקצועית</h3>
             <p style="font-size: 16px; line-height: 1.6;">${reviewerFeedback}</p>
           </div>
 
-          <div style="background: #f9fafb; padding: 20px; border-radius: 8px; margin: 20px 0;">
-            <h3 style="color: #374151; margin-top: 0;">פרטי המועמד</h3>
-            <p><strong>שם מלא:</strong> ${candidate.firstName} ${candidate.lastName}</p>
-            <p><strong>אימייל:</strong> ${candidate.email}</p>
-            <p><strong>נייד:</strong> ${candidate.phone || 'לא צוין'}</p>
-            <p><strong>עיר:</strong> ${candidate.city || 'לא צוין'}</p>
-            ${candidate.profession ? `<p><strong>מקצוע:</strong> ${candidate.profession}</p>` : ''}
-            ${candidate.experience ? `<p><strong>ניסיון תעסוקתי:</strong> ${candidate.experience}</p>` : ''}
-          </div>
+          <p style="font-size: 16px; line-height: 1.6; color: #374151; margin: 20px 0;">
+            נשמח לשמוע חוות דעתך.
+          </p>
 
-          ${(candidate.manualCv || candidate.cvContent) ? `
-          <div style="background: #fffbeb; padding: 20px; border-radius: 8px; margin: 20px 0; border-right: 4px solid #f59e0b;">
-            <h3 style="color: #92400e; margin-top: 0;">תמצית קורות חיים</h3>
-            <div style="white-space: pre-wrap; font-size: 14px; line-height: 1.6; color: #374151;">${candidate.manualCv || candidate.cvContent || ''}</div>
-          </div>
-          ` : ''}
+          <p style="font-size: 16px; line-height: 1.6; color: #374151; margin: 20px 0;">
+            בברכה,<br>
+            צוות H-Group
+          </p>
 
           <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; text-align: center;">
             <p style="color: #6b7280; font-size: 14px;">נשלח ממערכת ניהול גיוס H-Group</p>
