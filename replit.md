@@ -27,10 +27,11 @@ Preferred communication style: Simple, everyday language.
 - **File upload handling** with Multer for resume management
 
 ## Authentication System
-- **Replit OAuth** integration for seamless authentication
-- **Passport.js** with OpenID Connect strategy
+- **Local authentication** with Passport.js and bcrypt password hashing
 - **Session-based authentication** with PostgreSQL session storage
-- **User profile management** with automatic user creation/update
+- **Default admin user** created on first run (email: admin@localhost, password: admin123)
+- **Self-registration disabled** - Only admin/super admin can create new users via user management interface
+- **User profile management** with role-based access control
 
 ## Authorization and Permissions System
 - **Three-layer permission architecture**:
@@ -117,6 +118,14 @@ Preferred communication style: Simple, everyday language.
 - **Route**: `/candidates/bulk-import` (protected route)
 - **API Endpoint**: `POST /api/candidates/bulk-import` with multipart/form-data
 - **Navigation**: Menu item visible only to super admin users
+
+## User Management (October 2025)
+- **Admin-controlled user creation** - Self-registration is disabled
+- **User Management Interface** at `/user-management` (admin/super admin only)
+- **Automatic password generation** and email delivery for new users
+- **Role assignment required** when creating new users
+- **Welcome email** with login credentials sent to new users automatically
+- **API Endpoint**: `POST /api/users` (requires admin or super admin role)
 
 # External Dependencies
 
