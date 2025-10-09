@@ -1236,7 +1236,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Bulk import CVs - Super Admin only
-  app.post('/api/candidates/bulk-import', isAuthenticated, injectUserPermissions, upload.array('cvFiles', 50), async (req: any, res) => {
+  app.post('/api/candidates/bulk-import', isAuthenticated, injectUserPermissions, upload.array('cvFiles', 1000), async (req: any, res) => {
     try {
       // Check if user is super admin
       if (!req.userPermissions?.isSuperAdmin()) {

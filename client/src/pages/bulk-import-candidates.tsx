@@ -187,7 +187,7 @@ export default function BulkImportCandidates() {
           <CardHeader>
             <CardTitle>בחירת קבצים</CardTitle>
             <CardDescription>
-              בחר עד 50 קבצי קורות חיים. נתמכים: PDF, DOC, DOCX, JPG, PNG
+              בחר קבצי קורות חיים (עד 1000 קבצים). נתמכים: PDF, DOC, DOCX, JPG, PNG
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -354,7 +354,7 @@ export default function BulkImportCandidates() {
           <AlertDescription className="space-y-2">
             <div className="font-medium">הוראות שימוש:</div>
             <ul className="list-disc list-inside space-y-1 text-sm">
-              <li>בחר עד 50 קבצי קורות חיים בפורמטים: PDF, DOC, DOCX, או תמונות</li>
+              <li>בחר קבצי קורות חיים (עד 1000 קבצים) בפורמטים: PDF, DOC, DOCX, או תמונות</li>
               <li>המערכת תחלץ אוטומטית: שם, טלפון, מייל ומקצוע</li>
               <li>קבצים עם פרטים כפולים (טלפון/מייל זהים) לא ייוצרו ויסומנו ככפולים</li>
               <li>כל מועמד שנוצר יקבל אירוע "נוצר באמצעות ייבוא מרובה" בטיימליין שלו</li>
