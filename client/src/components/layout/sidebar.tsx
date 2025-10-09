@@ -1,6 +1,7 @@
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
-import { LayoutDashboard, Users, Building2, Briefcase, Mail, BarChart3, Settings, UserCheck, Search, Calendar } from "lucide-react";
+import { LayoutDashboard, Users, Building2, Briefcase, Mail, BarChart3, Settings, UserCheck, Search, Calendar, Upload } from "lucide-react";
+import { usePermissions } from "@/hooks/usePermissions";
 
 const navigation = [
   { name: "לוח בקרה", href: "/", icon: LayoutDashboard },
@@ -18,6 +19,7 @@ const navigation = [
 
 export default function Sidebar() {
   const [location] = useLocation();
+  const { isSuperAdmin } = usePermissions();
 
   return (
     <aside className="bg-surface w-64 shadow-lg border-l border-gray-200 dark:border-gray-700 flex-shrink-0 sidebar-transition">
@@ -50,6 +52,23 @@ export default function Sidebar() {
               </li>
             );
           })}
+          {isSuperAdmin && (
+            <li>
+              <Link 
+                href="/candidates/bulk-import"
+                className={cn(
+                  "flex items-center p-3 rounded-lg transition-colors",
+                  location === "/candidates/bulk-import"
+                    ? "text-primary bg-blue-50 dark:bg-blue-900/20" 
+                    : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                )}
+                data-testid="link-bulk-import-sidebar"
+              >
+                <Upload className="h-5 w-5 ml-3" />
+                ייבוא מרובה
+              </Link>
+            </li>
+          )}
         </ul>
       </nav>
     </aside>
