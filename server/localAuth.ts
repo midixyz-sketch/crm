@@ -152,55 +152,11 @@ export async function setupAuth(app: Express) {
     })(req, res, next);
   });
 
-  // Registration route
+  // Registration route - DISABLED: Only Super Admin can create users via user management
   app.post("/api/register", async (req, res) => {
-    try {
-      const { email, password, firstName, lastName, username } = req.body;
-      
-      // Validation
-      if (!email || !password || !firstName || !lastName) {
-        return res.status(400).json({ message: 'כל השדות נדרשים' });
-      }
-
-      // Check if user already exists
-      const existingUser = await storage.getUserByEmail(email);
-      if (existingUser) {
-        return res.status(400).json({ message: 'משתמש עם האימייל הזה כבר קיים' });
-      }
-
-      // Hash password
-      const passwordHash = await bcrypt.hash(password, 12);
-
-      // Create user
-      const newUser = await storage.createUser({
-        email,
-        password: passwordHash,
-        firstName,
-        lastName,
-        username: username || email.split('@')[0],
-        isActive: true
-      });
-
-      // Log the user in
-      req.login(newUser, (err) => {
-        if (err) {
-          return res.status(500).json({ message: 'שגיאה בהתחברות' });
-        }
-        res.json({ 
-          success: true, 
-          user: {
-            id: newUser.id,
-            email: newUser.email,
-            firstName: newUser.firstName,
-            lastName: newUser.lastName,
-            username: newUser.username
-          }
-        });
-      });
-    } catch (error) {
-      console.error('Registration error:', error);
-      res.status(500).json({ message: 'שגיאה ביצירת משתמש' });
-    }
+    return res.status(403).json({ 
+      message: 'רישום עצמאי אינו אפשרי. רק סופר אדמין יכול ליצור משתמשים חדשים דרך ניהול משתמשים' 
+    });
   });
 
 
