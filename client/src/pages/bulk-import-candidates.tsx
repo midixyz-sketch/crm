@@ -1,11 +1,13 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
-import { Upload, FileText, CheckCircle, XCircle, AlertCircle, Download } from "lucide-react";
+import { Upload, FileText, CheckCircle, XCircle, AlertCircle, Download, ShieldAlert } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { usePermissions } from "@/hooks/usePermissions";
+import { useLocation } from "wouter";
 
 interface ImportResult {
   filename: string;
@@ -38,6 +40,39 @@ export default function BulkImportCandidates() {
   const [summary, setSummary] = useState<ImportSummary | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+  const { isSuperAdmin } = usePermissions();
+  const [, setLocation] = useLocation();
+
+  useEffect(() => {
+    if (!isSuperAdmin) {
+      toast({
+        title: "אין הרשאת גישה",
+        description: "רק סופר אדמין יכול לגשת לעמוד זה",
+        variant: "destructive"
+      });
+      setLocation('/');
+    }
+  }, [isSuperAdmin, setLocation, toast]);
+
+  if (!isSuperAdmin) {
+    return (
+      <div className="container mx-auto py-8">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <ShieldAlert className="h-6 w-6 text-red-500" />
+              אין הרשאת גישה
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-muted-foreground">
+              רק סופר אדמין יכול לגשת לעמוד זה. אתה מועבר לדף הבית...
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
