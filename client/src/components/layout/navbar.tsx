@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
-import { LayoutDashboard, Users, Building2, Briefcase, Mail, BarChart3, Settings, UserCheck, Search, Menu, Calendar, Shield, LogOut } from "lucide-react";
+import { LayoutDashboard, Users, Building2, Briefcase, Mail, BarChart3, Settings, UserCheck, Search, Menu, Calendar, Shield, LogOut, Upload } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { usePermissions } from "@/hooks/usePermissions";
@@ -32,7 +32,7 @@ const navigation = [
 export default function Navbar() {
   const [location] = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { canManageUsers } = usePermissions();
+  const { canManageUsers, isSuperAdmin } = usePermissions();
   const { getAllowedNavigation, canViewComponent } = useDetailedPermissions();
   const { user } = useAuth();
 
@@ -179,6 +179,22 @@ export default function Navbar() {
                       </DropdownMenuItem>
                     );
                   })}
+                {isSuperAdmin && (
+                  <DropdownMenuItem asChild>
+                    <Link
+                      href="/candidates/bulk-import"
+                      className={cn(
+                        "flex items-center w-full px-2 py-2",
+                        location === "/candidates/bulk-import" && "bg-blue-50 dark:bg-blue-900/20"
+                      )}
+                      onClick={() => setIsMenuOpen(false)}
+                      data-testid="link-bulk-import"
+                    >
+                      <Upload className="h-4 w-4 ml-2" />
+                      ייבוא מרובה
+                    </Link>
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem asChild>
                   <button
                     onClick={handleLogout}

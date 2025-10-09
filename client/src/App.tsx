@@ -26,6 +26,7 @@ import Settings from "@/pages/settings";
 import CVSearch from "@/pages/cv-search";
 import Calendar from "@/pages/calendar";
 import UserManagement from "@/pages/user-management";
+import BulkImportCandidates from "@/pages/bulk-import-candidates";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -51,6 +52,7 @@ function Router() {
           <Route path="/candidates" component={Candidates} />
           <Route path="/candidates/new" component={AddCandidate} />
           <Route path="/candidates/add" component={AddCandidate} />
+          <Route path="/candidates/bulk-import" component={BulkImportCandidates} />
           <Route path="/candidates/advanced" component={AdvancedCandidate} />
           <Route path="/candidates/:id/advanced" component={AdvancedCandidate} />
           <Route path="/candidates/:id" component={CandidateDetail} />
