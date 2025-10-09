@@ -630,6 +630,22 @@ const HEBREW_LAST_NAMES = new Set([
   'כהן', 'לוי', 'מזרחי', 'פרץ', 'ביטון', 'חן', 'אבוקסיס', 'פרידמן', 'אוחיון', 'דוד', 'אזולאי', 'אברהם', 'שמש', 'ששון', 'מלכה', 'אלבז', 'בן דוד', 'עמר', 'טל', 'בר', 'גבאי', 'מור', 'עזרא', 'אשכנזי', 'ברק', 'שלום', 'דהן', 'בנימין', 'מנשה', 'יוסף', 'חיים', 'שמואל', 'אהרון', 'יעקב', 'שטרית', 'בוסקילה', 'חדד', 'משה', 'עובדיה', 'ניסים', 'שושני', 'בוחבוט', 'שטרן', 'רוזנברג', 'גולדשטיין', 'גרינברג', 'קפלן', 'שניידר', 'לנדאו', 'ברנשטיין'
 ]);
 
+// Exported wrapper function for bulk import
+export function extractCandidateDataFromText(cvText: string, filename?: string): {
+  name?: string;
+  email?: string;
+  mobile?: string;
+  profession?: string;
+} {
+  const result = parseCVData(cvText);
+  return {
+    name: result.firstName && result.lastName ? `${result.firstName} ${result.lastName}` : undefined,
+    email: result.email || undefined,
+    mobile: result.mobile || undefined,
+    profession: result.profession || undefined
+  };
+}
+
 function parseCVData(cvText: string): {
   firstName: string;
   lastName: string;
