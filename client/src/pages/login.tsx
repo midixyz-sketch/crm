@@ -71,45 +71,33 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md">
-        <CardContent className="pt-6">
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">אימייל</Label>
-              <Input
-                id="email"
-                type="email"
-                value={formData.email}
-                onChange={(e) => handleInputChange('email', e.target.value)}
-                required
-                data-testid="input-email"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="password">סיסמה</Label>
-              <Input
-                id="password"
-                type="password"
-                value={formData.password}
-                onChange={(e) => handleInputChange('password', e.target.value)}
-                required
-                data-testid="input-password"
-              />
-            </div>
-
-            <Button 
-              type="submit" 
-              className="w-full" 
-              disabled={isLoading}
-              data-testid="button-submit"
-            >
-              {isLoading ? 'טוען...' : 'התחברות'}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+    <div className="min-h-screen flex items-center justify-center p-4">
+      <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-4">
+        <Input
+          type="email"
+          placeholder="אימייל"
+          value={formData.email}
+          onChange={(e) => handleInputChange('email', e.target.value)}
+          required
+          data-testid="input-email"
+        />
+        <Input
+          type="password"
+          placeholder="סיסמה"
+          value={formData.password}
+          onChange={(e) => handleInputChange('password', e.target.value)}
+          required
+          data-testid="input-password"
+        />
+        <Button 
+          type="submit" 
+          className="w-full" 
+          disabled={isLoading}
+          data-testid="button-submit"
+        >
+          {isLoading ? 'טוען...' : 'התחברות'}
+        </Button>
+      </form>
     </div>
   );
 }
