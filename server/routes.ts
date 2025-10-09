@@ -2921,7 +2921,7 @@ ${extractedData.achievements ? `הישגים ופעילות נוספת: ${cleanS
       const emailContent = `
         <div dir="rtl" style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h2 style="color: #2563eb; border-bottom: 2px solid #e5e7eb; padding-bottom: 10px;">
-            המלצה על מועמד למשרה: ${job.title}
+            מועמד/ת לתפקיד ${job.title}
           </h2>
           
           <p style="font-size: 16px; line-height: 1.6; color: #374151; margin: 20px 0;">
