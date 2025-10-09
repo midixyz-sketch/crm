@@ -177,7 +177,7 @@ export default function BulkImportCandidates() {
       <div className="mb-6">
         <h1 className="text-3xl font-bold">ייבוא מרובה של מועמדים</h1>
         <p className="text-muted-foreground mt-2">
-          העלה קבצי קורות חיים (PDF, DOCX, תמונות) והמערכת תחלץ את הפרטים ותיצור כרטיסי מועמד אוטומטית
+          העלה כמה שתרצה קבצי קורות חיים (PDF, DOCX, תמונות) - המערכת תעבד אותם ב-batches של 1000 ותחלץ את הפרטים אוטומטית
         </p>
       </div>
 
@@ -187,7 +187,7 @@ export default function BulkImportCandidates() {
           <CardHeader>
             <CardTitle>בחירת קבצים</CardTitle>
             <CardDescription>
-              בחר קבצי קורות חיים (עד 1000 קבצים). נתמכים: PDF, DOC, DOCX, JPG, PNG
+              בחר קבצי קורות חיים בכמות בלתי מוגבלת. המערכת תעבד 1000 קבצים בכל פעם. נתמכים: PDF, DOC, DOCX, JPG, PNG
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -354,7 +354,7 @@ export default function BulkImportCandidates() {
           <AlertDescription className="space-y-2">
             <div className="font-medium">הוראות שימוש:</div>
             <ul className="list-disc list-inside space-y-1 text-sm">
-              <li>בחר קבצי קורות חיים (עד 1000 קבצים) בפורמטים: PDF, DOC, DOCX, או תמונות</li>
+              <li>בחר כמה קבצים שתרצה - המערכת תעבד אותם ב-batches של 1000 קבצים בכל פעם</li>
               <li>המערכת תחלץ אוטומטית: שם, טלפון, מייל ומקצוע</li>
               <li>קבצים עם פרטים כפולים (טלפון/מייל זהים) לא ייוצרו ויסומנו ככפולים</li>
               <li>כל מועמד שנוצר יקבל אירוע "נוצר באמצעות ייבוא מרובה" בטיימליין שלו</li>
