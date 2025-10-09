@@ -72,32 +72,35 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
-      <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-4">
-        <Input
-          type="email"
-          placeholder="אימייל"
-          value={formData.email}
-          onChange={(e) => handleInputChange('email', e.target.value)}
-          required
-          data-testid="input-email"
-        />
-        <Input
-          type="password"
-          placeholder="סיסמה"
-          value={formData.password}
-          onChange={(e) => handleInputChange('password', e.target.value)}
-          required
-          data-testid="input-password"
-        />
-        <Button 
-          type="submit" 
-          className="w-full" 
-          disabled={isLoading}
-          data-testid="button-submit"
-        >
-          {isLoading ? 'טוען...' : 'התחברות'}
-        </Button>
-      </form>
+      <div className="w-full max-w-sm">
+        <h1 className="text-2xl font-bold text-center mb-6">התחברות למערכת הגיוס</h1>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <Input
+            type="email"
+            placeholder="אימייל"
+            value={formData.email}
+            onChange={(e) => handleInputChange('email', e.target.value)}
+            required
+            data-testid="input-email"
+          />
+          <Input
+            type="password"
+            placeholder="סיסמה"
+            value={formData.password}
+            onChange={(e) => handleInputChange('password', e.target.value)}
+            required
+            data-testid="input-password"
+          />
+          <Button 
+            type="submit" 
+            className="w-full" 
+            disabled={isLoading}
+            data-testid="button-submit"
+          >
+            {isLoading ? 'טוען...' : 'התחברות'}
+          </Button>
+        </form>
+      </div>
     </div>
   );
 }
