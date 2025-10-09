@@ -68,13 +68,13 @@ export default function Navbar() {
             <div className="flex items-center space-x-3 space-x-reverse">
               <div className="text-right">
                 <p className="text-sm font-medium text-gray-900 dark:text-white">
-                  {user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email : 'משתמש'}
+                  {user ? `${(user as any).firstName || ''} ${(user as any).lastName || ''}`.trim() || (user as any).email : 'משתמש'}
                 </p>
                 <p className="text-xs text-gray-600 dark:text-gray-300">מנהל גיוס</p>
               </div>
               <div className="w-8 h-8 bg-primary text-white rounded-full flex items-center justify-center">
                 <span className="text-sm font-medium">
-                  {user ? `${user.firstName?.charAt(0) || ''}${user.lastName?.charAt(0) || ''}` || 'מ' : 'מ'}
+                  {user ? `${(user as any).firstName?.charAt(0) || ''}${(user as any).lastName?.charAt(0) || ''}` || 'מ' : 'מ'}
                 </span>
               </div>
             </div>
