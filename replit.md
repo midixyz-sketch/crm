@@ -106,6 +106,18 @@ Preferred communication style: Simple, everyday language.
   - Whitespace normalization
   - Multi-line text handling
 
+### Bulk CV Import Feature (October 2025)
+- **Super admin exclusive feature** for uploading multiple CV files simultaneously
+- **Multi-file processing**: Support for up to 50 files per batch
+- **Automatic candidate creation**: Extracts data and creates candidate profiles automatically
+- **Duplicate detection**: Identifies existing candidates by email/phone to prevent duplicates
+- **Progress tracking**: Real-time UI feedback during import process
+- **Detailed results**: Shows success/failure status for each file with error messages
+- **Security**: Frontend and backend permission checks ensure only super admins can access
+- **Route**: `/candidates/bulk-import` (protected route)
+- **API Endpoint**: `POST /api/candidates/bulk-import` with multipart/form-data
+- **Navigation**: Menu item visible only to super admin users
+
 # External Dependencies
 
 ## Core Framework Dependencies
