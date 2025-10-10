@@ -539,6 +539,8 @@ export class DatabaseStorage implements IStorage {
       .from(candidates)
       .where(whereCondition);
 
+    console.log(`📊 getCandidates: conditions.length=${conditions.length}, candidateResults.length=${candidateResults.length}, total=${totalResults[0].count}, limit=${limit}, offset=${offset}`);
+
     return {
       candidates: candidateResults,
       total: totalResults[0].count
@@ -559,8 +561,10 @@ export class DatabaseStorage implements IStorage {
     // Get basic candidates data
     const { candidates: basicCandidates, total } = await this.getCandidates(limit, offset, search, dateFilter, statuses, dateFrom, dateTo);
     
+    console.log(`📊 getCandidatesEnriched: basicCandidates.length=${basicCandidates.length}, total=${total}, limit=${limit}, offset=${offset}`);
+    
     if (basicCandidates.length === 0) {
-      return { candidates: [], total: 0 };
+      return { candidates: [], total };  // Return the actual total, not 0!
     }
 
     const candidateIds = basicCandidates.map(c => c.id);
