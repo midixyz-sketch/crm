@@ -1015,6 +1015,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         dateTo
       );
       console.log(`✅ Sending response: candidates.length=${result.candidates.length}, total=${result.total}`);
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
       res.json(result);
     } catch (error) {
       console.error("Error fetching enriched candidates:", error);
