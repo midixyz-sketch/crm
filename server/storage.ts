@@ -63,6 +63,7 @@ import * as path from 'path';
 import mammoth from 'mammoth';
 import { execSync } from 'child_process';
 import Tesseract from 'tesseract.js';
+import { pdf } from 'pdf-to-img';
 
 // CV Search types
 export interface SearchResult {
@@ -156,9 +157,49 @@ export async function extractTextFromCVFile(cvPath: string): Promise<string> {
                            !extractedText.includes('/Type/Catalog');
         
         if (!hasRealText) {
-          console.log('⚠️ PDF נראה כמו מבנה בינארי או PDF סרוק - לא ניתן לחלץ טקסט');
-          console.log('💡 המלצה: המר את ה-PDF לתמונה (JPG/PNG) כדי שה-OCR יוכל לעבוד');
-          return '';
+          console.log('⚠️ PDF סרוק - מתחיל המרה אוטומטית לתמונה + OCR...');
+          
+          try {
+            // Convert PDF to image using pdf-to-img
+            console.log('🔄 ממיר PDF לתמונה...');
+            const document = await pdf(fullPath, { scale: 3 }); // High quality for OCR
+            
+            // Get first page only (for performance)
+            const firstPageIterator = document[Symbol.asyncIterator]();
+            const firstPageResult = await firstPageIterator.next();
+            
+            if (firstPageResult.done || !firstPageResult.value) {
+              console.log('❌ לא הצלחתי להמיר PDF לתמונה');
+              return '';
+            }
+            
+            const imageBuffer = firstPageResult.value;
+            console.log('✅ PDF הומר לתמונה בהצלחה');
+            
+            // Run OCR on the image
+            console.log('🔍 מפעיל OCR על התמונה...');
+            const { data: { text } } = await Tesseract.recognize(imageBuffer, 'heb+eng+ara', {
+              logger: m => {
+                if (m.status === 'recognizing text') {
+                  console.log(`📝 OCR: ${Math.round(m.progress * 100)}%`);
+                }
+              }
+            });
+            
+            const cleanedOcrText = text.replace(/\s+/g, ' ').trim();
+            console.log(`✅ OCR הושלם: ${cleanedOcrText.length} תווים חולצו`);
+            
+            if (cleanedOcrText.length > 10) {
+              console.log(`📄 דוגמה מטקסט OCR: "${cleanedOcrText.substring(0, 100)}..."`);
+              return cleanedOcrText;
+            } else {
+              console.log('⚠️ OCR לא הצליח לחלץ מספיק טקסט');
+              return '';
+            }
+          } catch (pdfConversionError) {
+            console.error('❌ שגיאה בהמרת PDF לתמונה:', pdfConversionError);
+            return '';
+          }
         }
         
         return extractedText;
