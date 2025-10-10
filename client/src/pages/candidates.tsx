@@ -382,7 +382,9 @@ export default function Candidates() {
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-3">
                 <div className="text-sm text-gray-600 dark:text-gray-400">
-                  {candidatesData?.total ? `${candidatesData.total} מועמדים` : ""}
+                  {candidatesData?.candidates && candidatesData?.total 
+                    ? `מציג ${candidatesData.candidates.length} מתוך ${candidatesData.total} מועמדים` 
+                    : ""}
                 </div>
                 {selectedCandidates.length > 0 && isSuperAdmin && (
                   <DeleteButton
