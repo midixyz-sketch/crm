@@ -1620,10 +1620,10 @@ export class DatabaseStorage implements IStorage {
       .from(jobs)
       .where(eq(jobs.status, 'active'));
 
+    // Get ALL candidates count (not just new ones in last 30 days)
     const [newCandidatesResult] = await db
       .select({ count: count() })
-      .from(candidates)
-      .where(sql`${candidates.createdAt} >= ${thirtyDaysAgo}`);
+      .from(candidates);
 
     const [placementsResult] = await db
       .select({ count: count() })
