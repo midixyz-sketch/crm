@@ -179,6 +179,15 @@ Preferred communication style: Simple, everyday language.
 - **Implementation**: Uses `candidates.status = 'hired' AND candidates.updatedAt >= start_of_month` query
 - **Display**: Third statistics card in dashboard showing monthly hired candidates count
 
+## Dashboard Stats - Revenue Display (October 2025)
+- **Revenue card**: Displays monthly revenue in Israeli Shekels (₪)
+- **Current implementation**: Revenue is hardcoded to ₪0 (server/storage.ts line 1644)
+- **Historical issue**: Previously showed mock calculation (placements × ₪15,000) which displayed incorrect revenue of ₪45,000
+- **Cache prevention**: Added no-cache headers to `/api/dashboard/stats` endpoint to prevent browser caching of stale data
+- **Headers**: `Cache-Control: no-store, no-cache, must-revalidate, proxy-revalidate`, `Pragma: no-cache`, `Expires: 0`
+- **No percentage change**: Revenue card does not display percentage change (removed mock +15% data)
+- **Future implementation**: Revenue will be calculated from actual payment data when payment tracking is implemented
+
 # External Dependencies
 
 ## Core Framework Dependencies
