@@ -2983,7 +2983,7 @@ ${extractedData.achievements ? `הישגים ופעילות נוספת: ${cleanS
           </p>
           
           <div style="background: #f0f9ff; padding: 20px; border-radius: 8px; margin: 20px 0;">
-            <h3 style="color: #0369a1; margin-top: 0;">חוות דעת מקצועית</h3>
+            <h3 style="color: #0369a1; margin-top: 0;">חוות דעת</h3>
             <p style="font-size: 16px; line-height: 1.6;">${reviewerFeedback}</p>
           </div>
 
@@ -3059,7 +3059,7 @@ ${extractedData.achievements ? `הישגים ופעילות נוספת: ${cleanS
         await storage.addCandidateEvent({
           candidateId,
           eventType: 'sent_to_employer',
-          description: `נשלח למעסיק עם חוות דעת מקצועית`,
+          description: `נשלח למעסיק עם חוות דעת`,
           metadata: {
             jobTitle: job.title,
             jobId: jobId,
