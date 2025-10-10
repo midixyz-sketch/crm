@@ -103,6 +103,11 @@ export default function Candidates() {
   const [dateTo, setDateTo] = useState("");
   const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
+  
+  // Pagination
+  const PAGE_SIZE = 50;
+  const [page, setPage] = useState(0);
+  const offset = page * PAGE_SIZE;
   const [emailDialog, setEmailDialog] = useState<{
     isOpen: boolean;
     type: "candidate" | "interview" | "shortlist";
@@ -143,8 +148,15 @@ export default function Candidates() {
     enabled: isAuthenticated,
   });
 
+  // Reset page when filters change
+  useEffect(() => {
+    setPage(0);
+  }, [search, dateFilter, selectedStatuses, selectedJobs, selectedUsers, dateFrom, dateTo]);
+
   const { data: candidatesData, isLoading: candidatesLoading } = useQuery<{ candidates: EnrichedCandidate[]; total: number }>({
     queryKey: ["/api/candidates/enriched", { 
+      limit: PAGE_SIZE,
+      offset,
       search, 
       dateFilter, 
       statuses: selectedStatuses, 
@@ -382,9 +394,15 @@ export default function Candidates() {
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-3">
                 <div className="text-sm text-gray-600 dark:text-gray-400">
-                  {candidatesData?.candidates && candidatesData?.total 
-                    ? `מציג ${candidatesData.candidates.length} מתוך ${candidatesData.total} מועמדים` 
-                    : ""}
+                  {candidatesData?.candidates && candidatesData?.total ? (
+                    <>
+                      {candidatesData.candidates.length > 0 ? (
+                        `מציג ${offset + 1}-${offset + candidatesData.candidates.length} מתוך ${candidatesData.total} מועמדים`
+                      ) : (
+                        `0 מועמדים`
+                      )}
+                    </>
+                  ) : ""}
                 </div>
                 {selectedCandidates.length > 0 && isSuperAdmin && (
                   <DeleteButton
@@ -624,6 +642,31 @@ export default function Candidates() {
                 </div>
               )}
             </>
+          )}
+
+          {/* Pagination Controls */}
+          {candidatesData?.candidates && candidatesData.candidates.length > 0 && candidatesData.total > PAGE_SIZE && (
+            <div className="flex justify-center items-center gap-4 mt-6">
+              <Button
+                variant="outline"
+                onClick={() => setPage(p => Math.max(0, p - 1))}
+                disabled={page === 0 || candidatesLoading}
+                data-testid="button-previous-page"
+              >
+                הקודם
+              </Button>
+              <span className="text-sm text-gray-600 dark:text-gray-400">
+                עמוד {page + 1} מתוך {Math.ceil(candidatesData.total / PAGE_SIZE)}
+              </span>
+              <Button
+                variant="outline"
+                onClick={() => setPage(p => p + 1)}
+                disabled={offset + PAGE_SIZE >= candidatesData.total || candidatesLoading}
+                data-testid="button-next-page"
+              >
+                הבא
+              </Button>
+            </div>
           )}
 
       {/* Delete Confirmation Dialog */}
