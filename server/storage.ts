@@ -156,58 +156,14 @@ export async function extractTextFromCVFile(cvPath: string): Promise<string> {
                            !extractedText.includes('/Type/Catalog');
         
         if (!hasRealText) {
-          console.log('⚠️ PDF נראה כמו מבנה בינארי או סרוק - מפעיל OCR...');
-          
-          try {
-            // Try OCR on the PDF as a fallback
-            const { data: { text } } = await Tesseract.recognize(fileBuffer, 'heb+eng+ara', {
-              logger: m => {
-                if (m.status === 'recognizing text') {
-                  console.log(`📝 OCR על PDF: ${Math.round(m.progress * 100)}%`);
-                }
-              }
-            });
-            
-            const cleanedOcrText = text.replace(/\s+/g, ' ').trim();
-            console.log(`✅ OCR על PDF הושלם: ${cleanedOcrText.length} תווים חולצו`);
-            
-            if (cleanedOcrText.length > 10) {
-              console.log(`📄 דוגמה מטקסט OCR: "${cleanedOcrText.substring(0, 100)}..."`);
-              return cleanedOcrText;
-            } else {
-              console.log('⚠️ גם OCR לא הצליח לחלץ מספיק טקסט');
-              return '';
-            }
-          } catch (ocrError) {
-            console.error('שגיאה ב-OCR על PDF:', ocrError);
-            return '';
-          }
+          console.log('⚠️ PDF נראה כמו מבנה בינארי או PDF סרוק - לא ניתן לחלץ טקסט');
+          console.log('💡 המלצה: המר את ה-PDF לתמונה (JPG/PNG) כדי שה-OCR יוכל לעבוד');
+          return '';
         }
         
         return extractedText;
       } catch (error) {
         console.error('שגיאה בחילוץ PDF:', error);
-        
-        // Try OCR as a last resort
-        console.log('🔄 מנסה OCR כפתרון אחרון...');
-        try {
-          const { data: { text } } = await Tesseract.recognize(fileBuffer, 'heb+eng+ara', {
-            logger: m => {
-              if (m.status === 'recognizing text') {
-                console.log(`📝 OCR התאוששות: ${Math.round(m.progress * 100)}%`);
-              }
-            }
-          });
-          
-          const cleanedText = text.replace(/\s+/g, ' ').trim();
-          if (cleanedText.length > 10) {
-            console.log(`✅ OCR התאוששות הצליחה: ${cleanedText.length} תווים`);
-            return cleanedText;
-          }
-        } catch (ocrError) {
-          console.error('גם OCR התאוששות נכשל:', ocrError);
-        }
-        
         return '';
       }
     }
