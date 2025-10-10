@@ -1383,6 +1383,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Bulk delete candidates
+  app.post('/api/candidates/bulk-delete', isAuthenticated, injectUserPermissions, async (req: any, res) => {
+    try {
+      // Check if user has permission to delete candidates
+      if (!req.userPermissions?.can('delete_candidates')) {
+        return res.status(403).json({ message: "אין לך הרשאה למחוק מועמדים" });
+      }
+
+      const { candidateIds } = req.body;
+
+      if (!candidateIds || !Array.isArray(candidateIds) || candidateIds.length === 0) {
+        return res.status(400).json({ message: "נדרש לספק מזהי מועמדים למחיקה" });
+      }
+
+      console.log(`🗑️ מוחק ${candidateIds.length} מועמדים`);
+
+      // Delete each candidate
+      const deleteResults = await Promise.all(
+        candidateIds.map(async (id: string) => {
+          try {
+            await storage.deleteCandidate(id);
+            return { id, success: true };
+          } catch (error) {
+            console.error(`❌ שגיאה במחיקת מועמד ${id}:`, error);
+            return { id, success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+          }
+        })
+      );
+
+      const successCount = deleteResults.filter(r => r.success).length;
+      const failedCount = deleteResults.filter(r => !r.success).length;
+
+      console.log(`✅ נמחקו ${successCount} מועמדים, נכשלו ${failedCount}`);
+
+      res.json({
+        message: `נמחקו ${successCount} מועמדים בהצלחה`,
+        success: successCount,
+        failed: failedCount,
+        results: deleteResults
+      });
+
+    } catch (error) {
+      console.error("Error in bulk delete:", error);
+      res.status(500).json({ message: "שגיאה במחיקה מרובה של מועמדים" });
+    }
+  });
+
   app.put('/api/candidates/:id', isAuthenticated, upload.single('cv'), async (req, res) => {
     try {
       // Get current candidate to check for status changes
