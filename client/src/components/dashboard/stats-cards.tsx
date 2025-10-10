@@ -38,7 +38,7 @@ export default function StatsCards() {
       link: "/candidates",
     },
     {
-      title: "השמות החודש",
+      title: "התקבלו לעבודה החודש",
       value: stats?.placements || 0,
       icon: Handshake,
       color: "bg-orange-100 dark:bg-orange-900",
