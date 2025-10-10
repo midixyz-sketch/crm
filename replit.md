@@ -143,13 +143,14 @@ Preferred communication style: Simple, everyday language.
 - **Integration**: Automatically triggers before candidate send in referral workflow
 
 ## Bulk Candidate Operations (October 2025)
+- **Super Admin exclusive feature**: Only super admin users can perform bulk operations
 - **Multi-select functionality**: Checkboxes for selecting multiple candidates in candidates page
 - **Select all**: Checkbox in table header to select/deselect all visible candidates
 - **Bulk delete**: Delete multiple candidates simultaneously with confirmation dialog
-- **Permission-based**: Only users with `delete_candidates` permission can perform bulk deletion
+- **Permission-based**: Only super admin can see checkboxes and perform bulk deletion
 - **Parallel processing**: Deletes all selected candidates simultaneously using `Promise.all`
 - **UI feedback**: Shows count of selected candidates and delete button appears when candidates are selected
-- **API Endpoint**: `POST /api/candidates/bulk-delete` with `candidateIds` array in request body
+- **API Endpoint**: `POST /api/candidates/bulk-delete` with `candidateIds` array in request body (super admin only)
 - **Success tracking**: Returns detailed results showing successful and failed deletions
 - **Cache invalidation**: Automatically refreshes candidate lists after bulk operations
 
