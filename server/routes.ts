@@ -995,9 +995,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const limit = parseInt(req.query.limit as string) || 50;
       const offset = parseInt(req.query.offset as string) || 0;
+      const statusFilter = req.query.status as string;
+      const jobFilter = req.query.jobs as string;
+      const dateFrom = req.query.dateFrom as string;
+      const dateTo = req.query.dateTo as string;
       
-      // Filter only rejected or sent_to_employer statuses
-      const statuses = 'rejected,sent_to_employer';
+      // Filter only rejected_by_employer or sent_to_employer statuses (or specific status if provided)
+      const statuses = statusFilter || 'rejected_by_employer,sent_to_employer';
       
       const result = await storage.getCandidatesEnriched(
         limit, 
@@ -1005,10 +1009,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         undefined, // search
         undefined, // dateFilter
         statuses,
-        undefined, // jobs
+        jobFilter, // jobs
         undefined, // users
-        undefined, // dateFrom
-        undefined  // dateTo
+        dateFrom, // dateFrom
+        dateTo  // dateTo
       );
       
       res.set({
