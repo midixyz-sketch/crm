@@ -387,7 +387,7 @@ export default function CandidateDetail() {
         if (!selectedJob || !selectedJob.client?.id) continue;
 
         try {
-          const checkResult = await apiRequest('GET', `/api/check-recent-employer-sends/${selectedJob.client.id}`);
+          const checkResult: any = await apiRequest('GET', `/api/check-recent-employer-sends/${selectedJob.client.id}`);
           
           if (checkResult.hasRecentSends && checkResult.recentSends.length > 0) {
             const recentNames = checkResult.recentSends
