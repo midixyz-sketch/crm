@@ -129,6 +129,16 @@ Preferred communication style: Simple, everyday language.
 - **Welcome email** with login credentials sent to new users automatically
 - **API Endpoint**: `POST /api/users` (requires admin or super admin role)
 
+## Duplicate Send Prevention (October 2025)
+- **30-day duplicate warning system** - Prevents accidental sending of multiple candidates to same employer
+- **Pre-send validation** - Checks if other candidates were sent to employer within last 30 days
+- **Warning dialog** - Shows list of previously sent candidates with names and send dates
+- **User confirmation required** - Employee can review and choose to proceed or cancel send
+- **API Endpoint**: `GET /api/check-recent-employer-sends/:clientId` - Returns recent sends history
+- **Smart detection** - Queries emails table with joins to candidates and jobs for accurate tracking
+- **Warning message format**: "⚠️ למעסיק [שם החברה] נשלחו מועמדים ב-30 הימים האחרונים: [רשימת שמות]"
+- **Integration**: Automatically triggers before candidate send in referral workflow
+
 # External Dependencies
 
 ## Core Framework Dependencies
