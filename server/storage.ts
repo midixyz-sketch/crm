@@ -1640,8 +1640,8 @@ export class DatabaseStorage implements IStorage {
         sql`${candidates.updatedAt} >= ${startOfMonth}`
       ));
 
-    // Mock revenue calculation - in real app this would come from a payments table
-    const revenue = placementsResult.count * 15000; // Average commission per placement
+    // No revenue data - will show 0 until real revenue tracking is implemented
+    const revenue = 0;
 
     return {
       activeJobs: activeJobsResult.count,
