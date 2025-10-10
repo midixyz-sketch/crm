@@ -9,6 +9,7 @@ import {
   candidateEvents,
   messageTemplates,
   systemSettings,
+  candidateStatuses,
   reminders,
   interviewEvents,
   roles,
@@ -40,6 +41,8 @@ import {
   type InsertMessageTemplate,
   type SystemSetting,
   type InsertSystemSetting,
+  type CandidateStatus,
+  type InsertCandidateStatus,
   type Reminder,
   type ReminderWithDetails,
   type InsertReminder,
@@ -376,6 +379,13 @@ export interface IStorage {
   setSystemSetting(key: string, value: string, description?: string): Promise<SystemSetting>;
   getAllSystemSettings(): Promise<SystemSetting[]>;
   deleteSystemSetting(key: string): Promise<void>;
+
+  // Candidate Status operations
+  getCandidateStatuses(): Promise<CandidateStatus[]>;
+  getCandidateStatus(id: string): Promise<CandidateStatus | undefined>;
+  createCandidateStatus(status: InsertCandidateStatus): Promise<CandidateStatus>;
+  updateCandidateStatus(id: string, status: Partial<InsertCandidateStatus>): Promise<CandidateStatus>;
+  deleteCandidateStatus(id: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1863,6 +1873,40 @@ export class DatabaseStorage implements IStorage {
 
   async deleteSystemSetting(key: string): Promise<void> {
     await db.delete(systemSettings).where(eq(systemSettings.key, key));
+  }
+
+  // Candidate Status operations
+  async getCandidateStatuses(): Promise<CandidateStatus[]> {
+    return await db.select().from(candidateStatuses).orderBy(asc(candidateStatuses.displayOrder));
+  }
+
+  async getCandidateStatus(id: string): Promise<CandidateStatus | undefined> {
+    const [status] = await db.select().from(candidateStatuses).where(eq(candidateStatuses.id, id));
+    return status;
+  }
+
+  async createCandidateStatus(status: InsertCandidateStatus): Promise<CandidateStatus> {
+    const [newStatus] = await db.insert(candidateStatuses).values({
+      ...status,
+      updatedAt: new Date(),
+    }).returning();
+    return newStatus;
+  }
+
+  async updateCandidateStatus(id: string, status: Partial<InsertCandidateStatus>): Promise<CandidateStatus> {
+    const [updatedStatus] = await db
+      .update(candidateStatuses)
+      .set({
+        ...status,
+        updatedAt: new Date(),
+      })
+      .where(eq(candidateStatuses.id, id))
+      .returning();
+    return updatedStatus;
+  }
+
+  async deleteCandidateStatus(id: string): Promise<void> {
+    await db.delete(candidateStatuses).where(eq(candidateStatuses.id, id));
   }
 
   // Reminder operations

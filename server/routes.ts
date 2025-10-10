@@ -21,6 +21,7 @@ import {
   insertTaskSchema, 
   insertEmailSchema, 
   insertMessageTemplateSchema,
+  insertCandidateStatusSchema,
   insertRoleSchema,
   insertPermissionSchema,
   insertUserRoleSchema,
@@ -3907,6 +3908,67 @@ ${extractedData.achievements ? `הישגים ופעילות נוספת: ${cleanS
     } catch (error) {
       console.error('Error deleting message template:', error);
       res.status(500).json({ error: 'שגיאה במחיקת תבנית ההודעה' });
+    }
+  });
+
+  // Candidate Status Management
+  app.get('/api/candidate-statuses', isAuthenticated, async (req, res) => {
+    try {
+      const statuses = await storage.getCandidateStatuses();
+      res.json(statuses);
+    } catch (error) {
+      console.error('Error fetching candidate statuses:', error);
+      res.status(500).json({ error: 'שגיאה בטעינת סטטוסים' });
+    }
+  });
+
+  app.post('/api/candidate-statuses', isAuthenticated, requirePermission('manage_settings'), async (req, res) => {
+    try {
+      const statusData = insertCandidateStatusSchema.parse(req.body);
+      const status = await storage.createCandidateStatus(statusData);
+      res.json(status);
+    } catch (error) {
+      console.error('Error creating candidate status:', error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: 'נתונים לא תקינים', details: error.errors });
+      }
+      res.status(500).json({ error: 'שגיאה ביצירת הסטטוס' });
+    }
+  });
+
+  app.put('/api/candidate-statuses/:id', isAuthenticated, requirePermission('manage_settings'), async (req, res) => {
+    try {
+      const { id } = req.params;
+      const statusData = insertCandidateStatusSchema.parse(req.body);
+      const status = await storage.updateCandidateStatus(id, statusData);
+      res.json(status);
+    } catch (error) {
+      console.error('Error updating candidate status:', error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: 'נתונים לא תקינים', details: error.errors });
+      }
+      res.status(500).json({ error: 'שגיאה בעדכון הסטטוס' });
+    }
+  });
+
+  app.delete('/api/candidate-statuses/:id', isAuthenticated, requirePermission('manage_settings'), async (req, res) => {
+    try {
+      const { id } = req.params;
+      const status = await storage.getCandidateStatus(id);
+      
+      if (!status) {
+        return res.status(404).json({ error: 'הסטטוס לא נמצא' });
+      }
+
+      if (status.isSystem) {
+        return res.status(403).json({ error: 'לא ניתן למחוק סטטוס מערכת' });
+      }
+
+      await storage.deleteCandidateStatus(id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Error deleting candidate status:', error);
+      res.status(500).json({ error: 'שגיאה במחיקת הסטטוס' });
     }
   });
 
