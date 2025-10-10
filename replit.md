@@ -79,10 +79,12 @@ Preferred communication style: Simple, everyday language.
 
 ### Advanced CV Data Extraction (October 2025 Improvements)
 - **Format-aware text extraction**:
-  - **PDF**: `pdf-parse` library for accurate text extraction with layout preservation
+  - **PDF with text**: `pdf-parse` library for accurate text extraction with layout preservation
+  - **PDF scanned** (no text): Automatic conversion to images + Tesseract OCR
   - **DOCX**: Mammoth library for clean text extraction from Word documents
+  - **DOC, RTF, ODT**: Textract universal extractor for legacy formats
   - **Images**: Tesseract.js OCR with Hebrew, English, and Arabic language support
-  - Fallback strategies for corrupted or complex files
+  - **Multi-stage fallback pipeline**: PDF text → PDF-to-image OCR → Textract universal
   
 - **Hebrew-aware name extraction** with 5-strategy multi-pass system:
   1. Label-based patterns (שם מלא, שם, name, etc.)
@@ -110,6 +112,7 @@ Preferred communication style: Simple, everyday language.
 ### Bulk CV Import Feature (October 2025)
 - **Super admin exclusive feature** for uploading unlimited CV files simultaneously
 - **Batch processing architecture**: Processes files in batches of 1000 to prevent system overload
+- **Parallel processing**: Files within each batch are processed simultaneously with `Promise.all` for 5-10x speed improvement
 - **Unlimited file support**: Can handle 20,000+ files by processing them in chunks
 - **Automatic candidate creation**: Extracts data and creates candidate profiles automatically
 - **Duplicate detection**: Identifies existing candidates by email/phone to prevent duplicates
@@ -119,7 +122,7 @@ Preferred communication style: Simple, everyday language.
 - **Route**: `/candidates/bulk-import` (protected route)
 - **API Endpoint**: `POST /api/candidates/bulk-import` with multipart/form-data (supports up to 20,000 files)
 - **Navigation**: Menu item visible only to super admin users
-- **Performance optimization**: Memory-efficient processing prevents timeouts and crashes
+- **Performance optimization**: Memory-efficient processing with parallel execution prevents timeouts and crashes
 
 ## User Management (October 2025)
 - **Admin-controlled user creation** - Self-registration is disabled
