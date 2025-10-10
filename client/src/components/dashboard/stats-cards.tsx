@@ -54,8 +54,8 @@ export default function StatsCards() {
       icon: DollarSign,
       color: "bg-purple-100 dark:bg-purple-900",
       iconColor: "text-purple-600",
-      change: "+15%",
-      changeText: "מהחודש שעבר",
+      change: null,
+      changeText: null,
       isPositive: true,
       link: "/clients",
     },
@@ -104,15 +104,17 @@ export default function StatsCards() {
                   <Icon className={`h-6 w-6 ${stat.iconColor}`} />
                 </div>
               </div>
-              <div className="mt-4 flex items-center">
-                <span className={`text-sm flex items-center ${stat.isPositive ? 'text-success' : 'text-error'}`}>
-                  <ChangeIcon className="h-4 w-4 ml-1" />
-                  {stat.change}
-                </span>
-                <span className="text-gray-600 dark:text-gray-300 text-sm mr-2">
-                  {stat.changeText}
-                </span>
-              </div>
+              {stat.change && stat.changeText && (
+                <div className="mt-4 flex items-center">
+                  <span className={`text-sm flex items-center ${stat.isPositive ? 'text-success' : 'text-error'}`}>
+                    <ChangeIcon className="h-4 w-4 ml-1" />
+                    {stat.change}
+                  </span>
+                  <span className="text-gray-600 dark:text-gray-300 text-sm mr-2">
+                    {stat.changeText}
+                  </span>
+                </div>
+              )}
             </CardContent>
           </Card>
         );
