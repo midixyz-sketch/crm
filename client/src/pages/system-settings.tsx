@@ -41,30 +41,7 @@ export default function SystemSettings() {
   const [newSource, setNewSource] = useState('');
 
   // Candidate statuses
-  const [candidateStatuses, setCandidateStatuses] = useState<Array<{id: string, name: string, color: string}>>([
-    // Legacy statuses
-    { id: 'available', name: 'זמין', color: 'bg-green-100 text-green-800' },
-    { id: 'employed', name: 'מועסק', color: 'bg-blue-100 text-blue-800' },
-    { id: 'inactive', name: 'לא פעיל', color: 'bg-gray-100 text-gray-800' },
-    { id: 'blacklisted', name: 'ברשימה שחורה', color: 'bg-red-100 text-red-800' },
-    // New detailed statuses
-    { id: 'pending', name: 'ממתין', color: 'bg-purple-100 text-purple-800' },
-    { id: 'pending_initial_screening', name: 'ממתין לסינון ראשוני', color: 'bg-yellow-100 text-yellow-800' },
-    { id: 'in_initial_screening', name: 'בסינון ראשוני', color: 'bg-orange-100 text-orange-800' },
-    { id: 'passed_initial_screening', name: 'עבר סינון ראשוני', color: 'bg-green-100 text-green-800' },
-    { id: 'failed_initial_screening', name: 'נפסל בסינון ראשוני', color: 'bg-red-100 text-red-800' },
-    { id: 'sent_to_employer', name: 'נשלח למעסיק', color: 'bg-blue-100 text-blue-800' },
-    { id: 'whatsapp_sent', name: 'נשלחה הודעת ווצאפ', color: 'bg-green-100 text-green-800' },
-    { id: 'phone_contact_made', name: 'נוצר קשר טלפוני', color: 'bg-cyan-100 text-cyan-800' },
-    { id: 'waiting_employer_response', name: 'מועמד ממתין לתשובת מעסיק', color: 'bg-yellow-100 text-yellow-800' },
-    { id: 'invited_to_interview', name: 'זומן לראיון אצל מעסיק', color: 'bg-indigo-100 text-indigo-800' },
-    { id: 'attended_interview', name: 'הגיע לראיון אצל מעסיק', color: 'bg-blue-100 text-blue-800' },
-    { id: 'missed_interview', name: 'לא הגיע לראיון', color: 'bg-red-100 text-red-800' },
-    { id: 'passed_interview', name: 'עבר ראיון אצל מעסיק', color: 'bg-green-100 text-green-800' },
-    { id: 'rejected_by_employer', name: 'נפסל בראיון', color: 'bg-red-100 text-red-800' },
-    { id: 'hired', name: 'התקבל לעבודה', color: 'bg-emerald-100 text-emerald-800' },
-    { id: 'employment_ended', name: 'סיים העסקה', color: 'bg-gray-100 text-gray-800' }
-  ]);
+  const [candidateStatuses, setCandidateStatuses] = useState<Array<{id: string, key: string, name: string, color: string, isSystem?: boolean, displayOrder?: number}>>([]);
   const [newStatusName, setNewStatusName] = useState('');
   const [selectedStatusColor, setSelectedStatusColor] = useState('bg-blue-100 text-blue-800');
 
@@ -75,10 +52,10 @@ export default function SystemSettings() {
 
   const loadCandidateStatuses = async () => {
     try {
-      const response = await fetch('/api/settings/candidate-statuses');
+      const response = await fetch('/api/candidate-statuses');
       if (response.ok) {
-        const data = await response.json();
-        setCandidateStatuses(data.statuses);
+        const statuses = await response.json();
+        setCandidateStatuses(statuses);
       }
     } catch (error) {
       console.error('Error loading candidate statuses:', error);
@@ -254,66 +231,81 @@ export default function SystemSettings() {
     }
   };
 
-  const addCandidateStatus = () => {
+  const addCandidateStatus = async () => {
     if (newStatusName.trim() && !candidateStatuses.find(s => s.name === newStatusName.trim())) {
-      const newStatus = {
-        id: Date.now().toString(),
-        name: newStatusName.trim(),
-        color: selectedStatusColor
-      };
-      setCandidateStatuses([...candidateStatuses, newStatus]);
-      setNewStatusName('');
-      toast({
-        title: "סטטוס מועמד נוסף",
-        description: `הסטטוס "${newStatusName}" נוסף בהצלחה`,
-      });
+      try {
+        const response = await fetch('/api/candidate-statuses', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            key: newStatusName.trim().toLowerCase().replace(/\s+/g, '_'),
+            name: newStatusName.trim(),
+            color: selectedStatusColor,
+            isSystem: false,
+            displayOrder: candidateStatuses.length + 1
+          }),
+        });
+
+        if (response.ok) {
+          setNewStatusName('');
+          await loadCandidateStatuses();
+          toast({
+            title: "סטטוס מועמד נוסף",
+            description: `הסטטוס "${newStatusName}" נוסף בהצלחה`,
+          });
+        } else {
+          throw new Error('Failed to add status');
+        }
+      } catch (error) {
+        toast({
+          title: "שגיאה",
+          description: "לא ניתן להוסיף את הסטטוס",
+          variant: "destructive",
+        });
+      }
     }
   };
 
-  const removeCandidateStatus = (statusId: string) => {
+  const removeCandidateStatus = async (statusId: string) => {
     const status = candidateStatuses.find(s => s.id === statusId);
-    if (['available', 'employed', 'inactive', 'blacklisted'].includes(statusId)) {
+    
+    if (!status) return;
+
+    if (status.isSystem) {
       toast({
         title: "לא ניתן למחוק",
-        description: "לא ניתן למחוק סטטוס ברירת מחדל",
+        description: "לא ניתן למחוק סטטוס מערכת",
         variant: "destructive",
       });
       return;
     }
     
-    setCandidateStatuses(candidateStatuses.filter(s => s.id !== statusId));
-    toast({
-      title: "סטטוס מועמד הוסר",
-      description: `הסטטוס "${status?.name}" הוסר בהצלחה`,
-    });
-  };
-
-  const saveCandidateStatuses = async () => {
     try {
-      const response = await fetch('/api/settings/candidate-statuses', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ statuses: candidateStatuses }),
+      const response = await fetch(`/api/candidate-statuses/${statusId}`, {
+        method: 'DELETE',
       });
 
       if (response.ok) {
-        toast({
-          title: "סטטוסי מועמדים נשמרו",
-          description: "רשימת סטטוסי המועמדים עודכנה בהצלחה",
-        });
-        // Reload statuses after saving
         await loadCandidateStatuses();
+        toast({
+          title: "סטטוס מועמד הוסר",
+          description: `הסטטוס "${status.name}" הוסר בהצלחה`,
+        });
+      } else {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to delete status');
       }
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "שגיאה",
-        description: "לא ניתן לשמור את סטטוסי המועמדים",
+        description: error.message || "לא ניתן למחוק את הסטטוס",
         variant: "destructive",
       });
     }
   };
+
 
   const getStatusIcon = () => {
     switch (connectionStatus) {
@@ -667,15 +659,10 @@ export default function SystemSettings() {
                           <li>• ניתן להוסיף סטטוסים מותאמים אישית לפי צרכי הארגון</li>
                           <li>• בחר צבע מתאים לכל סטטוס לזיהוי חזותי טוב יותר</li>
                         </ul>
+                        <p className="text-sm text-muted-foreground mt-2">
+                          💡 השינויים נשמרים אוטומטית בעת הוספה או מחיקה של סטטוס
+                        </p>
                       </div>
-                      
-                      <Button 
-                        onClick={saveCandidateStatuses}
-                        className="flex items-center gap-2"
-                      >
-                        <Settings className="w-4 h-4" />
-                        שמור סטטוסי מועמדים
-                      </Button>
                     </div>
                   </CardContent>
                 </Card>
