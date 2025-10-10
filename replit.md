@@ -164,6 +164,14 @@ Preferred communication style: Simple, everyday language.
 - **Sorted by date**: Shows most recent updates first for easy activity monitoring
 - **Navigation**: Accessible via main menu for all users with appropriate permissions
 
+## Dashboard Stats - Hired This Month (October 2025)
+- **Placement tracking** renamed from "השמות החודש" to "התקבלו לעבודה החודש"
+- **Current month counting**: Tracks candidates with status='hired' updated from start of current month (not last 30 days)
+- **Data source change**: Now counts from `candidates` table instead of `jobApplications` table
+- **Monthly reset**: Count resets automatically at the start of each month
+- **Implementation**: Uses `candidates.status = 'hired' AND candidates.updatedAt >= start_of_month` query
+- **Display**: Third statistics card in dashboard showing monthly hired candidates count
+
 # External Dependencies
 
 ## Core Framework Dependencies
