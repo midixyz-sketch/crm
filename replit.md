@@ -154,6 +154,16 @@ Preferred communication style: Simple, everyday language.
 - **Success tracking**: Returns detailed results showing successful and failed deletions
 - **Cache invalidation**: Automatically refreshes candidate lists after bulk operations
 
+## Recently Updated Candidates Page (October 2025)
+- **Activity tracking page** showing candidates with recent status changes (rejected or sent to employers)
+- **Comprehensive display**: Shows job name, company name, user name, candidate name, and last update timestamp
+- **Permission-based access**: `view_recently_updated` permission (granted to admin, restricted_admin, and user roles)
+- **Route**: `/candidates/recently-updated` with navigation menu item featuring RefreshCw icon
+- **API Endpoint**: `GET /api/candidates/recently-updated` returns enriched candidate data with job and company info
+- **Status filtering**: Automatically filters for "נדחה" (rejected) and "נשלח למעסיק" (sent to employer) statuses
+- **Sorted by date**: Shows most recent updates first for easy activity monitoring
+- **Navigation**: Accessible via main menu for all users with appropriate permissions
+
 # External Dependencies
 
 ## Core Framework Dependencies
