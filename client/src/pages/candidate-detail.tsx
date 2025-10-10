@@ -379,6 +379,41 @@ export default function CandidateDetail() {
     setIsSendingReferral(true);
 
     try {
+      // Check for recent sends to employers (within 30 days)
+      const warningsToShow: string[] = [];
+      
+      for (const jobId of selectedJobIds) {
+        const selectedJob = jobs.find((job: any) => job.id === jobId);
+        if (!selectedJob || !selectedJob.client?.id) continue;
+
+        try {
+          const checkResult = await apiRequest('GET', `/api/check-recent-employer-sends/${selectedJob.client.id}`);
+          
+          if (checkResult.hasRecentSends && checkResult.recentSends.length > 0) {
+            const recentNames = checkResult.recentSends
+              .map((send: any) => `${send.candidateFirstName} ${send.candidateLastName}`)
+              .join(', ');
+            
+            warningsToShow.push(
+              `⚠️ למעסיק "${selectedJob.client.companyName}" נשלחו מועמדים ב-30 הימים האחרונים:\n${recentNames}`
+            );
+          }
+        } catch (error) {
+          console.error('Error checking recent sends:', error);
+        }
+      }
+
+      // Show warning if there are recent sends
+      if (warningsToShow.length > 0) {
+        const confirmMessage = warningsToShow.join('\n\n') + '\n\nהאם להמשיך בשליחה?';
+        const confirmed = window.confirm(confirmMessage);
+        
+        if (!confirmed) {
+          setIsSendingReferral(false);
+          return;
+        }
+      }
+
       let emailsSent = 0;
       let emailsFailed = 0;
 
