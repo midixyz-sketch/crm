@@ -1014,6 +1014,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         dateFrom,
         dateTo
       );
+      console.log(`✅ Sending response: candidates.length=${result.candidates.length}, total=${result.total}`);
       res.json(result);
     } catch (error) {
       console.error("Error fetching enriched candidates:", error);
