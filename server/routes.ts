@@ -1015,7 +1015,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         dateTo
       );
       console.log(`✅ Sending response: candidates.length=${result.candidates.length}, total=${result.total}`);
-      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      
+      // Disable caching and ETag to ensure fresh data
+      res.set({
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+        'ETag': false
+      });
+      
       res.json(result);
     } catch (error) {
       console.error("Error fetching enriched candidates:", error);
