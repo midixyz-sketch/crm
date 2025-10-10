@@ -5,11 +5,17 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 import { storage } from "./storage";
+import { db } from "./db";
+import { eq, and, desc, sql, isNotNull } from "drizzle-orm";
 import { isAuthenticated } from "./localAuth";
 import { requireRole, requirePermission, injectUserPermissions } from "./authMiddleware";
 import { 
   insertCandidateSchema, 
-  insertClientSchema, 
+  insertClientSchema,
+  candidates,
+  emails,
+  jobs,
+  clients, 
   insertJobSchema, 
   insertJobApplicationSchema, 
   insertTaskSchema, 
