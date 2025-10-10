@@ -924,6 +924,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/dashboard/stats', isAuthenticated, async (req, res) => {
     try {
       const stats = await storage.getDashboardStats();
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
       res.json(stats);
     } catch (error) {
       console.error("Error fetching dashboard stats:", error);
