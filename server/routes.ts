@@ -2902,6 +2902,46 @@ ${extractedData.achievements ? `הישגים ופעילות נוספת: ${cleanS
     }
   });
 
+  // Check recent candidate sends to employer (within 30 days)
+  app.get('/api/check-recent-employer-sends/:clientId', isAuthenticated, async (req: any, res) => {
+    try {
+      const { clientId } = req.params;
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+      // Get all emails sent to this client in the last 30 days
+      const recentSends = await db
+        .select({
+          candidateFirstName: candidates.firstName,
+          candidateLastName: candidates.lastName,
+          candidateId: candidates.id,
+          sentAt: emails.sentAt,
+          jobTitle: jobs.title,
+        })
+        .from(emails)
+        .innerJoin(jobApplications, eq(emails.relatedEntityId, jobApplications.id))
+        .innerJoin(candidates, eq(jobApplications.candidateId, candidates.id))
+        .leftJoin(jobs, eq(jobApplications.jobId, jobs.id))
+        .where(
+          and(
+            eq(jobs.clientId, clientId),
+            sql`${emails.sentAt} >= ${thirtyDaysAgo}`,
+            eq(emails.status, 'sent')
+          )
+        )
+        .orderBy(desc(emails.sentAt))
+        .limit(5);
+
+      res.json({ 
+        hasRecentSends: recentSends.length > 0,
+        recentSends: recentSends 
+      });
+    } catch (error) {
+      console.error("Error checking recent employer sends:", error);
+      res.status(500).json({ message: "Failed to check recent sends" });
+    }
+  });
+
   // Send candidate profile to employer
   app.post('/api/send-candidate-profile', isAuthenticated, async (req: any, res) => {
     try {
