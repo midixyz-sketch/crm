@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
+import { usePermissions } from "@/hooks/usePermissions";
 import { useToast } from "@/hooks/use-toast";
 import { PermissionWrapper } from "@/components/permissions/permission-wrapper";
 import { PermissionButton, AddButton, EditButton, DeleteButton, ExportButton } from "@/components/permissions/button-permission";
@@ -26,6 +27,7 @@ export default function Candidates() {
   const { toast } = useToast();
   const { filterCandidates, canViewClientNames } = useDataFiltering();
   const { isAuthenticated, isLoading } = useAuth();
+  const { isSuperAdmin } = usePermissions();
 
   // Status color and text helpers
   const getStatusColor = (status: string) => {
@@ -382,17 +384,15 @@ export default function Candidates() {
                 <div className="text-sm text-gray-600 dark:text-gray-400">
                   {candidatesData?.total ? `${candidatesData.total} מועמדים` : ""}
                 </div>
-                {selectedCandidates.length > 0 && (
-                  <PermissionWrapper permission="delete_candidates">
-                    <DeleteButton
-                      onClick={handleBulkDelete}
-                      className="bg-red-600 hover:bg-red-700 text-white"
-                      data-testid="button-bulk-delete"
-                    >
-                      <Trash2 className="h-4 w-4 ml-2" />
-                      מחק {selectedCandidates.length} נבחרים
-                    </DeleteButton>
-                  </PermissionWrapper>
+                {selectedCandidates.length > 0 && isSuperAdmin && (
+                  <DeleteButton
+                    onClick={handleBulkDelete}
+                    className="bg-red-600 hover:bg-red-700 text-white"
+                    data-testid="button-bulk-delete"
+                  >
+                    <Trash2 className="h-4 w-4 ml-2" />
+                    מחק {selectedCandidates.length} נבחרים
+                  </DeleteButton>
                 )}
               </div>
               <PermissionWrapper permission="create_candidates">
@@ -449,13 +449,15 @@ export default function Candidates() {
                     <Table>
                       <TableHeader>
                         <TableRow className="bg-gray-50 dark:bg-gray-900 text-sm">
-                          <TableHead className="w-12 bg-gray-50 dark:bg-gray-900">
-                            <Checkbox
-                              checked={selectedCandidates.length === candidatesData?.candidates.length && candidatesData?.candidates.length > 0}
-                              onCheckedChange={handleSelectAll}
-                              data-testid="checkbox-select-all"
-                            />
-                          </TableHead>
+                          {isSuperAdmin && (
+                            <TableHead className="w-12 bg-gray-50 dark:bg-gray-900">
+                              <Checkbox
+                                checked={selectedCandidates.length === candidatesData?.candidates.length && candidatesData?.candidates.length > 0}
+                                onCheckedChange={handleSelectAll}
+                                data-testid="checkbox-select-all"
+                              />
+                            </TableHead>
+                          )}
                           <TableHead className="text-right font-medium text-gray-700 dark:text-gray-300 sticky right-0 bg-gray-50 dark:bg-gray-900 z-10">שם המועמד</TableHead>
                           <TableHead className="text-right font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">עיר</TableHead>
                           <TableHead className="text-right font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">עדכון</TableHead>
@@ -478,13 +480,15 @@ export default function Candidates() {
                           data-testid={`row-candidate-${candidate.id}`}
                           onClick={() => window.location.href = `/candidates/${candidate.id}`}
                         >
-                          <TableCell className="w-12" onClick={(e) => e.stopPropagation()}>
-                            <Checkbox
-                              checked={selectedCandidates.includes(candidate.id)}
-                              onCheckedChange={() => handleSelectCandidate(candidate.id)}
-                              data-testid={`checkbox-candidate-${candidate.id}`}
-                            />
-                          </TableCell>
+                          {isSuperAdmin && (
+                            <TableCell className="w-12" onClick={(e) => e.stopPropagation()}>
+                              <Checkbox
+                                checked={selectedCandidates.includes(candidate.id)}
+                                onCheckedChange={() => handleSelectCandidate(candidate.id)}
+                                data-testid={`checkbox-candidate-${candidate.id}`}
+                              />
+                            </TableCell>
+                          )}
                           <TableCell className="font-medium sticky right-0 bg-white dark:bg-gray-800 text-sm">
                             <p className="text-secondary dark:text-white" data-testid={`text-candidate-name-${candidate.id}`}>
                               {candidate.firstName} {candidate.lastName}

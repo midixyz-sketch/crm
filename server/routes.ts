@@ -1383,12 +1383,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Bulk delete candidates
+  // Bulk delete candidates - Super Admin only
   app.post('/api/candidates/bulk-delete', isAuthenticated, injectUserPermissions, async (req: any, res) => {
     try {
-      // Check if user has permission to delete candidates
-      if (!req.userPermissions?.can('delete_candidates')) {
-        return res.status(403).json({ message: "אין לך הרשאה למחוק מועמדים" });
+      // Check if user is super admin
+      if (!req.userPermissions?.isSuperAdmin()) {
+        return res.status(403).json({ message: "רק סופר אדמין יכול לבצע פעולות מרובות" });
       }
 
       const { candidateIds } = req.body;
