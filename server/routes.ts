@@ -2917,6 +2917,10 @@ ${extractedData.achievements ? `הישגים ופעילות נוספת: ${cleanS
         return res.status(404).json({ message: "Job not found" });
       }
 
+      // Get sender's name
+      const sender = await storage.getUser(req.user.id);
+      const senderName = sender ? `${sender.firstName || ''} ${sender.lastName || ''}`.trim() : 'צוות H-Group';
+
       // Create email content with reviewer feedback
       const emailContent = `
         <div dir="rtl" style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -2943,7 +2947,7 @@ ${extractedData.achievements ? `הישגים ופעילות נוספת: ${cleanS
 
           <p style="font-size: 16px; line-height: 1.6; color: #374151; margin: 20px 0;">
             בברכה,<br>
-            צוות H-Group
+            ${senderName}
           </p>
 
           <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; text-align: center;">
