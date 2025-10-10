@@ -20,7 +20,7 @@ export default function RecentlyUpdated() {
   
   // Filters
   const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [jobFilter, setJobFilter] = useState<string>("");
+  const [jobFilter, setJobFilter] = useState<string>("all");
   const [dateFrom, setDateFrom] = useState<string>("");
   const [dateTo, setDateTo] = useState<string>("");
 
@@ -54,7 +54,7 @@ export default function RecentlyUpdated() {
       limit: PAGE_SIZE,
       offset,
       status: statusFilter !== "all" ? statusFilter : undefined,
-      jobs: jobFilter || undefined,
+      jobs: jobFilter !== "all" ? jobFilter : undefined,
       dateFrom: dateFrom || undefined,
       dateTo: dateTo || undefined
     }],
@@ -81,7 +81,7 @@ export default function RecentlyUpdated() {
 
   const handleClearFilters = () => {
     setStatusFilter("all");
-    setJobFilter("");
+    setJobFilter("all");
     setDateFrom("");
     setDateTo("");
     setPage(0);
@@ -123,7 +123,7 @@ export default function RecentlyUpdated() {
                 <SelectValue placeholder="כל המשרות" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">כל המשרות</SelectItem>
+                <SelectItem value="all">כל המשרות</SelectItem>
                 {jobsData?.jobs?.map((job) => (
                   <SelectItem key={job.id} value={job.id}>
                     {job.title}
