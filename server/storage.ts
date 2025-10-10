@@ -64,6 +64,7 @@ import mammoth from 'mammoth';
 import { execSync } from 'child_process';
 import Tesseract from 'tesseract.js';
 import { pdf } from 'pdf-to-img';
+import textract from 'textract';
 
 // CV Search types
 export interface SearchResult {
@@ -207,6 +208,29 @@ export async function extractTextFromCVFile(cvPath: string): Promise<string> {
         console.error('שגיאה בחילוץ PDF:', error);
         return '';
       }
+    }
+    
+    // If nothing worked, try textract as universal fallback
+    console.log('🔧 מנסה חילוץ אוניברסלי עם textract...');
+    try {
+      const extractedText = await new Promise<string>((resolve, reject) => {
+        textract.fromFileWithPath(fullPath, (error: any, text: string) => {
+          if (error) {
+            reject(error);
+          } else {
+            resolve(text || '');
+          }
+        });
+      });
+      
+      const cleanedText = extractedText.replace(/\s+/g, ' ').trim();
+      if (cleanedText.length > 10) {
+        console.log(`✅ Textract הצליח: ${cleanedText.length} תווים`);
+        console.log(`📄 דוגמה: "${cleanedText.substring(0, 100)}..."`);
+        return cleanedText;
+      }
+    } catch (textractError) {
+      console.error('שגיאה ב-textract:', textractError);
     }
     
     return '';
