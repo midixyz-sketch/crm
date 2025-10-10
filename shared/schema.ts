@@ -124,6 +124,18 @@ export const systemSettings = pgTable("system_settings", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Candidate statuses table
+export const candidateStatuses = pgTable("candidate_statuses", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  key: varchar("key").notNull().unique(), // כמו 'available', 'employed' - מזהה ייחודי
+  name: varchar("name").notNull(), // השם בעברית - 'זמין', 'מועסק'
+  color: varchar("color").notNull().default('bg-gray-100 text-gray-800'), // צבע התווית
+  isSystem: boolean("is_system").default(false), // האם זה סטטוס מערכת שלא ניתן למחוק
+  displayOrder: integer("display_order").default(0), // סדר תצוגה
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Candidates table
 export const candidates = pgTable("candidates", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -584,12 +596,20 @@ export const insertSystemSettingSchema = createInsertSchema(systemSettings).omit
   updatedAt: true,
 });
 
+export const insertCandidateStatusSchema = createInsertSchema(candidateStatuses).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 export type InsertEmail = z.infer<typeof insertEmailSchema>;
 export type Email = typeof emails.$inferSelect;
 export type InsertMessageTemplate = z.infer<typeof insertMessageTemplateSchema>;
 export type MessageTemplate = typeof messageTemplates.$inferSelect;
 export type InsertSystemSetting = z.infer<typeof insertSystemSettingSchema>;
 export type SystemSetting = typeof systemSettings.$inferSelect;
+export type InsertCandidateStatus = z.infer<typeof insertCandidateStatusSchema>;
+export type CandidateStatus = typeof candidateStatuses.$inferSelect;
 export type InsertCandidateEvent = z.infer<typeof insertCandidateEventSchema>;
 export type CandidateEvent = typeof candidateEvents.$inferSelect;
 export type InsertReminder = z.infer<typeof insertReminderSchema>;
