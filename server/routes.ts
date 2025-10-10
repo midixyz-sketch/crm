@@ -1269,91 +1269,96 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const batchNumber = Math.floor(batchStart / BATCH_SIZE) + 1;
         const totalBatches = Math.ceil(files.length / BATCH_SIZE);
         
-        console.log(`📦 מעבד batch ${batchNumber}/${totalBatches} (קבצים ${batchStart + 1}-${batchEnd} מתוך ${files.length})`);
+        console.log(`📦 מעבד batch ${batchNumber}/${totalBatches} (קבצים ${batchStart + 1}-${batchEnd} מתוך ${files.length}) - במקביל! ⚡`);
 
-        for (const file of batch) {
-          const result: any = {
-            filename: file.originalname,
-            status: 'pending'
-          };
-
-          try {
-            // Extract text from CV
-            const cvText = await extractTextFromCVFile(file.path);
-            
-            if (!cvText || cvText.length < 10) {
-              result.status = 'failed';
-              result.error = 'לא הצלחנו לחלץ טקסט מהקובץ';
-              allResults.push(result);
-              continue;
-            }
-
-            // Extract candidate data
-            const extractedData = extractCandidateDataFromText(cvText, file.originalname);
-            
-            // Prepare candidate data
-            const candidateData: any = {
-              firstName: extractedData.name?.split(' ')[0] || 'לא ידוע',
-              lastName: extractedData.name?.split(' ').slice(1).join(' ') || '',
-              email: extractedData.email || undefined,
-              mobile: extractedData.mobile || undefined,
-              profession: extractedData.profession || undefined,
-              cvPath: file.path,
-              cvContent: cvText,
-              recruitmentSource: `ייבוא מרובה - ${req.user?.email?.split('@')[0] || 'מנהל'}`
+        // Process all files in batch in parallel with Promise.all
+        const batchResults = await Promise.all(
+          batch.map(async (file) => {
+            const result: any = {
+              filename: file.originalname,
+              status: 'pending'
             };
 
-            // Check for duplicates
-            const existingCandidate = await storage.findCandidateByContactInfo(
-              candidateData.mobile || '',
-              candidateData.email || '',
-              ''
-            );
-
-            if (existingCandidate) {
-              result.status = 'duplicate';
-              result.error = 'מועמד עם פרטי קשר זהים כבר קיים במערכת';
-              result.existingCandidateId = existingCandidate.id;
-              result.existingCandidateName = `${existingCandidate.firstName} ${existingCandidate.lastName}`;
-              allResults.push(result);
-              continue;
-            }
-
-            // Create candidate
-            const candidate = await storage.createCandidate(candidateData);
-            
-            // Add event
-            await storage.addCandidateEvent({
-              candidateId: candidate.id,
-              eventType: 'created',
-              description: `מועמד נוצר באמצעות ייבוא מרובה`,
-              metadata: {
-                source: 'bulk_import',
-                filename: file.originalname,
-                createdBy: req.user.id,
-                extractedData: extractedData,
-                timestamp: new Date().toISOString()
+            try {
+              // Extract text from CV
+              const cvText = await extractTextFromCVFile(file.path);
+              
+              if (!cvText || cvText.length < 10) {
+                result.status = 'failed';
+                result.error = 'לא הצלחנו לחלץ טקסט מהקובץ';
+                return result;
               }
-            });
 
-            result.status = 'success';
-            result.candidateId = candidate.id;
-            result.candidateName = `${candidate.firstName} ${candidate.lastName}`;
-            result.extractedData = {
-              name: extractedData.name,
-              email: extractedData.email,
-              mobile: extractedData.mobile,
-              profession: extractedData.profession
-            };
-            
-          } catch (error) {
-            console.error(`❌ שגיאה בעיבוד קובץ ${file.originalname}:`, error);
-            result.status = 'failed';
-            result.error = error instanceof Error ? error.message : 'שגיאה לא ידועה';
-          }
+              // Extract candidate data
+              const extractedData = extractCandidateDataFromText(cvText, file.originalname);
+              
+              // Prepare candidate data
+              const candidateData: any = {
+                firstName: extractedData.name?.split(' ')[0] || 'לא ידוע',
+                lastName: extractedData.name?.split(' ').slice(1).join(' ') || '',
+                email: extractedData.email || undefined,
+                mobile: extractedData.mobile || undefined,
+                profession: extractedData.profession || undefined,
+                cvPath: file.path,
+                cvContent: cvText,
+                recruitmentSource: `ייבוא מרובה - ${req.user?.email?.split('@')[0] || 'מנהל'}`
+              };
 
-          allResults.push(result);
-        }
+              // Check for duplicates
+              const existingCandidate = await storage.findCandidateByContactInfo(
+                candidateData.mobile || '',
+                candidateData.email || '',
+                ''
+              );
+
+              if (existingCandidate) {
+                result.status = 'duplicate';
+                result.error = 'מועמד עם פרטי קשר זהים כבר קיים במערכת';
+                result.existingCandidateId = existingCandidate.id;
+                result.existingCandidateName = `${existingCandidate.firstName} ${existingCandidate.lastName}`;
+                return result;
+              }
+
+              // Create candidate
+              const candidate = await storage.createCandidate(candidateData);
+              
+              // Add event
+              await storage.addCandidateEvent({
+                candidateId: candidate.id,
+                eventType: 'created',
+                description: `מועמד נוצר באמצעות ייבוא מרובה`,
+                metadata: {
+                  source: 'bulk_import',
+                  filename: file.originalname,
+                  createdBy: req.user.id,
+                  extractedData: extractedData,
+                  timestamp: new Date().toISOString()
+                }
+              });
+
+              result.status = 'success';
+              result.candidateId = candidate.id;
+              result.candidateName = `${candidate.firstName} ${candidate.lastName}`;
+              result.extractedData = {
+                name: extractedData.name,
+                email: extractedData.email,
+                mobile: extractedData.mobile,
+                profession: extractedData.profession
+              };
+              
+              return result;
+              
+            } catch (error) {
+              console.error(`❌ שגיאה בעיבוד קובץ ${file.originalname}:`, error);
+              result.status = 'failed';
+              result.error = error instanceof Error ? error.message : 'שגיאה לא ידועה';
+              return result;
+            }
+          })
+        );
+
+        // Add batch results to all results
+        allResults.push(...batchResults);
 
         console.log(`✅ סיים batch ${batchNumber}/${totalBatches}`);
       }

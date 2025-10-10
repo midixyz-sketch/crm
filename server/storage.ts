@@ -64,6 +64,7 @@ import mammoth from 'mammoth';
 import { execSync } from 'child_process';
 import Tesseract from 'tesseract.js';
 import { pdf } from 'pdf-to-img';
+// @ts-ignore - textract doesn't have types
 import textract from 'textract';
 
 // CV Search types
