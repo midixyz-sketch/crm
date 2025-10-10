@@ -742,7 +742,7 @@ export class DatabaseStorage implements IStorage {
 
     return {
       candidates: filteredCandidates,
-      total: filteredCandidates.length
+      total: total  // Return the original total from database, not filtered length
     };
   }
 
