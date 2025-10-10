@@ -10,6 +10,7 @@ export type PagePermission =
   | 'view_candidate_details'
   | 'edit_candidates'
   | 'delete_candidates'
+  | 'view_recently_updated'
   | 'view_cv_search'
   | 'view_calendar'
   | 'view_clients'
@@ -144,6 +145,12 @@ export function useDetailedPermissions() {
         name: "מאגר מועמדים", 
         href: "/candidates", 
         icon: "Users" 
+      },
+      { 
+        permission: 'view_recently_updated' as PagePermission, 
+        name: "עודכנו לאחרונה", 
+        href: "/candidates/recently-updated", 
+        icon: "RefreshCw" 
       },
       { 
         permission: 'view_cv_search' as PagePermission, 

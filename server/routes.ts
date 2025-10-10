@@ -990,6 +990,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Candidate routes
 
+  // Get recently updated candidates (rejected or sent to employer)
+  app.get('/api/candidates/recently-updated', isAuthenticated, async (req, res) => {
+    try {
+      const limit = parseInt(req.query.limit as string) || 50;
+      const offset = parseInt(req.query.offset as string) || 0;
+      
+      // Filter only rejected or sent_to_employer statuses
+      const statuses = 'rejected,sent_to_employer';
+      
+      const result = await storage.getCandidatesEnriched(
+        limit, 
+        offset, 
+        undefined, // search
+        undefined, // dateFilter
+        statuses,
+        undefined, // jobs
+        undefined, // users
+        undefined, // dateFrom
+        undefined  // dateTo
+      );
+      
+      res.set({
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+        'ETag': false
+      });
+      
+      res.json(result);
+    } catch (error) {
+      console.error("Error fetching recently updated candidates:", error);
+      res.status(500).json({ message: "Failed to fetch recently updated candidates" });
+    }
+  });
+
   // Get candidates with enriched data for table display (must come before /:id route)
   app.get('/api/candidates/enriched', isAuthenticated, async (req, res) => {
     try {
