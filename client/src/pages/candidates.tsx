@@ -19,6 +19,7 @@ import SearchFilter from "@/components/search-filter";
 import { EmailDialog } from "@/components/email-dialog";
 import { MultiSelect } from "@/components/ui/multi-select";
 import { Plus, Search, Phone, Mail, FileText, Edit, Trash2, Send, Users, Calendar } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import type { Candidate, EnrichedCandidate } from "@shared/schema";
 
 export default function Candidates() {
@@ -206,6 +207,40 @@ export default function Candidates() {
     },
   });
 
+  const bulkDeleteCandidates = useMutation({
+    mutationFn: async (ids: string[]) => {
+      await apiRequest("POST", "/api/candidates/bulk-delete", { candidateIds: ids });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/candidates"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/candidates/enriched"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
+      setSelectedCandidates([]);
+      toast({
+        title: "הצלחה",
+        description: "המועמדים נמחקו בהצלחה",
+      });
+    },
+    onError: (error) => {
+      if (isUnauthorizedError(error)) {
+        toast({
+          title: "לא מורשה",
+          description: "אתה מנותק. מתחבר שוב...",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          window.location.href = "/login";
+        }, 500);
+        return;
+      }
+      toast({
+        title: "שגיאה",
+        description: "שגיאה במחיקת המועמדים",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleAddCandidate = () => {
     setSelectedCandidate(null);
     setIsFormOpen(true);
@@ -219,6 +254,28 @@ export default function Candidates() {
   const handleDeleteCandidate = (id: string) => {
     setCandidateToDelete(id);
     setDeleteDialogOpen(true);
+  };
+
+  const handleSelectAll = () => {
+    if (selectedCandidates.length === candidatesData?.candidates.length) {
+      setSelectedCandidates([]);
+    } else {
+      setSelectedCandidates(candidatesData?.candidates.map(c => c.id) || []);
+    }
+  };
+
+  const handleSelectCandidate = (id: string) => {
+    setSelectedCandidates(prev => 
+      prev.includes(id) ? prev.filter(cId => cId !== id) : [...prev, id]
+    );
+  };
+
+  const handleBulkDelete = () => {
+    if (selectedCandidates.length === 0) return;
+    
+    if (confirm(`האם אתה בטוח שברצונך למחוק ${selectedCandidates.length} מועמדים?`)) {
+      bulkDeleteCandidates.mutate(selectedCandidates);
+    }
   };
 
   const confirmDeleteCandidate = () => {
@@ -321,8 +378,22 @@ export default function Candidates() {
             </div>
             
             <div className="flex justify-between items-center">
-              <div className="text-sm text-gray-600 dark:text-gray-400">
-                {candidatesData?.total ? `${candidatesData.total} מועמדים` : ""}
+              <div className="flex items-center gap-3">
+                <div className="text-sm text-gray-600 dark:text-gray-400">
+                  {candidatesData?.total ? `${candidatesData.total} מועמדים` : ""}
+                </div>
+                {selectedCandidates.length > 0 && (
+                  <PermissionWrapper permission="delete_candidates">
+                    <DeleteButton
+                      onClick={handleBulkDelete}
+                      className="bg-red-600 hover:bg-red-700 text-white"
+                      data-testid="button-bulk-delete"
+                    >
+                      <Trash2 className="h-4 w-4 ml-2" />
+                      מחק {selectedCandidates.length} נבחרים
+                    </DeleteButton>
+                  </PermissionWrapper>
+                )}
               </div>
               <PermissionWrapper permission="create_candidates">
               <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
@@ -378,6 +449,13 @@ export default function Candidates() {
                     <Table>
                       <TableHeader>
                         <TableRow className="bg-gray-50 dark:bg-gray-900 text-sm">
+                          <TableHead className="w-12 bg-gray-50 dark:bg-gray-900">
+                            <Checkbox
+                              checked={selectedCandidates.length === candidatesData?.candidates.length && candidatesData?.candidates.length > 0}
+                              onCheckedChange={handleSelectAll}
+                              data-testid="checkbox-select-all"
+                            />
+                          </TableHead>
                           <TableHead className="text-right font-medium text-gray-700 dark:text-gray-300 sticky right-0 bg-gray-50 dark:bg-gray-900 z-10">שם המועמד</TableHead>
                           <TableHead className="text-right font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">עיר</TableHead>
                           <TableHead className="text-right font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">עדכון</TableHead>
@@ -400,6 +478,13 @@ export default function Candidates() {
                           data-testid={`row-candidate-${candidate.id}`}
                           onClick={() => window.location.href = `/candidates/${candidate.id}`}
                         >
+                          <TableCell className="w-12" onClick={(e) => e.stopPropagation()}>
+                            <Checkbox
+                              checked={selectedCandidates.includes(candidate.id)}
+                              onCheckedChange={() => handleSelectCandidate(candidate.id)}
+                              data-testid={`checkbox-candidate-${candidate.id}`}
+                            />
+                          </TableCell>
                           <TableCell className="font-medium sticky right-0 bg-white dark:bg-gray-800 text-sm">
                             <p className="text-secondary dark:text-white" data-testid={`text-candidate-name-${candidate.id}`}>
                               {candidate.firstName} {candidate.lastName}

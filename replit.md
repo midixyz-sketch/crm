@@ -142,6 +142,17 @@ Preferred communication style: Simple, everyday language.
 - **Warning message format**: "⚠️ למעסיק [שם החברה] נשלחו מועמדים ב-30 הימים האחרונים: [רשימת שמות]"
 - **Integration**: Automatically triggers before candidate send in referral workflow
 
+## Bulk Candidate Operations (October 2025)
+- **Multi-select functionality**: Checkboxes for selecting multiple candidates in candidates page
+- **Select all**: Checkbox in table header to select/deselect all visible candidates
+- **Bulk delete**: Delete multiple candidates simultaneously with confirmation dialog
+- **Permission-based**: Only users with `delete_candidates` permission can perform bulk deletion
+- **Parallel processing**: Deletes all selected candidates simultaneously using `Promise.all`
+- **UI feedback**: Shows count of selected candidates and delete button appears when candidates are selected
+- **API Endpoint**: `POST /api/candidates/bulk-delete` with `candidateIds` array in request body
+- **Success tracking**: Returns detailed results showing successful and failed deletions
+- **Cache invalidation**: Automatically refreshes candidate lists after bulk operations
+
 # External Dependencies
 
 ## Core Framework Dependencies
