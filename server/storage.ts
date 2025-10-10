@@ -1617,7 +1617,9 @@ export class DatabaseStorage implements IStorage {
     placements: number;
     revenue: number;
   }> {
-    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    // Get start of current month
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     
     const [activeJobsResult] = await db
       .select({ count: count() })
@@ -1629,12 +1631,13 @@ export class DatabaseStorage implements IStorage {
       .select({ count: count() })
       .from(candidates);
 
+    // Count candidates with status 'hired' (התקבל לעבודה) updated this month
     const [placementsResult] = await db
       .select({ count: count() })
-      .from(jobApplications)
+      .from(candidates)
       .where(and(
-        eq(jobApplications.status, 'accepted'),
-        sql`${jobApplications.appliedAt} >= ${thirtyDaysAgo}`
+        eq(candidates.status, 'hired'),
+        sql`${candidates.updatedAt} >= ${startOfMonth}`
       ));
 
     // Mock revenue calculation - in real app this would come from a payments table
