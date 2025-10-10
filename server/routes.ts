@@ -2914,19 +2914,19 @@ ${extractedData.achievements ? `הישגים ופעילות נוספת: ${cleanS
         .select({
           candidateFirstName: candidates.firstName,
           candidateLastName: candidates.lastName,
-          candidateId: candidates.id,
+          candidateId: emails.candidateId,
           sentAt: emails.sentAt,
           jobTitle: jobs.title,
         })
         .from(emails)
-        .innerJoin(jobApplications, eq(emails.relatedEntityId, jobApplications.id))
-        .innerJoin(candidates, eq(jobApplications.candidateId, candidates.id))
-        .leftJoin(jobs, eq(jobApplications.jobId, jobs.id))
+        .leftJoin(candidates, eq(emails.candidateId, candidates.id))
+        .leftJoin(jobs, eq(emails.jobId, jobs.id))
         .where(
           and(
-            eq(jobs.clientId, clientId),
+            eq(emails.clientId, clientId),
             sql`${emails.sentAt} >= ${thirtyDaysAgo}`,
-            eq(emails.status, 'sent')
+            eq(emails.status, 'sent'),
+            isNotNull(emails.candidateId)
           )
         )
         .orderBy(desc(emails.sentAt))
