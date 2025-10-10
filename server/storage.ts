@@ -56,7 +56,7 @@ import {
   type InsertRolePermission,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, desc, asc, like, ilike, sql, count, or, isNotNull } from "drizzle-orm";
+import { eq, and, desc, asc, like, ilike, sql, count, or, isNotNull, inArray } from "drizzle-orm";
 import bcrypt from "bcrypt";
 import * as fs from 'fs';
 import * as path from 'path';
@@ -492,114 +492,159 @@ export class DatabaseStorage implements IStorage {
     // Get basic candidates data
     const { candidates: basicCandidates, total } = await this.getCandidates(limit, offset, search, dateFilter, statuses, dateFrom, dateTo);
     
-    // Enrich each candidate with additional computed data
-    const enrichedCandidates = await Promise.all(
-      basicCandidates.map(async (candidate) => {
-        // Get latest job application
-        const latestJobApp = await db
-          .select({
-            jobTitle: jobs.title,
-            jobId: jobApplications.jobId,
-            appliedAt: jobApplications.appliedAt,
-            status: jobApplications.status
-          })
-          .from(jobApplications)
-          .leftJoin(jobs, eq(jobApplications.jobId, jobs.id))
-          .where(eq(jobApplications.candidateId, candidate.id))
-          .orderBy(desc(jobApplications.appliedAt))
-          .limit(1);
+    if (basicCandidates.length === 0) {
+      return { candidates: [], total: 0 };
+    }
 
-        // Get latest status change event
-        const latestStatusEvent = await db
-          .select({
-            eventType: candidateEvents.eventType,
-            description: candidateEvents.description,
-            createdAt: candidateEvents.createdAt
-          })
-          .from(candidateEvents)
-          .where(
-            and(
-              eq(candidateEvents.candidateId, candidate.id),
-              eq(candidateEvents.eventType, 'status_change')
-            )
-          )
-          .orderBy(desc(candidateEvents.createdAt))
-          .limit(1);
+    const candidateIds = basicCandidates.map(c => c.id);
 
-        // Get latest referral event
-        const latestReferralEvent = await db
-          .select({
-            description: candidateEvents.description,
-            createdAt: candidateEvents.createdAt
-          })
-          .from(candidateEvents)
-          .where(
-            and(
-              eq(candidateEvents.candidateId, candidate.id),
-              or(
-                eq(candidateEvents.eventType, 'email_sent'),
-                eq(candidateEvents.eventType, 'cv_sent'),
-                eq(candidateEvents.eventType, 'job_application')
-              )
-            )
-          )
-          .orderBy(desc(candidateEvents.createdAt))
-          .limit(1);
-
-        // Get latest referral client name (from job applications sent to client)
-        const latestReferralClient = await db
-          .select({
-            companyName: clients.companyName,
-            clientId: clients.id,
-            sentAt: jobApplications.appliedAt
-          })
-          .from(jobApplications)
-          .leftJoin(jobs, eq(jobApplications.jobId, jobs.id))
-          .leftJoin(clients, eq(jobs.clientId, clients.id))
-          .where(
-            and(
-              eq(jobApplications.candidateId, candidate.id),
-              eq(jobApplications.sentToClient, true)
-            )
-          )
-          .orderBy(desc(jobApplications.appliedAt))
-          .limit(1);
-
-        // Get creator user info from candidate events
-        const creatorEvent = await db
-          .select({
-            metadata: candidateEvents.metadata
-          })
-          .from(candidateEvents)
-          .where(
-            and(
-              eq(candidateEvents.candidateId, candidate.id),
-              eq(candidateEvents.eventType, 'created')
-            )
-          )
-          .orderBy(desc(candidateEvents.createdAt))
-          .limit(1);
-
-        // Extract createdBy from metadata (it's stored as metadata.createdBy)
-        const metadata = creatorEvent[0]?.metadata as any;
-        const createdBy = metadata?.createdBy || null;
-        
-        return {
-          ...candidate,
-          lastJobTitle: latestJobApp[0]?.jobTitle || null,
-          lastJobId: latestJobApp[0]?.jobId || null,
-          lastAppliedAt: latestJobApp[0]?.appliedAt || null,
-          recruitmentSource: candidate.recruitmentSource || null,
-          lastReferralDate: latestReferralEvent[0]?.createdAt || null,
-          lastReferralClient: latestReferralClient[0]?.companyName || null,
-          lastReferralClientId: latestReferralClient[0]?.clientId || null,
-          lastStatusChange: latestStatusEvent[0]?.createdAt || null,
-          lastStatusDescription: latestStatusEvent[0]?.description || null,
-          creatorUserId: createdBy,
-          creatorUsername: null
-        };
+    // Fetch all job applications for these candidates in ONE query
+    const allJobApps = await db
+      .select({
+        candidateId: jobApplications.candidateId,
+        jobTitle: jobs.title,
+        jobId: jobApplications.jobId,
+        appliedAt: jobApplications.appliedAt,
+        status: jobApplications.status
       })
-    );
+      .from(jobApplications)
+      .leftJoin(jobs, eq(jobApplications.jobId, jobs.id))
+      .where(inArray(jobApplications.candidateId, candidateIds))
+      .orderBy(desc(jobApplications.appliedAt));
+
+    // Fetch all status events in ONE query
+    const allStatusEvents = await db
+      .select({
+        candidateId: candidateEvents.candidateId,
+        eventType: candidateEvents.eventType,
+        description: candidateEvents.description,
+        createdAt: candidateEvents.createdAt
+      })
+      .from(candidateEvents)
+      .where(
+        and(
+          inArray(candidateEvents.candidateId, candidateIds),
+          eq(candidateEvents.eventType, 'status_change')
+        )
+      )
+      .orderBy(desc(candidateEvents.createdAt));
+
+    // Fetch all referral events in ONE query
+    const allReferralEvents = await db
+      .select({
+        candidateId: candidateEvents.candidateId,
+        description: candidateEvents.description,
+        createdAt: candidateEvents.createdAt
+      })
+      .from(candidateEvents)
+      .where(
+        and(
+          inArray(candidateEvents.candidateId, candidateIds),
+          or(
+            eq(candidateEvents.eventType, 'email_sent'),
+            eq(candidateEvents.eventType, 'cv_sent'),
+            eq(candidateEvents.eventType, 'job_application')
+          )
+        )
+      )
+      .orderBy(desc(candidateEvents.createdAt));
+
+    // Fetch all sent-to-client applications in ONE query
+    const allClientApps = await db
+      .select({
+        candidateId: jobApplications.candidateId,
+        companyName: clients.companyName,
+        clientId: clients.id,
+        sentAt: jobApplications.appliedAt
+      })
+      .from(jobApplications)
+      .leftJoin(jobs, eq(jobApplications.jobId, jobs.id))
+      .leftJoin(clients, eq(jobs.clientId, clients.id))
+      .where(
+        and(
+          inArray(jobApplications.candidateId, candidateIds),
+          eq(jobApplications.sentToClient, true)
+        )
+      )
+      .orderBy(desc(jobApplications.appliedAt));
+
+    // Fetch all creator events in ONE query
+    const allCreatorEvents = await db
+      .select({
+        candidateId: candidateEvents.candidateId,
+        metadata: candidateEvents.metadata
+      })
+      .from(candidateEvents)
+      .where(
+        and(
+          inArray(candidateEvents.candidateId, candidateIds),
+          eq(candidateEvents.eventType, 'created')
+        )
+      )
+      .orderBy(desc(candidateEvents.createdAt));
+
+    // Build lookup maps for O(1) access
+    const jobAppMap = new Map<string, typeof allJobApps[0]>();
+    allJobApps.forEach(app => {
+      if (!jobAppMap.has(app.candidateId)) {
+        jobAppMap.set(app.candidateId, app);
+      }
+    });
+
+    const statusEventMap = new Map<string, typeof allStatusEvents[0]>();
+    allStatusEvents.forEach(event => {
+      if (!statusEventMap.has(event.candidateId)) {
+        statusEventMap.set(event.candidateId, event);
+      }
+    });
+
+    const referralEventMap = new Map<string, typeof allReferralEvents[0]>();
+    allReferralEvents.forEach(event => {
+      if (!referralEventMap.has(event.candidateId)) {
+        referralEventMap.set(event.candidateId, event);
+      }
+    });
+
+    const clientAppMap = new Map<string, typeof allClientApps[0]>();
+    allClientApps.forEach(app => {
+      if (!clientAppMap.has(app.candidateId)) {
+        clientAppMap.set(app.candidateId, app);
+      }
+    });
+
+    const creatorEventMap = new Map<string, typeof allCreatorEvents[0]>();
+    allCreatorEvents.forEach(event => {
+      if (!creatorEventMap.has(event.candidateId)) {
+        creatorEventMap.set(event.candidateId, event);
+      }
+    });
+
+    // Enrich candidates using the lookup maps (no more DB queries!)
+    const enrichedCandidates = basicCandidates.map((candidate) => {
+      const latestJobApp = jobAppMap.get(candidate.id);
+      const latestStatusEvent = statusEventMap.get(candidate.id);
+      const latestReferralEvent = referralEventMap.get(candidate.id);
+      const latestReferralClient = clientAppMap.get(candidate.id);
+      const creatorEvent = creatorEventMap.get(candidate.id);
+
+      const metadata = creatorEvent?.metadata as any;
+      const createdBy = metadata?.createdBy || null;
+      
+      return {
+        ...candidate,
+        lastJobTitle: latestJobApp?.jobTitle || null,
+        lastJobId: latestJobApp?.jobId || null,
+        lastAppliedAt: latestJobApp?.appliedAt || null,
+        recruitmentSource: candidate.recruitmentSource || null,
+        lastReferralDate: latestReferralEvent?.createdAt || null,
+        lastReferralClient: latestReferralClient?.companyName || null,
+        lastReferralClientId: latestReferralClient?.clientId || null,
+        lastStatusChange: latestStatusEvent?.createdAt || null,
+        lastStatusDescription: latestStatusEvent?.description || null,
+        creatorUserId: createdBy,
+        creatorUsername: null
+      };
+    });
 
     // Apply client-side filtering after enrichment
     let filteredCandidates = enrichedCandidates;
