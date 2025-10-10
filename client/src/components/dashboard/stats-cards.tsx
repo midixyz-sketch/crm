@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
-import { Briefcase, UserPlus, Handshake, DollarSign, TrendingUp, TrendingDown } from "lucide-react";
+import { Briefcase, UserPlus, Handshake, Banknote, TrendingUp, TrendingDown } from "lucide-react";
 import { useLocation } from "wouter";
 
 export default function StatsCards() {
@@ -51,7 +51,7 @@ export default function StatsCards() {
     {
       title: "הכנסות חודשיות",
       value: stats?.revenue ? `₪${stats.revenue.toLocaleString()}` : "₪0",
-      icon: DollarSign,
+      icon: Banknote,
       color: "bg-purple-100 dark:bg-purple-900",
       iconColor: "text-purple-600",
       change: null,
