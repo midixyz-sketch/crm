@@ -40,11 +40,12 @@ export default function BulkImportCandidates() {
   const [summary, setSummary] = useState<ImportSummary | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
-  const { isSuperAdmin } = usePermissions();
+  const { isSuperAdmin, isLoading } = usePermissions();
   const [, setLocation] = useLocation();
 
   useEffect(() => {
-    if (!isSuperAdmin) {
+    // Only redirect if loading is done and user is not super admin
+    if (!isLoading && !isSuperAdmin) {
       toast({
         title: "אין הרשאת גישה",
         description: "רק סופר אדמין יכול לגשת לעמוד זה",
@@ -52,8 +53,22 @@ export default function BulkImportCandidates() {
       });
       setLocation('/');
     }
-  }, [isSuperAdmin, setLocation, toast]);
+  }, [isSuperAdmin, isLoading, setLocation, toast]);
 
+  // Show loading while checking permissions
+  if (isLoading) {
+    return (
+      <div className="container mx-auto py-8">
+        <Card>
+          <CardContent className="py-8">
+            <p className="text-center text-muted-foreground">טוען...</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Show access denied if not super admin
   if (!isSuperAdmin) {
     return (
       <div className="container mx-auto py-8">
