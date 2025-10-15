@@ -71,18 +71,11 @@ export function usePermissions() {
   // Check if user has a specific role
   function hasRole(roleType: string): boolean {
     if (!userWithRoles?.userRoles) {
-      console.log('🔴 hasRole: No userRoles found', { userWithRoles });
       return false;
     }
-    const result = userWithRoles.userRoles.some((userRole: UserRole) => 
+    return userWithRoles.userRoles.some((userRole: UserRole) => 
       userRole.role.type === roleType
     );
-    console.log('🔍 hasRole check:', { 
-      roleType, 
-      result,
-      userRoles: userWithRoles.userRoles.map(ur => ({ name: ur.role.name, type: ur.role.type }))
-    });
-    return result;
   }
 
   // Check if user has a specific permission
