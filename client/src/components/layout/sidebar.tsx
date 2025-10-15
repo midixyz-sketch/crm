@@ -20,6 +20,8 @@ const navigation = [
 export default function Sidebar() {
   const [location] = useLocation();
   const { isSuperAdmin } = usePermissions();
+  
+  console.log('📍 Sidebar isSuperAdmin:', isSuperAdmin);
 
   return (
     <aside className="bg-surface w-64 shadow-lg border-l border-gray-200 dark:border-gray-700 flex-shrink-0 sidebar-transition">
