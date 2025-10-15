@@ -132,6 +132,21 @@ export default function Navbar() {
                 </Link>
               );
             })}
+            {isSuperAdmin && (
+              <Link
+                href="/candidates/bulk-import"
+                className={cn(
+                  "flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                  location === "/candidates/bulk-import"
+                    ? "text-primary bg-blue-50 dark:bg-blue-900/20" 
+                    : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                )}
+                data-testid="link-bulk-import-navbar"
+              >
+                <Upload className="h-4 w-4 ml-2" />
+                ייבוא מרובה
+              </Link>
+            )}
           </div>
 
           {/* Mobile menu button */}
