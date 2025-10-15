@@ -1053,9 +1053,14 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteCandidate(id: string): Promise<void> {
-    // First delete all candidate events
+    // Delete all related records first (in correct order due to foreign key constraints)
     await db.delete(candidateEvents).where(eq(candidateEvents.candidateId, id));
-    // Then delete the candidate
+    await db.delete(jobApplications).where(eq(jobApplications.candidateId, id));
+    await db.delete(tasks).where(eq(tasks.candidateId, id));
+    await db.delete(reminders).where(eq(reminders.candidateId, id));
+    await db.delete(interviewEvents).where(eq(interviewEvents.candidateId, id));
+    await db.delete(emails).where(eq(emails.candidateId, id));
+    // Finally delete the candidate
     await db.delete(candidates).where(eq(candidates.id, id));
   }
 
