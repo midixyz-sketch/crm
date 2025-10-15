@@ -44,6 +44,8 @@ export function usePermissions() {
   const { data: userWithRoles, isLoading: rolesLoading } = useQuery<UserWithRoles>({
     queryKey: ['/api/users/roles', (user as any)?.id],
     enabled: !!(user as any)?.id && !authLoading,
+    staleTime: 0, // Always fetch fresh data
+    gcTime: 0, // Don't cache
   });
 
   // Helper function to check role (needed for other queries)
