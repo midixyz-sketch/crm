@@ -4479,6 +4479,13 @@ ${recommendation}
         return res.status(404).json({ message: "User not found" });
       }
 
+      // Prevent caching to ensure fresh permission data
+      res.set({
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      });
+      
       res.json(userWithRoles);
     } catch (error) {
       console.error("Error fetching user roles:", error);
