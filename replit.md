@@ -29,6 +29,9 @@ Preferred communication style: Simple, everyday language.
 -   **PostgreSQL** with **Drizzle ORM** for type-safe operations.
 -   Schema-first approach with core entities like Users, Candidates, Clients, Jobs, Applications, and Tasks.
 -   Dynamic `candidate_statuses` stored in the database, allowing admin customization and system-defined protected statuses.
+    -   8 system statuses (isSystem=true, cannot be deleted): available (זמין), pending (ממתין), sent_to_employer (נשלח למעסיק), in_interview (בתהליך ראיון), hired (התקבל לעבודה), rejected (נדחה), rejected_by_employer (נפסל), not_relevant (לא רלוונטי)
+    -   Management UI: `/system-settings` → "סטטוסי מועמדים" tab
+    -   API: GET/POST/PUT/DELETE `/api/candidate-statuses`
 
 ## Key Features & Implementations
 -   **Advanced CV Data Extraction**: Supports various document formats (PDF, DOCX, DOC, images) with format-aware text extraction, OCR (Tesseract.js for Hebrew/English/Arabic), Hebrew-aware name extraction, international phone number parsing, and enhanced email extraction.
