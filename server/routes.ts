@@ -1308,25 +1308,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "לא נבחרו קבצים לייבוא" });
       }
 
-      console.log(`📥 מתחיל ייבוא מרובה של ${files.length} קבצי CV (עיבוד ב-batches של 1000)`);
+      console.log(`📥 מתחיל ייבוא מרובה של ${files.length} קבצי CV (עיבוד במקביל של 10 קבצים בכל פעם)`);
 
-      const BATCH_SIZE = 1000;
+      const BATCH_SIZE = 1000; // Logical batch for logging
+      const CONCURRENT_LIMIT = 10; // Process only 10 files in parallel at a time
       const allResults = [];
       const { extractTextFromCVFile } = await import('./storage');
       const { extractCandidateDataFromText } = await import('./cpanel-email');
 
-      // Process files in batches of 1000
+      // Process files in batches of 1000 for logging, but with controlled concurrency
       for (let batchStart = 0; batchStart < files.length; batchStart += BATCH_SIZE) {
         const batchEnd = Math.min(batchStart + BATCH_SIZE, files.length);
         const batch = files.slice(batchStart, batchEnd);
         const batchNumber = Math.floor(batchStart / BATCH_SIZE) + 1;
         const totalBatches = Math.ceil(files.length / BATCH_SIZE);
         
-        console.log(`📦 מעבד batch ${batchNumber}/${totalBatches} (קבצים ${batchStart + 1}-${batchEnd} מתוך ${files.length}) - במקביל! ⚡`);
+        console.log(`📦 מעבד batch ${batchNumber}/${totalBatches} (קבצים ${batchStart + 1}-${batchEnd} מתוך ${files.length}) - ${CONCURRENT_LIMIT} במקביל`);
 
-        // Process all files in batch in parallel with Promise.all
-        const batchResults = await Promise.all(
-          batch.map(async (file) => {
+        // Process files with controlled concurrency (10 at a time)
+        const batchResults = [];
+        for (let i = 0; i < batch.length; i += CONCURRENT_LIMIT) {
+          const concurrentBatch = batch.slice(i, i + CONCURRENT_LIMIT);
+          const concurrentResults = await Promise.all(
+            concurrentBatch.map(async (file) => {
             const result: any = {
               filename: file.originalname,
               status: 'pending'
@@ -1409,9 +1413,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
           })
         );
+        
+        // Add concurrent results to batch results
+        batchResults.push(...concurrentResults);
+      }
 
-        // Add batch results to all results
-        allResults.push(...batchResults);
+      // Add batch results to all results
+      allResults.push(...batchResults);
 
         console.log(`✅ סיים batch ${batchNumber}/${totalBatches}`);
       }
