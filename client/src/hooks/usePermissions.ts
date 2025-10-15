@@ -123,9 +123,9 @@ export function usePermissions() {
     return userWithRoles.userRoles.map((userRole: UserRole) => userRole.role);
   }
 
-  // Admin helper functions
-  const isAdmin = hasRole('admin') || hasRole('super_admin');
-  const isSuperAdmin = hasRole('super_admin');
+  // Admin helper functions - computed on every render to react to data changes
+  const isSuperAdmin = userWithRoles?.userRoles?.some(ur => ur.role.type === 'super_admin') ?? false;
+  const isAdmin = userWithRoles?.userRoles?.some(ur => ur.role.type === 'admin' || ur.role.type === 'super_admin') ?? false;
   const canManageUsers = hasPermission('users', 'read') || hasPermission('users', 'create') || hasPermission('users', 'update') || hasPermission('users', 'delete') || isAdmin;
   const canManageRoles = isSuperAdmin || isAdmin;
 
