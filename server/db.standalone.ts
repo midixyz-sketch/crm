@@ -11,10 +11,10 @@ console.log('🗄️ מתחבר למסד נתונים PostgreSQL מקומי...')
 // יצירת connection pool מקומי
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  // הגדרות אופטימליות לשרת מקומי
+  // הגדרות אופטימליות לשרת מקומי עם תמיכה ב-OCR ממושך
   max: 20,
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 2000,
+  idleTimeoutMillis: 600000, // 10 דקות - לתמיכה ב-OCR ארוך
+  connectionTimeoutMillis: 120000, // 2 דקות - timeout גבוה יותר
 });
 
 // בדיקת חיבור
