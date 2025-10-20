@@ -35,7 +35,7 @@ Preferred communication style: Simple, everyday language.
 
 ## Key Features & Implementations
 -   **Advanced CV Data Extraction**: Supports various document formats (PDF, DOCX, DOC, images) with format-aware text extraction, OCR (Tesseract.js for Hebrew/English/Arabic), Hebrew-aware name extraction, international phone number parsing, and enhanced email extraction.
--   **Bulk CV Import**: Super admin feature for parallel processing of large volumes of CV files, including automatic candidate creation, duplicate detection, and progress tracking.
+-   **Bulk CV Import**: Super admin feature for sequential processing of large volumes (up to 20,000) CV files with guaranteed stability. Processes files one at a time in batches of 10, with duplicate detection by mobile phone number only. Database timeout increased to 10 minutes to handle OCR operations. System prioritizes stability over speed - will never crash even with heavy OCR workloads.
 -   **User Management**: Admin-only user creation, role assignment, and automated welcome emails.
 -   **Duplicate Send Prevention**: A 30-day warning system to prevent sending the same candidate to an employer multiple times.
 -   **Bulk Candidate Operations**: Super admin functionality for multi-selecting and performing bulk deletions of candidates with parallel processing.
