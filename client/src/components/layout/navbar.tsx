@@ -13,8 +13,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import logoPath from "@assets/linkjob-logo.png";
-
 const navigation = [
   { name: "מאגר מועמדים", href: "/candidates", icon: Users },
   { name: "חיפוש בקורות חיים", href: "/cv-search", icon: Search },
@@ -58,7 +56,7 @@ export default function Navbar() {
           <div className="flex items-center">
             <Link href="/" data-testid="link-logo">
               <img 
-                src={logoPath} 
+                src="/linkjob-logo.png" 
                 alt="Linkjob" 
                 className="h-12 cursor-pointer hover:opacity-80 transition-opacity"
               />

@@ -2,8 +2,6 @@ import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 import { LayoutDashboard, Users, Building2, Briefcase, Mail, BarChart3, Settings, UserCheck, Search, Calendar, Upload } from "lucide-react";
 import { usePermissions } from "@/hooks/usePermissions";
-import logoPath from "@assets/linkjob-logo.png";
-
 const navigation = [
   { name: "מאגר מועמדים", href: "/candidates", icon: Users },
   { name: "חיפוש בקורות חיים", href: "/cv-search", icon: Search },
@@ -24,7 +22,7 @@ export default function Sidebar() {
       <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex justify-center">
         <Link href="/" data-testid="link-logo-sidebar">
           <img 
-            src={logoPath} 
+            src="/linkjob-logo.png" 
             alt="Linkjob" 
             className="h-16 cursor-pointer hover:opacity-80 transition-opacity"
           />
