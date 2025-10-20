@@ -25,48 +25,69 @@ interface ReminderFormProps {
   candidateId?: string;
   jobId?: string;
   clientId?: string;
+  reminder?: {
+    id: string;
+    title: string;
+    description?: string | null;
+    reminderDate: Date;
+    priority?: string | null;
+  };
   onSuccess?: () => void;
+  trigger?: React.ReactNode;
 }
 
-export function ReminderForm({ candidateId, jobId, clientId, onSuccess }: ReminderFormProps) {
+export function ReminderForm({ candidateId, jobId, clientId, reminder, onSuccess, trigger }: ReminderFormProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
+  const formatDateForForm = (date: Date) => {
+    const d = new Date(date);
+    d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+    return d.toISOString().slice(0, 16);
+  };
+
   const form = useForm<ReminderFormData>({
     resolver: zodResolver(reminderSchema),
     defaultValues: {
-      title: "",
-      description: "",
-      reminderDate: "",
-      priority: "medium",
+      title: reminder?.title || "",
+      description: reminder?.description || "",
+      reminderDate: reminder ? formatDateForForm(reminder.reminderDate) : "",
+      priority: (reminder?.priority as "low" | "medium" | "high") || "medium",
     },
   });
 
   const onSubmit = async (data: ReminderFormData) => {
     setIsSubmitting(true);
     try {
-      await apiRequest('POST', '/api/reminders', {
-        ...data,
-        candidateId,
-        jobId,
-        clientId,
-      });
-
-      toast({
-        title: "הצלחה",
-        description: "התזכורת נוצרה בהצלחה",
-      });
+      if (reminder) {
+        await apiRequest('PUT', `/api/reminders/${reminder.id}`, data);
+        toast({
+          title: "הצלחה",
+          description: "התזכורת עודכנה בהצלחה",
+        });
+      } else {
+        await apiRequest('POST', '/api/reminders', {
+          ...data,
+          candidateId,
+          jobId,
+          clientId,
+        });
+        toast({
+          title: "הצלחה",
+          description: "התזכורת נוצרה בהצלחה",
+        });
+      }
 
       form.reset();
       setIsOpen(false);
       onSuccess?.();
       queryClient.invalidateQueries({ queryKey: ['/api/reminders'] });
     } catch (error) {
-      console.error('Error creating reminder:', error);
+      console.error('Error saving reminder:', error);
       toast({
         title: "שגיאה",
-        description: "שגיאה ביצירת התזכורת",
+        description: reminder ? "שגיאה בעדכון התזכורת" : "שגיאה ביצירת התזכורת",
         variant: "destructive",
       });
     } finally {
@@ -93,14 +114,18 @@ export function ReminderForm({ candidateId, jobId, clientId, onSuccess }: Remind
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button size="sm" variant="outline" data-testid="button-create-reminder">
-          <Bell className="w-4 h-4 ml-2" />
-          יצירת תזכורת
-        </Button>
+        {trigger || (
+          <Button size="sm" variant="outline" data-testid="button-create-reminder">
+            <Bell className="w-4 h-4 ml-2" />
+            יצירת תזכורת
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent className="max-w-md" dir="rtl">
         <DialogHeader>
-          <DialogTitle className="text-right">יצירת תזכורת חדשה</DialogTitle>
+          <DialogTitle className="text-right">
+            {reminder ? "עריכת תזכורת" : "יצירת תזכורת חדשה"}
+          </DialogTitle>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -192,7 +217,7 @@ export function ReminderForm({ candidateId, jobId, clientId, onSuccess }: Remind
                 className="flex-1"
                 data-testid="button-submit-reminder"
               >
-                {isSubmitting ? "יוצר..." : "יצירת תזכורת"}
+                {isSubmitting ? (reminder ? "שומר..." : "יוצר...") : (reminder ? "שמור" : "יצירת תזכורת")}
               </Button>
               <Button
                 type="button"
