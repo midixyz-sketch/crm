@@ -26,7 +26,7 @@ export default function ClientForm({ client, onSuccess }: ClientFormProps) {
     resolver: zodResolver(insertClientSchema),
     defaultValues: {
       companyName: client?.companyName || "",
-      contactName: client?.contactName || "",
+      contactName: "", // Legacy field - kept for backward compatibility
       email: client?.email || "",
       phone: client?.phone || "",
       address: client?.address || "",
@@ -119,35 +119,19 @@ export default function ClientForm({ client, onSuccess }: ClientFormProps) {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="companyName"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>שם החברה *</FormLabel>
-                <FormControl>
-                  <Input placeholder="הכנס שם החברה" {...field} data-testid="input-company-name" />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="contactName"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>איש קשר *</FormLabel>
-                <FormControl>
-                  <Input placeholder="שם איש הקשר" {...field} data-testid="input-contact-name" />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
+        <FormField
+          control={form.control}
+          name="companyName"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>שם החברה *</FormLabel>
+              <FormControl>
+                <Input placeholder="הכנס שם החברה" {...field} data-testid="input-company-name" />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField
