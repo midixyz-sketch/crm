@@ -68,17 +68,17 @@ export function AddButton({ children, ...props }: Omit<PermissionButtonProps, 'p
   );
 }
 
-export function EditButton({ children, ...props }: Omit<PermissionButtonProps, 'permission'>) {
+export function EditButton({ permission = "edit_candidates", children, ...props }: Partial<PermissionButtonProps>) {
   return (
-    <PermissionButton permission="edit_candidates" {...props}>
+    <PermissionButton permission={permission} {...props}>
       {children || "ערוך"}
     </PermissionButton>
   );
 }
 
-export function DeleteButton({ children, ...props }: Omit<PermissionButtonProps, 'permission'>) {
+export function DeleteButton({ permission = "delete_candidates", children, ...props }: Partial<PermissionButtonProps>) {
   return (
-    <PermissionButton permission="delete_candidates" {...props}>
+    <PermissionButton permission={permission} {...props}>
       {children || "מחק"}
     </PermissionButton>
   );

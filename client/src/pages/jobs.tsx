@@ -47,7 +47,12 @@ export default function Jobs() {
     enabled: isAuthenticated,
     select: (data) => ({
       ...data,
-      jobs: filterJobs(data.jobs)
+      jobs: filterJobs(data.jobs).sort((a, b) => {
+        // משרות דחופות תמיד בראש
+        if (a.isUrgent && !b.isUrgent) return -1;
+        if (!a.isUrgent && b.isUrgent) return 1;
+        return 0;
+      })
     })
   });
 
@@ -223,7 +228,11 @@ export default function Jobs() {
                     </TableHeader>
                     <TableBody>
                       {jobsData.jobs.map((job: JobWithClient) => (
-                        <TableRow key={job.id} className="hover:bg-gray-50 dark:hover:bg-gray-700" data-testid={`row-job-${job.id}`}>
+                        <TableRow 
+                          key={job.id} 
+                          className={`hover:bg-gray-50 dark:hover:bg-gray-700 ${job.isUrgent ? 'bg-green-50 dark:bg-green-900/20 border-l-4 border-l-green-500' : ''}`}
+                          data-testid={`row-job-${job.id}`}
+                        >
                           <TableCell className="font-medium">
                             <div>
                               <p className="text-primary font-mono text-sm" data-testid={`text-job-code-${job.id}`}>
