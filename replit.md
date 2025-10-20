@@ -98,6 +98,24 @@ Preferred communication style: Simple, everyday language.
     -   **All fields editable**: Direct inline editing without scrolling
     -   **Single save button**: "שמור הכל" button at top of details panel
     -   **Event history**: Expandable panel showing all interactions with creator names
+-   **WhatsApp Web Integration**: Full WhatsApp integration embedded within the CRM (no external windows)
+    -   **Connection**: Click on Linkjob logo in sidebar to open WhatsApp connection dialog with QR code scanning
+    -   **Backend**: Baileys (@whiskeysockets/baileys) library for WhatsApp Web protocol
+    -   **Database**: 3 tables - whatsapp_sessions (connection state), whatsapp_chats (conversation list), whatsapp_messages (message history)
+    -   **Floating Button**: Draggable WhatsApp button in bottom-left corner with unread message counter
+    -   **Chat Panel**: Side panel with chat list and conversation view, polls for new messages every 5 seconds
+    -   **Message Sending**: From candidate detail page - select template, edit message, send via WhatsApp API
+    -   **Status Updates**: Automatically updates candidate status to "נשלחה הודעת ווצאפ" after sending
+    -   **Event Logging**: All WhatsApp interactions automatically logged in candidate event history
+    -   **Chat Linking**: Chats automatically linked to candidates based on phone number
+    -   **Message History**: WhatsApp history tab in candidate detail page shows full conversation
+    -   **Notifications**: Toast notifications for incoming messages with auto-refresh
+    -   **CV Import**: Automatic detection of PDF/DOCX attachments with user confirmation dialog
+    -   **Phone Formatting**: Supports +972, 972, and 05X formats with automatic normalization
+    -   **Error Handling**: "Slower but never crash" principle - comprehensive error handling throughout
+    -   **API Endpoints**: 9 endpoints for initialize, logout, send, get chats, get messages, mark read, send by number
+    -   **Auto-reconnect**: Automatic QR refresh and reconnection on connection loss
+    -   **Stability Priority**: System prioritizes stability over speed, will never crash even with connection issues
 
 # External Dependencies
 
@@ -128,3 +146,8 @@ Preferred communication style: Simple, everyday language.
 -   `multer` (file uploads)
 -   `clsx`
 -   `cmdk`
+
+## WhatsApp Integration
+-   `@whiskeysockets/baileys` (WhatsApp Web protocol)
+-   `qrcode` (QR code generation)
+-   `winston` (logging)
