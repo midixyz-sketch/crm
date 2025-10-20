@@ -62,6 +62,8 @@ class WhatsAppService {
   };
 
   private authDir = path.join(process.cwd(), 'whatsapp_auth');
+  private initializationPromise: Promise<void> | null = null;
+  private isInitializing: boolean = false;
 
   constructor() {
     // Ensure auth directory exists
@@ -74,6 +76,36 @@ class WhatsAppService {
    * Initialize WhatsApp connection for a user
    */
   async initialize(userId: string): Promise<void> {
+    // If initialization is in progress, wait for it
+    if (this.isInitializing) {
+      logger.info('WhatsApp initialization already in progress, waiting for completion...');
+      if (this.initializationPromise) {
+        await this.initializationPromise;
+      }
+      return;
+    }
+
+    // If already connected (even if not fully ready), skip
+    if (this.state.socket) {
+      logger.info('WhatsApp socket already exists, skipping initialization');
+      return;
+    }
+
+    this.isInitializing = true;
+    this.initializationPromise = this._initializeInternal(userId);
+    
+    try {
+      await this.initializationPromise;
+    } catch (error) {
+      logger.error(`Failed to initialize WhatsApp: ${error}`);
+      throw error;
+    } finally {
+      this.isInitializing = false;
+      this.initializationPromise = null;
+    }
+  }
+
+  private async _initializeInternal(userId: string): Promise<void> {
     try {
       logger.info(`Initializing WhatsApp for user ${userId}`);
       
@@ -203,30 +235,22 @@ class WhatsAppService {
           // Import existing chats immediately after connection
           setTimeout(async () => {
             try {
-              logger.info('Fetching existing chats from WhatsApp...');
-              const chats = await socket.groupFetchAllParticipating();
-              const chatIds = Object.keys(chats);
-              logger.info(`Found ${chatIds.length} group chats`);
-
-              // Also get individual chats from store
-              const allChats: any[] = [];
+              logger.info('Fetching existing chats from store...');
               
-              // Process group chats
-              for (const id of chatIds) {
-                allChats.push({
-                  id,
-                  name: chats[id].subject || id.split('@')[0],
-                  conversationTimestamp: chats[id].creation,
-                  unreadCount: 0
-                });
+              // Get chats from Baileys store
+              const store = (socket as any).ev?.store;
+              if (!store || !store.chats) {
+                logger.warn('No store or chats available');
+                return;
               }
 
-              logger.info(`Importing ${allChats.length} existing chats to database...`);
+              const allChats = Object.values(store.chats.all());
+              logger.info(`Found ${allChats.length} chats in store`);
 
-              for (const chat of allChats) {
+              for (const chat of allChats as any[]) {
                 try {
                   const remoteJid = chat.id;
-                  const name = chat.name || remoteJid.split('@')[0];
+                  const name = chat.name || chat.conversationTimestamp || remoteJid.split('@')[0];
                   const phoneNumber = remoteJid.split('@')[0];
                   
                   const candidate = await db.query.candidates.findFirst({
@@ -251,17 +275,18 @@ class WhatsAppService {
                       lastMessagePreview: '',
                       unreadCount: chat.unreadCount || 0,
                     });
+                    logger.info(`Imported chat: ${name} (${remoteJid})`);
                   }
                 } catch (err) {
-                  logger.error(`Error importing chat ${chat.id}: ${err}`);
+                  logger.error(`Error importing chat: ${err}`);
                 }
               }
 
-              logger.info(`Successfully imported ${allChats.length} chats`);
+              logger.info(`Successfully processed ${allChats.length} chats`);
             } catch (error) {
               logger.error(`Error importing existing chats: ${error}`);
             }
-          }, 5000); // Wait 5 seconds after connection to fetch chats
+          }, 3000); // Wait 3 seconds after connection to fetch chats
         }
       });
 
