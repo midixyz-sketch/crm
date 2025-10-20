@@ -13,6 +13,7 @@ Preferred communication style: Simple, everyday language.
 -   **Wouter** for routing, **TanStack Query** for server state.
 -   **React Hook Form** with Zod for forms.
 -   **shadcn/ui** and **Tailwind CSS** for UI, supporting RTL for Hebrew.
+-   **Navigation**: Simplified sidebar/navbar with main menu items. Settings-related pages (email settings, user management, bulk import, system settings) are accessed through the main Settings page (`/settings`) via cards.
 
 ## Backend
 -   **Express.js** with TypeScript, following a RESTful API design.

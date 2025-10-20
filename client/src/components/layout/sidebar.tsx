@@ -11,10 +11,8 @@ const navigation = [
   { name: "מאגר לקוחות", href: "/clients", icon: Building2 },
   { name: "מאגר משרות", href: "/jobs", icon: Briefcase },
   { name: "ראיונות", href: "/interviews", icon: UserCheck },
-  { name: "מערכת מיילים", href: "/emails", icon: Mail },
-  { name: "הגדרות מייל", href: "/email-settings", icon: Settings },
   { name: "דוחות ואנליטיקה", href: "/reports", icon: BarChart3 },
-  { name: "הגדרות מערכת", href: "/system-settings", icon: Settings },
+  { name: "הגדרות", href: "/settings", icon: Settings },
 ];
 
 export default function Sidebar() {
@@ -52,23 +50,6 @@ export default function Sidebar() {
               </li>
             );
           })}
-          {isSuperAdmin && (
-            <li>
-              <Link 
-                href="/candidates/bulk-import"
-                className={cn(
-                  "flex items-center p-3 rounded-lg transition-colors",
-                  location === "/candidates/bulk-import"
-                    ? "text-primary bg-blue-50 dark:bg-blue-900/20" 
-                    : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-                )}
-                data-testid="link-bulk-import-sidebar"
-              >
-                <Upload className="h-5 w-5 ml-3" />
-                ייבוא מרובה
-              </Link>
-            </li>
-          )}
         </ul>
       </nav>
     </aside>
