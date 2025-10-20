@@ -62,31 +62,31 @@ export default function Navbar() {
             </Link>
           </div>
 
-          {/* User Info and Logout */}
-          <div className="hidden lg:flex items-center space-x-4 space-x-reverse">
-            <div className="flex items-center space-x-3 space-x-reverse">
-              <div className="text-right">
-                <p className="text-sm font-medium text-gray-900 dark:text-white">
-                  {user ? `${(user as any).firstName || ''} ${(user as any).lastName || ''}`.trim() || (user as any).email : 'משתמש'}
-                </p>
-                <p className="text-xs text-gray-600 dark:text-gray-300">מנהל גיוס</p>
-              </div>
-              <div className="w-8 h-8 bg-primary text-white rounded-full flex items-center justify-center">
-                <span className="text-sm font-medium">
-                  {user ? `${(user as any).firstName?.charAt(0) || ''}${(user as any).lastName?.charAt(0) || ''}` || 'מ' : 'מ'}
-                </span>
-              </div>
-            </div>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={handleLogout}
-              className="text-gray-600 hover:text-gray-800 dark:text-gray-300 dark:hover:text-white"
-              data-testid="button-logout"
-            >
-              <LogOut className="h-4 w-4 ml-2" />
-              יציאה
-            </Button>
+          {/* User Menu */}
+          <div className="hidden lg:flex items-center">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="w-10 h-10 bg-primary text-white rounded-full flex items-center justify-center cursor-pointer hover:opacity-80 transition-opacity focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2">
+                  <span className="text-sm font-medium">
+                    {user ? `${(user as any).firstName?.charAt(0) || ''}${(user as any).lastName?.charAt(0) || ''}` || 'מ' : 'מ'}
+                  </span>
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+                  <p className="text-sm font-medium text-gray-900 dark:text-white">
+                    {user ? `${(user as any).firstName || ''} ${(user as any).lastName || ''}`.trim() || (user as any).email : 'משתמש'}
+                  </p>
+                  <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">
+                    {(user as any)?.email || ''}
+                  </p>
+                </div>
+                <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
+                  <LogOut className="h-4 w-4 ml-2" />
+                  <span>התנתק מהמערכת</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
 
           {/* Desktop Navigation */}
@@ -133,17 +133,31 @@ export default function Navbar() {
             })}
           </div>
 
-          {/* Mobile menu button */}
+          {/* Mobile menu */}
           <div className="lg:hidden flex items-center space-x-2 space-x-reverse">
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={handleLogout}
-              className="text-gray-600 hover:text-gray-800 dark:text-gray-300 dark:hover:text-white"
-              data-testid="button-logout-mobile"
-            >
-              <LogOut className="h-4 w-4" />
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="w-9 h-9 bg-primary text-white rounded-full flex items-center justify-center cursor-pointer hover:opacity-80 transition-opacity focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2">
+                  <span className="text-sm font-medium">
+                    {user ? `${(user as any).firstName?.charAt(0) || ''}${(user as any).lastName?.charAt(0) || ''}` || 'מ' : 'מ'}
+                  </span>
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+                  <p className="text-sm font-medium text-gray-900 dark:text-white">
+                    {user ? `${(user as any).firstName || ''} ${(user as any).lastName || ''}`.trim() || (user as any).email : 'משתמש'}
+                  </p>
+                  <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">
+                    {(user as any)?.email || ''}
+                  </p>
+                </div>
+                <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
+                  <LogOut className="h-4 w-4 ml-2" />
+                  <span>התנתק מהמערכת</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <DropdownMenu open={isMenuOpen} onOpenChange={setIsMenuOpen}>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="sm">
@@ -171,15 +185,6 @@ export default function Navbar() {
                       </DropdownMenuItem>
                     );
                   })}
-                <DropdownMenuItem asChild>
-                  <button
-                    onClick={handleLogout}
-                    className="flex items-center w-full px-2 py-2 text-red-600 hover:text-red-800"
-                  >
-                    <LogOut className="h-4 w-4 ml-2" />
-                    יציאה
-                  </button>
-                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
