@@ -1048,6 +1048,56 @@ async function processParsedEmailAttachments(parsed: any): Promise<void> {
           console.log(
             `🎯 נוצרה הגשת מועמדות אוטומטית למשרה: ${matchingJob.title}`,
           );
+
+          // If job has autoSendToClient enabled, send candidate to employer immediately
+          if (matchingJob.autoSendToClient && matchingJob.contactEmails && matchingJob.contactEmails.length > 0) {
+            console.log(`📧 משרה מוגדרת לשליחה אוטומטית - שולח מועמד למעסיק...`);
+            
+            // Import email service
+            const { sendCandidateToEmployer } = await import("./emailService");
+            
+            // Send to all contact emails
+            for (const email of matchingJob.contactEmails) {
+              try {
+                console.log(`📤 שולח מועמד ${newCandidate.candidateNumber} למייל: ${email}`);
+                
+                const result = await sendCandidateToEmployer({
+                  candidateId: newCandidate.id,
+                  to: email,
+                  jobTitle: matchingJob.title,
+                  reviewerFeedback: `מועמד חדש התקבל אוטומטית ממערכת הגיוס למשרה: ${matchingJob.title}`,
+                });
+                
+                if (result.success) {
+                  console.log(`✅ מועמד נשלח בהצלחה למייל: ${email}`);
+                  
+                  // Add event to candidate
+                  await storage.addCandidateEvent({
+                    candidateId: newCandidate.id,
+                    eventType: "candidate_sent",
+                    description: `מועמד נשלח אוטומטית למעסיק: ${email}`,
+                    metadata: {
+                      jobId: matchingJob.id,
+                      jobTitle: matchingJob.title,
+                      sentTo: email,
+                      automatic: true,
+                    },
+                  });
+                  
+                  // Update candidate status
+                  await storage.updateCandidate(newCandidate.id, {
+                    status: "נשלח למעסיק",
+                  });
+                } else {
+                  console.error(`❌ שגיאה בשליחת מועמד למייל ${email}:`, result.error);
+                }
+              } catch (error: any) {
+                console.error(`❌ שגיאה בשליחת מועמד למעסיק:`, error.message);
+              }
+            }
+          } else {
+            console.log(`ℹ️ משרה לא מוגדרת לשליחה אוטומטית או אין מיילי יצירת קשר`);
+          }
         } else {
           console.log(`⚠️ לא נמצאה משרה עם קוד: ${jobCode}`);
         }

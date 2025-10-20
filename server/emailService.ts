@@ -418,3 +418,121 @@ export async function sendWelcomeEmail(data: WelcomeEmailData): Promise<boolean>
     return false;
   }
 }
+
+// Send candidate to employer
+interface SendCandidateToEmployerParams {
+  candidateId: string;
+  to: string;
+  jobTitle: string;
+  reviewerFeedback: string;
+}
+
+export async function sendCandidateToEmployer(params: SendCandidateToEmployerParams): Promise<{ success: boolean; error?: string; messageId?: string }> {
+  console.log("📤 Sending candidate to employer automatically...");
+  
+  try {
+    // Ensure email configuration is loaded
+    if (!emailConfigLoaded) {
+      await loadEmailConfig();
+    }
+
+    if (!transporter) {
+      return { success: false, error: "Email not configured" };
+    }
+
+    // Get candidate details
+    const candidate = await storage.getCandidate(params.candidateId);
+    if (!candidate) {
+      return { success: false, error: "Candidate not found" };
+    }
+
+    // Get email user for sender
+    const emailUser = await storage.getSystemSetting('CPANEL_EMAIL_USER');
+    const senderEmail = emailUser?.value || process.env.GMAIL_USER || 'info@h-group.org.il';
+    
+    // Construct email HTML
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; direction: rtl;">
+        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+          <h1 style="color: white; margin: 0; font-size: 28px;">מועמד חדש למשרה</h1>
+        </div>
+        
+        <div style="background: white; padding: 30px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 10px 10px;">
+          <p style="font-size: 16px; line-height: 1.6; color: #374151; margin: 20px 0;">
+            שלום,
+          </p>
+          
+          <p style="font-size: 16px; line-height: 1.6; color: #374151; margin: 20px 0;">
+            מצורף קורות חיים של מועמד/ת למשרה: <strong>${params.jobTitle}</strong>
+          </p>
+          
+          <div style="background: #f3f4f6; padding: 15px; border-radius: 8px; margin: 20px 0;">
+            <p style="font-size: 16px; line-height: 1.8; color: #374151; margin: 0;">
+              <strong>שם מלא:</strong> ${candidate.firstName} ${candidate.lastName}<br>
+              <strong>טלפון:</strong> ${candidate.mobile || candidate.phone || '-'}<br>
+              <strong>עיר:</strong> ${candidate.city || '-'}<br>
+              <strong>מייל:</strong> ${candidate.email || '-'}
+            </p>
+          </div>
+          
+          <div style="background: #f0f9ff; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <h3 style="color: #0369a1; margin-top: 0;">הערות</h3>
+            <p style="font-size: 16px; line-height: 1.6;">${params.reviewerFeedback}</p>
+          </div>
+
+          <p style="font-size: 16px; line-height: 1.6; color: #374151; margin: 20px 0;">
+            נשמח לשמוע חוות דעתך.
+          </p>
+
+          <p style="font-size: 16px; line-height: 1.6; color: #374151; margin: 20px 0;">
+            בברכה,<br>
+            מערכת הגיוס
+          </p>
+
+          <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; text-align: center;">
+            <p style="color: #6b7280; font-size: 14px;">נשלח אוטומטית ממערכת ניהול גיוס H-Group</p>
+          </div>
+        </div>
+      </div>
+    `;
+
+    // Prepare CV attachment
+    const attachments = [];
+    if (candidate.cvPath) {
+      const fs = await import('fs');
+      const path = await import('path');
+      
+      const cvPath = candidate.cvPath.startsWith('uploads/') ? candidate.cvPath : `uploads/${candidate.cvPath}`;
+      if (fs.existsSync(cvPath)) {
+        const ext = path.extname(cvPath) || '.pdf';
+        attachments.push({
+          filename: `קורות_חיים_${candidate.firstName}_${candidate.lastName}${ext}`,
+          content: fs.readFileSync(cvPath).toString('base64'),
+          encoding: 'base64',
+          contentType: ext === '.pdf' ? 'application/pdf' : 
+                      ext === '.doc' ? 'application/msword' :
+                      ext === '.docx' ? 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' :
+                      'application/octet-stream'
+        });
+      }
+    }
+
+    // Send email
+    const mailOptions = {
+      from: senderEmail,
+      to: params.to,
+      subject: `מועמד חדש למשרה: ${params.jobTitle} - ${candidate.firstName} ${candidate.lastName}`,
+      html: html,
+      attachments: attachments
+    };
+
+    console.log(`📤 Sending candidate email to: ${params.to}`);
+    const result = await transporter.sendMail(mailOptions);
+    
+    console.log(`✅ Candidate sent successfully to ${params.to}`, result.messageId);
+    return { success: true, messageId: result.messageId };
+  } catch (error: any) {
+    console.error('❌ Failed to send candidate to employer:', error);
+    return { success: false, error: error.message };
+  }
+}
