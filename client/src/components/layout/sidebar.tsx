@@ -25,11 +25,12 @@ export default function Sidebar() {
   const [whatsappDialogOpen, setWhatsappDialogOpen] = useState(false);
   const { toast } = useToast();
 
-  // WhatsApp status query
-  const { data: whatsappStatus, refetch: refetchStatus } = useQuery({
+  // WhatsApp status query - always enabled when dialog is open
+  const { data: whatsappStatus, refetch: refetchStatus, isLoading } = useQuery({
     queryKey: ['/api/whatsapp/status'],
     refetchInterval: whatsappDialogOpen ? 3000 : false,
     enabled: whatsappDialogOpen,
+    staleTime: 0,
   });
 
   const handleInitializeWhatsApp = async () => {
@@ -89,7 +90,12 @@ export default function Sidebar() {
           </DialogHeader>
           
           <div className="space-y-4">
-            {whatsappStatus?.isConnected ? (
+            {isLoading ? (
+              <div className="text-center space-y-4 py-8">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+                <p className="text-sm text-gray-600">טוען...</p>
+              </div>
+            ) : whatsappStatus?.isConnected ? (
               <div className="text-center space-y-4">
                 <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto">
                   <svg className="w-10 h-10 text-green-600" fill="currentColor" viewBox="0 0 24 24">
@@ -138,6 +144,7 @@ export default function Sidebar() {
                 <Button
                   onClick={handleInitializeWhatsApp}
                   className="w-full bg-green-600 hover:bg-green-700"
+                  data-testid="button-initialize-whatsapp"
                 >
                   התחל חיבור WhatsApp
                 </Button>

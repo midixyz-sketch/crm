@@ -21,9 +21,12 @@ interface WhatsAppHistoryTabProps {
 }
 
 export function WhatsAppHistoryTab({ candidateId }: WhatsAppHistoryTabProps) {
-  const { data: messages = [], isLoading } = useQuery<WhatsAppMessage[]>({
+  const { data, isLoading } = useQuery<WhatsAppMessage[]>({
     queryKey: ['/api/candidates', candidateId, 'whatsapp'],
   });
+
+  // Ensure messages is always an array
+  const messages = Array.isArray(data) ? data : [];
 
   if (isLoading) {
     return (
