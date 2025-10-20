@@ -1341,7 +1341,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               
               // Prepare candidate data
               const candidateData: any = {
-                firstName: extractedData.name?.split(' ')[0] || 'לא ידוע',
+                firstName: extractedData.name?.split(' ')[0] || '-',
                 lastName: extractedData.name?.split(' ').slice(1).join(' ') || '',
                 email: extractedData.email || undefined,
                 mobile: extractedData.mobile || undefined,
