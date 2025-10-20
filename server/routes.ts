@@ -3085,6 +3085,15 @@ ${extractedData.achievements ? `הישגים ופעילות נוספת: ${cleanS
             מצורף קורות חיים של מועמד/ת למשרה.
           </p>
           
+          <div style="background: #f3f4f6; padding: 15px; border-radius: 8px; margin: 20px 0;">
+            <p style="font-size: 16px; line-height: 1.8; color: #374151; margin: 0;">
+              <strong>שם מלא:</strong> ${candidate.firstName} ${candidate.lastName}<br>
+              <strong>טלפון:</strong> ${candidate.mobile || candidate.phone || '-'}<br>
+              <strong>עיר:</strong> ${candidate.city || '-'}<br>
+              <strong>מייל:</strong> ${candidate.email || '-'}
+            </p>
+          </div>
+          
           <div style="background: #f0f9ff; padding: 20px; border-radius: 8px; margin: 20px 0;">
             <h3 style="color: #0369a1; margin-top: 0;">חוות דעת</h3>
             <p style="font-size: 16px; line-height: 1.6;">${reviewerFeedback}</p>
