@@ -27,8 +27,8 @@ export default function ClientForm({ client, onSuccess }: ClientFormProps) {
     defaultValues: {
       companyName: client?.companyName || "",
       contactName: "", // Legacy field - kept for backward compatibility
-      email: client?.email || "",
-      phone: client?.phone || "",
+      email: client?.email || "", // שומר ערכים קיימים - לא מוצג בטופס
+      phone: client?.phone || "", // שומר ערכים קיימים - לא מוצג בטופס
       address: client?.address || "",
       website: client?.website || "",
       industry: client?.industry || "",
@@ -132,36 +132,6 @@ export default function ClientForm({ client, onSuccess }: ClientFormProps) {
             </FormItem>
           )}
         />
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="email"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>אימייל *</FormLabel>
-                <FormControl>
-                  <Input type="email" placeholder="example@company.com" {...field} data-testid="input-email" />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="phone"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>טלפון</FormLabel>
-                <FormControl>
-                  <Input placeholder="05X-XXXXXXX" {...field} value={field.value || ""} data-testid="input-phone" />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
 
         <FormField
           control={form.control}

@@ -191,8 +191,8 @@ export const clients = pgTable("clients", {
   clientNumber: integer("client_number").unique(), // מספר לקוח אוטומטי
   companyName: varchar("company_name").notNull(),
   contactName: varchar("contact_name"), // Legacy field - kept for backward compatibility, now optional
-  email: varchar("email").notNull(),
-  phone: varchar("phone"),
+  email: varchar("email"), // אופציונלי - המידע קיים באנשי קשר
+  phone: varchar("phone"), // אופציונלי - המידע קיים באנשי קשר
   address: text("address"),
   website: varchar("website"),
   industry: varchar("industry"),
