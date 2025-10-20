@@ -1645,6 +1645,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // PATCH endpoint for quick updates (WhatsApp chats page: pin, tags, chatType)
+  app.patch('/api/candidates/:id', isAuthenticated, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const updates = req.body;
+
+      // Get current candidate
+      const currentCandidate = await storage.getCandidate(id);
+      if (!currentCandidate) {
+        return res.status(404).json({ message: "Candidate not found" });
+      }
+
+      // Build update data - only include fields that are provided
+      const updateData: any = {};
+      
+      if (updates.isPinned !== undefined) {
+        updateData.isPinned = updates.isPinned;
+      }
+      
+      if (updates.chatType !== undefined) {
+        updateData.chatType = updates.chatType;
+      }
+      
+      if (updates.previousChatType !== undefined) {
+        updateData.previousChatType = updates.previousChatType;
+      }
+      
+      if (updates.tags !== undefined) {
+        updateData.tags = Array.isArray(updates.tags) ? updates.tags : [];
+      }
+
+      // Update candidate
+      const updated = await storage.updateCandidate(id, updateData);
+
+      res.json(updated);
+    } catch (error) {
+      console.error("Error patching candidate:", error);
+      res.status(500).json({ message: "Failed to update candidate" });
+    }
+  });
+
   // CV file serving endpoint
   app.get('/api/candidates/:id/cv', isAuthenticated, async (req, res) => {
     try {

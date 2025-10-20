@@ -89,10 +89,12 @@ export default function WhatsAppChats() {
     enabled: whatsappStatus?.isConnected === true,
   });
 
-  const { data: allCandidates = [] } = useQuery<Candidate[]>({
+  const { data: candidatesData } = useQuery<{ candidates: Candidate[]; total: number }>({
     queryKey: ["/api/candidates"],
     refetchInterval: 3000,
   });
+
+  const allCandidates = candidatesData?.candidates || [];
 
   // Filter candidates to only those with WhatsApp messages
   const candidates = useMemo(() => {
