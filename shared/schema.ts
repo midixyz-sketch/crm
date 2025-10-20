@@ -296,6 +296,7 @@ export const candidateEvents = pgTable("candidate_events", {
   eventType: varchar("event_type").notNull(), // email_application, phone_call, interview, status_change, etc.
   description: text("description").notNull(),
   metadata: jsonb("metadata"), // additional data as JSON
+  createdBy: varchar("created_by").references(() => users.id),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -394,6 +395,10 @@ export const candidateEventsRelations = relations(candidateEvents, ({ one }) => 
   candidate: one(candidates, {
     fields: [candidateEvents.candidateId],
     references: [candidates.id],
+  }),
+  createdByUser: one(users, {
+    fields: [candidateEvents.createdBy],
+    references: [users.id],
   }),
 }));
 
