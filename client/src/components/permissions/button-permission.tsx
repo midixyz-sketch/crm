@@ -1,6 +1,6 @@
 import { Button, type ButtonProps } from "@/components/ui/button";
 import { useDetailedPermissions, type Permission } from "@/hooks/useDetailedPermissions";
-import { ReactNode } from "react";
+import { ReactNode, forwardRef } from "react";
 
 interface PermissionButtonProps extends ButtonProps {
   permission: Permission;
@@ -9,14 +9,14 @@ interface PermissionButtonProps extends ButtonProps {
 }
 
 // כפתור עם הרשאות
-export function PermissionButton({
+export const PermissionButton = forwardRef<HTMLButtonElement, PermissionButtonProps>(({
   permission,
   children,
   fallback = null,
   hideWhenNoAccess = false,
   disabled,
   ...props
-}: PermissionButtonProps) {
+}, ref) => {
   const { canAccessPage, canUseMenu, canViewComponent } = useDetailedPermissions();
   
   let hasPermission = false;
@@ -42,6 +42,7 @@ export function PermissionButton({
     return (
       <Button 
         {...props} 
+        ref={ref}
         disabled={true}
         variant="outline"
         className="opacity-50 cursor-not-allowed"
@@ -53,49 +54,66 @@ export function PermissionButton({
   }
   
   return (
-    <Button {...props} disabled={disabled}>
+    <Button {...props} ref={ref} disabled={disabled}>
       {children}
     </Button>
   );
-}
+});
+
+PermissionButton.displayName = "PermissionButton";
 
 // כפתורי פעולה נפוצים עם הרשאות
-export function AddButton({ children, ...props }: Omit<PermissionButtonProps, 'permission'>) {
-  return (
-    <PermissionButton permission="create_candidates" {...props}>
-      {children || "הוסף"}
-    </PermissionButton>
-  );
-}
+export const AddButton = forwardRef<HTMLButtonElement, Omit<PermissionButtonProps, 'permission'>>(
+  ({ children, ...props }, ref) => {
+    return (
+      <PermissionButton permission="create_candidates" {...props} ref={ref}>
+        {children || "הוסף"}
+      </PermissionButton>
+    );
+  }
+);
+AddButton.displayName = "AddButton";
 
-export function EditButton({ permission = "edit_candidates", children, ...props }: Partial<PermissionButtonProps>) {
-  return (
-    <PermissionButton permission={permission} {...props}>
-      {children || "ערוך"}
-    </PermissionButton>
-  );
-}
+export const EditButton = forwardRef<HTMLButtonElement, Partial<PermissionButtonProps>>(
+  ({ permission = "edit_candidates", children, ...props }, ref) => {
+    return (
+      <PermissionButton permission={permission} {...props} ref={ref}>
+        {children || "ערוך"}
+      </PermissionButton>
+    );
+  }
+);
+EditButton.displayName = "EditButton";
 
-export function DeleteButton({ permission = "delete_candidates", children, ...props }: Partial<PermissionButtonProps>) {
-  return (
-    <PermissionButton permission={permission} {...props}>
-      {children || "מחק"}
-    </PermissionButton>
-  );
-}
+export const DeleteButton = forwardRef<HTMLButtonElement, Partial<PermissionButtonProps>>(
+  ({ permission = "delete_candidates", children, ...props }, ref) => {
+    return (
+      <PermissionButton permission={permission} {...props} ref={ref}>
+        {children || "מחק"}
+      </PermissionButton>
+    );
+  }
+);
+DeleteButton.displayName = "DeleteButton";
 
-export function ExportButton({ children, ...props }: Omit<PermissionButtonProps, 'permission'>) {
-  return (
-    <PermissionButton permission="export_data" {...props}>
-      {children || "ייצא"}
-    </PermissionButton>
-  );
-}
+export const ExportButton = forwardRef<HTMLButtonElement, Omit<PermissionButtonProps, 'permission'>>(
+  ({ children, ...props }, ref) => {
+    return (
+      <PermissionButton permission="export_data" {...props} ref={ref}>
+        {children || "ייצא"}
+      </PermissionButton>
+    );
+  }
+);
+ExportButton.displayName = "ExportButton";
 
-export function SettingsButton({ children, ...props }: Omit<PermissionButtonProps, 'permission'>) {
-  return (
-    <PermissionButton permission="access_settings" {...props}>
-      {children || "הגדרות"}
-    </PermissionButton>
-  );
-}
+export const SettingsButton = forwardRef<HTMLButtonElement, Omit<PermissionButtonProps, 'permission'>>(
+  ({ children, ...props }, ref) => {
+    return (
+      <PermissionButton permission="access_settings" {...props} ref={ref}>
+        {children || "הגדרות"}
+      </PermissionButton>
+    );
+  }
+);
+SettingsButton.displayName = "SettingsButton";

@@ -1122,6 +1122,7 @@ export class DatabaseStorage implements IStorage {
       .select({
         id: jobs.id,
         jobCode: jobs.jobCode,
+        additionalCodes: jobs.additionalCodes,
         title: jobs.title,
         description: jobs.description,
         requirements: jobs.requirements,
@@ -1134,6 +1135,9 @@ export class DatabaseStorage implements IStorage {
         deadline: jobs.deadline,
         clientId: jobs.clientId,
         positions: jobs.positions,
+        contactEmails: jobs.contactEmails,
+        isUrgent: jobs.isUrgent,
+        autoSendToClient: jobs.autoSendToClient,
         createdAt: jobs.createdAt,
         updatedAt: jobs.updatedAt,
         client: {
@@ -1176,6 +1180,7 @@ export class DatabaseStorage implements IStorage {
       .select({
         id: jobs.id,
         jobCode: jobs.jobCode,
+        additionalCodes: jobs.additionalCodes,
         title: jobs.title,
         description: jobs.description,
         requirements: jobs.requirements,
@@ -1188,6 +1193,9 @@ export class DatabaseStorage implements IStorage {
         deadline: jobs.deadline,
         clientId: jobs.clientId,
         positions: jobs.positions,
+        contactEmails: jobs.contactEmails,
+        isUrgent: jobs.isUrgent,
+        autoSendToClient: jobs.autoSendToClient,
         createdAt: jobs.createdAt,
         updatedAt: jobs.updatedAt,
         client: {
