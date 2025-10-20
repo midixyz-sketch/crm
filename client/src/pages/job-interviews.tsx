@@ -133,6 +133,13 @@ export default function JobInterviews() {
 
   const jobData = jobsData?.jobs.find(job => job.id === jobId);
 
+  // Fetch message templates
+  const { data: templatesResponse } = useQuery({
+    queryKey: ['/api/message-templates'],
+    enabled: isAuthenticated,
+  });
+  const templates = Array.isArray(templatesResponse) ? templatesResponse : [];
+
   // Fetch job applications for this specific job
   const { data: applicationsData, isLoading: applicationsLoading } = useQuery<{ applications: JobApplicationWithDetails[] }>({
     queryKey: ["/api/job-applications"],
@@ -614,9 +621,9 @@ export default function JobInterviews() {
                                   <SelectValue placeholder="בחר הודעה..." />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  {whatsappMessages.map((message, index) => (
-                                    <SelectItem key={index} value={message}>
-                                      {message.substring(0, 50)}...
+                                  {(templates.length > 0 ? templates : whatsappMessages.map((msg, idx) => ({ id: idx.toString(), name: msg.substring(0, 30) + '...', content: msg, icon: '💬' }))).map((template: any) => (
+                                    <SelectItem key={template.id || template.name} value={template.content}>
+                                      {template.icon} {template.name || template.content.substring(0, 50)}...
                                     </SelectItem>
                                   ))}
                                 </SelectContent>
