@@ -1242,11 +1242,81 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateJob(id: string, job: Partial<InsertJob>): Promise<Job> {
+    // Get current job state before update
+    const currentJob = await this.getJob(id);
+    
     const [updatedJob] = await db
       .update(jobs)
       .set({ ...job, updatedAt: new Date() })
       .where(eq(jobs.id, id))
       .returning();
+    
+    // If autoSendToClient changed from false to true, send all existing candidates
+    if (job.autoSendToClient === true && 
+        currentJob && 
+        !currentJob.autoSendToClient && 
+        updatedJob.contactEmails && 
+        updatedJob.contactEmails.length > 0) {
+      console.log(`📧 משרה עודכנה לשליחה אוטומטית - שולח את כל המועמדים הקיימים...`);
+      
+      // Get all candidates for this job
+      const applications = await this.getJobApplications({ jobId: id });
+      
+      if (applications.length > 0) {
+        console.log(`📤 נמצאו ${applications.length} מועמדים קיימים - שולח למעסיק...`);
+        
+        // Import email service dynamically
+        const { sendCandidateToEmployer } = await import("./emailService");
+        
+        // Send each candidate to all contact emails
+        for (const application of applications) {
+          if (!application.candidate) continue;
+          
+          for (const email of updatedJob.contactEmails) {
+            try {
+              console.log(`📤 שולח מועמד ${application.candidate.candidateNumber} למייל: ${email}`);
+              
+              const result = await sendCandidateToEmployer({
+                candidateId: application.candidateId,
+                to: email,
+                jobTitle: updatedJob.title,
+                reviewerFeedback: `מועמד קיים נשלח אוטומטית למעסיק לאחר הפעלת שליחה אוטומטית למשרה: ${updatedJob.title}`,
+              });
+              
+              if (result.success) {
+                console.log(`✅ מועמד ${application.candidate.candidateNumber} נשלח בהצלחה למייל: ${email}`);
+                
+                // Add event to candidate
+                await this.addCandidateEvent({
+                  candidateId: application.candidateId,
+                  eventType: "candidate_sent",
+                  description: `מועמד נשלח אוטומטית למעסיק: ${email}`,
+                  metadata: {
+                    jobId: updatedJob.id,
+                    jobTitle: updatedJob.title,
+                    sentTo: email,
+                    automatic: true,
+                    trigger: "job_updated_to_auto_send"
+                  },
+                });
+                
+                // Update candidate status
+                await this.updateCandidate(application.candidateId, {
+                  status: "נשלח למעסיק",
+                });
+              } else {
+                console.error(`❌ שגיאה בשליחת מועמד למייל ${email}:`, result.error);
+              }
+            } catch (error: any) {
+              console.error(`❌ שגיאה בשליחת מועמד קיים למעסיק:`, error.message);
+            }
+          }
+        }
+        
+        console.log(`✅ כל המועמדים הקיימים נשלחו למעסיק`);
+      }
+    }
+    
     return updatedJob;
   }
 

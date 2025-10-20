@@ -35,7 +35,11 @@ Preferred communication style: Simple, everyday language.
 -   **Jobs Management Fields**:
     -   `contactEmails`: Array of email addresses for receiving candidate referrals (minimum 1 required)
     -   `isUrgent`: Boolean flag for urgent jobs (displayed at top of lists with green highlight)
-    -   `autoSendToClient`: Boolean flag for automatic candidate sending without manual filtering (applies to candidates from all sources: import, email, landing page)
+    -   `autoSendToClient`: Boolean flag for automatic candidate sending. When enabled:
+        -   **New candidates**: Any candidate assigned to this job (via email, import, manual addition) is automatically sent to all contactEmails
+        -   **Existing candidates**: When toggling autoSendToClient from false to true, all existing candidates for this job are immediately sent to all contactEmails
+        -   Automatic emails include candidate details and CV attachment
+        -   Candidate status updated to "נשלח למעסיק" and event logged in history
 
 ## Key Features & Implementations
 -   **Advanced CV Data Extraction**: Supports various document formats (PDF, DOCX, DOC, images) with format-aware text extraction, OCR (Tesseract.js for Hebrew/English/Arabic), Hebrew-aware name extraction, international phone number parsing, and enhanced email extraction.
