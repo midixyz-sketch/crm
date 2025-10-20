@@ -1260,7 +1260,7 @@ export class DatabaseStorage implements IStorage {
       console.log(`📧 משרה עודכנה לשליחה אוטומטית - שולח את כל המועמדים הקיימים...`);
       
       // Get all candidates for this job
-      const applications = await this.getJobApplications({ jobId: id });
+      const applications = await this.getJobApplications(id);
       
       if (applications.length > 0) {
         console.log(`📤 נמצאו ${applications.length} מועמדים קיימים - שולח למעסיק...`);
