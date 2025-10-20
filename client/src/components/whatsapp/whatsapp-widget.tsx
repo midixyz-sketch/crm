@@ -39,19 +39,6 @@ export function WhatsAppWidget() {
 
   const totalUnread = chats.reduce((sum, chat) => sum + (chat.unreadCount || 0), 0);
 
-  // Auto-initialize WhatsApp on component mount if not connected
-  useEffect(() => {
-    if (status && !status.isConnected && !status.qrCode) {
-      // Initialize WhatsApp connection
-      fetch('/api/whatsapp/initialize', {
-        method: 'POST',
-        credentials: 'include',
-      }).catch((error) => {
-        console.error('Failed to initialize WhatsApp:', error);
-      });
-    }
-  }, [status?.isConnected]);
-
   // Show toast when WhatsApp connects/disconnects and auto-open chat panel
   useEffect(() => {
     if (status?.isConnected && status.phoneNumber) {
