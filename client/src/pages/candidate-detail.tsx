@@ -38,6 +38,7 @@ import {
 import { queryClient } from "@/lib/queryClient";
 import { ReminderForm } from "@/components/reminder-form";
 import { EmailDialog } from "@/components/email-dialog";
+import { WhatsAppHistoryTab } from "@/components/candidate/whatsapp-history-tab";
 import type { Candidate } from "@shared/schema";
 
 export default function CandidateDetail() {
@@ -45,6 +46,7 @@ export default function CandidateDetail() {
   const { toast } = useToast();
   const { isAuthenticated, isLoading } = useAuth();
   const [showEvents, setShowEvents] = useState(true); // Show events by default
+  const [showWhatsAppHistory, setShowWhatsAppHistory] = useState(false); // Show WhatsApp history
   const [whatsappDialogOpen, setWhatsappDialogOpen] = useState(false);
   const [selectedMessageType, setSelectedMessageType] = useState("");
   const [editTemplateDialogOpen, setEditTemplateDialogOpen] = useState(false);
@@ -283,44 +285,81 @@ export default function CandidateDetail() {
     setEditTemplateDialogOpen(true);
   };
 
-  const handleSendWhatsAppMessage = () => {
+  const handleSendWhatsAppMessage = async () => {
     if (!candidate?.mobile || !editableTemplate) return;
     
-    // Record the WhatsApp message event
-    apiRequest('POST', `/api/candidates/${id}/events`, {
-      eventType: 'whatsapp_message',
-      description: `נשלחה הודעת וואטסאפ: ${selectedMessageType}`,
-      metadata: {
-        messageType: selectedMessageType,
-        mobile: candidate.mobile,
-        template: editableTemplate,
-        timestamp: new Date().toISOString()
+    try {
+      // Send WhatsApp message through backend API
+      const sendResponse = await apiRequest('POST', `/api/whatsapp/send-by-number`, {
+        phoneNumber: candidate.mobile,
+        message: editableTemplate,
+        candidateId: candidate.id
+      });
+
+      // Check if send was successful
+      if (!sendResponse.ok) {
+        const errorData = await sendResponse.json();
+        throw new Error(errorData.message || 'שגיאה בשליחת הודעה');
       }
-    }).then(() => {
-      // Refresh events if they're showing
+
+      // Parse response to get chatId
+      const result = await sendResponse.json();
+      const chatId = result.chatId;
+
+      // Update candidate status to whatsapp_sent
+      const statusResponse = await apiRequest('PATCH', `/api/candidates/${id}`, {
+        status: 'whatsapp_sent'
+      });
+      
+      if (!statusResponse.ok) {
+        const statusError = await statusResponse.json().catch(() => ({ message: 'שגיאה בעדכון סטטוס' }));
+        throw new Error(statusError.message || 'שגיאה בעדכון סטטוס מועמד');
+      }
+
+      // Record the WhatsApp message event
+      const eventResponse = await apiRequest('POST', `/api/candidates/${id}/events`, {
+        eventType: 'whatsapp_message',
+        description: `נשלחה הודעת וואטסאפ: ${selectedMessageType}`,
+        metadata: {
+          messageType: selectedMessageType,
+          mobile: candidate.mobile,
+          template: editableTemplate,
+          timestamp: new Date().toISOString()
+        }
+      });
+
+      if (!eventResponse.ok) {
+        const eventError = await eventResponse.json().catch(() => ({ message: 'שגיאה ברישום אירוע' }));
+        throw new Error(eventError.message || 'שגיאה ברישום אירוע WhatsApp');
+      }
+
+      // Refresh data with correct chatId
       if (showEvents) {
         queryClient.invalidateQueries({ queryKey: [`/api/candidates/${id}/events`] });
       }
+      if (showWhatsAppHistory && chatId) {
+        queryClient.invalidateQueries({ queryKey: ['/api/whatsapp/messages', chatId] });
+      }
+      queryClient.invalidateQueries({ queryKey: [`/api/candidates/${id}`] });
+      queryClient.invalidateQueries({ queryKey: ['/api/whatsapp/chats'] });
       
       toast({
-        title: "הודעה נרשמה",
-        description: `הודעת וואטסאפ "${selectedMessageType}" נרשמה באירועי המועמד`,
+        title: "הודעה נשלחה בהצלחה",
+        description: `הודעת WhatsApp "${selectedMessageType}" נשלחה אל ${candidate.firstName} ${candidate.lastName}`,
       });
-    }).catch(() => {
+
+      // Close dialog and reset state
+      setEditTemplateDialogOpen(false);
+      setEditableTemplate("");
+      setSelectedMessageType("");
+    } catch (error: any) {
+      console.error('Error sending WhatsApp message:', error);
       toast({
-        title: "שגיאה",
-        description: "לא ניתן לרשום את האירוע",
+        title: "שגיאה בשליחת ההודעה",
+        description: error.message || "ודא שWhatsApp מחובר ונסה שוב",
         variant: "destructive",
       });
-    });
-
-    // Open WhatsApp with the edited template
-    const phoneNumber = candidate.mobile.replace(/^0/, '').replace(/\D/g, '');
-    const encodedMessage = encodeURIComponent(editableTemplate);
-    window.open(`https://wa.me/972${phoneNumber}?text=${encodedMessage}`, '_blank');
-    setEditTemplateDialogOpen(false);
-    setEditableTemplate("");
-    setSelectedMessageType("");
+    }
   };
 
   const handleAddNote = () => {
@@ -994,6 +1033,16 @@ export default function CandidateDetail() {
                 <History className="w-4 h-4" />
                 אירועים אחרונים
               </Button>
+
+              <Button 
+                variant="outline" 
+                onClick={() => setShowWhatsAppHistory(!showWhatsAppHistory)}
+                className="flex items-center gap-2 text-green-600 border-green-200"
+                data-testid="button-whatsapp-history"
+              >
+                <MessageCircle className="w-4 h-4" />
+                שיחות WhatsApp
+              </Button>
               
               <Dialog open={statusDialogOpen} onOpenChange={setStatusDialogOpen}>
                 <DialogTrigger asChild>
@@ -1461,6 +1510,11 @@ export default function CandidateDetail() {
                 )}
               </CardContent>
             </Card>
+          )}
+
+          {/* WhatsApp History Panel */}
+          {showWhatsAppHistory && candidate?.id && (
+            <WhatsAppHistoryTab candidateId={candidate.id} />
           )}
 
           {/* Layout - 68% CV, 32% Details */}

@@ -671,3 +671,130 @@ export type EnrichedCandidate = Candidate & {
   lastStatusDescription?: string | null;
   creatorUsername?: string | null;
 };
+
+// WhatsApp Sessions table - for storing WhatsApp authentication state
+export const whatsappSessions = pgTable("whatsapp_sessions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  sessionId: varchar("session_id").notNull().unique(), // unique identifier for this session
+  userId: varchar("user_id").references(() => users.id), // which user owns this WhatsApp connection
+  authState: jsonb("auth_state"), // Baileys auth state (creds, keys)
+  isActive: boolean("is_active").default(false), // is currently connected
+  lastConnected: timestamp("last_connected"),
+  lastDisconnected: timestamp("last_disconnected"),
+  phoneNumber: varchar("phone_number"), // WhatsApp phone number
+  qrCode: text("qr_code"), // current QR code if waiting for scan
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// WhatsApp Messages table - for storing all WhatsApp messages
+export const whatsappMessages = pgTable("whatsapp_messages", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  messageId: varchar("message_id").notNull().unique(), // WhatsApp's internal message ID
+  sessionId: varchar("session_id").references(() => whatsappSessions.id),
+  candidateId: varchar("candidate_id").references(() => candidates.id), // linked candidate
+  fromMe: boolean("from_me").notNull(), // true if sent by us, false if received
+  remoteJid: varchar("remote_jid").notNull(), // WhatsApp JID (phone number)
+  senderName: varchar("sender_name"), // Name of the sender
+  messageType: varchar("message_type").notNull().default('text'), // text, image, document, audio, video, sticker
+  messageText: text("message_text"), // text content
+  mediaUrl: varchar("media_url"), // URL to media file if applicable
+  fileName: varchar("file_name"), // original file name for documents
+  mimeType: varchar("mime_type"), // MIME type for media
+  fileSize: integer("file_size"), // file size in bytes
+  caption: text("caption"), // caption for media
+  timestamp: timestamp("timestamp").notNull(), // when message was sent/received
+  isRead: boolean("is_read").default(false), // read status
+  metadata: jsonb("metadata"), // additional message data
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("whatsapp_messages_candidate_idx").on(table.candidateId),
+  index("whatsapp_messages_remote_jid_idx").on(table.remoteJid),
+  index("whatsapp_messages_timestamp_idx").on(table.timestamp),
+]);
+
+// WhatsApp Chats table - for tracking active conversations
+export const whatsappChats = pgTable("whatsapp_chats", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  sessionId: varchar("session_id").references(() => whatsappSessions.id),
+  candidateId: varchar("candidate_id").references(() => candidates.id), // linked candidate
+  remoteJid: varchar("remote_jid").notNull().unique(), // WhatsApp JID
+  name: varchar("name"), // chat name (contact name or group name)
+  profilePicUrl: varchar("profile_pic_url"), // profile picture URL
+  isGroup: boolean("is_group").default(false), // is this a group chat
+  isPinned: boolean("is_pinned").default(false), // is chat pinned
+  isArchived: boolean("is_archived").default(false), // is chat archived
+  unreadCount: integer("unread_count").default(0), // number of unread messages
+  lastMessageAt: timestamp("last_message_at"), // timestamp of last message
+  lastMessagePreview: text("last_message_preview"), // preview of last message
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("whatsapp_chats_candidate_idx").on(table.candidateId),
+  index("whatsapp_chats_remote_jid_idx").on(table.remoteJid),
+]);
+
+// Relations for WhatsApp tables
+export const whatsappSessionsRelations = relations(whatsappSessions, ({ one, many }) => ({
+  user: one(users, {
+    fields: [whatsappSessions.userId],
+    references: [users.id],
+  }),
+  messages: many(whatsappMessages),
+  chats: many(whatsappChats),
+}));
+
+export const whatsappMessagesRelations = relations(whatsappMessages, ({ one }) => ({
+  session: one(whatsappSessions, {
+    fields: [whatsappMessages.sessionId],
+    references: [whatsappSessions.id],
+  }),
+  candidate: one(candidates, {
+    fields: [whatsappMessages.candidateId],
+    references: [candidates.id],
+  }),
+}));
+
+export const whatsappChatsRelations = relations(whatsappChats, ({ one }) => ({
+  session: one(whatsappSessions, {
+    fields: [whatsappChats.sessionId],
+    references: [whatsappSessions.id],
+  }),
+  candidate: one(candidates, {
+    fields: [whatsappChats.candidateId],
+    references: [candidates.id],
+  }),
+}));
+
+// Insert schemas for WhatsApp
+export const insertWhatsappSessionSchema = createInsertSchema(whatsappSessions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertWhatsappMessageSchema = createInsertSchema(whatsappMessages).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertWhatsappChatSchema = createInsertSchema(whatsappChats).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+// Types for WhatsApp
+export type WhatsappSession = typeof whatsappSessions.$inferSelect;
+export type InsertWhatsappSession = z.infer<typeof insertWhatsappSessionSchema>;
+
+export type WhatsappMessage = typeof whatsappMessages.$inferSelect;
+export type InsertWhatsappMessage = z.infer<typeof insertWhatsappMessageSchema>;
+
+export type WhatsappChat = typeof whatsappChats.$inferSelect;
+export type InsertWhatsappChat = z.infer<typeof insertWhatsappChatSchema>;
+
+export type WhatsappChatWithMessages = WhatsappChat & {
+  messages: WhatsappMessage[];
+  candidate?: Candidate;
+};
