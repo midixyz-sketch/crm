@@ -83,6 +83,21 @@ Preferred communication style: Simple, everyday language.
     -   ReminderWithDetails type includes: candidate, job, client, and createdByUser relations
     -   Backend returns full user details for reminder creators in all queries
     -   API endpoints: GET/POST/PUT/DELETE `/api/reminders`
+-   **Candidate Event History with User Tracking**: Full audit trail of all candidate interactions
+    -   **candidateEvents** table includes `createdBy` field linking to users table
+    -   **getCandidateEvents** API returns creator details (firstName, lastName, username) via join with users table
+    -   **Frontend display**: Event history shows creator name prominently in blue text: "נוצר על ידי: [שם היוצר]"
+    -   **Backend integration**: All event creation points automatically include createdBy from authenticated user
+    -   Events tracked: created, profile_updated, status_change, whatsapp_message, note_added, job_referral, sent_to_employer, and more
+-   **Optimized Candidate Table**: Streamlined table view without horizontal scrolling
+    -   **Columns displayed**: שם המועמד (sticky right), עיר, נייד, סטטוס, מס' מועמד, פעולות (sticky left)
+    -   **Removed columns**: עדכון, משרה אחרונה, מקור גיוס, דוא״ל, הפניה אחרונה, שינוי סטטוס
+    -   **Design principle**: Essential information only, full details available in candidate detail page
+-   **Candidate Detail Page**: Comprehensive profile with inline editing
+    -   **Layout**: 68% CV display, 32% editable details sidebar
+    -   **All fields editable**: Direct inline editing without scrolling
+    -   **Single save button**: "שמור הכל" button at top of details panel
+    -   **Event history**: Expandable panel showing all interactions with creator names
 
 # External Dependencies
 
