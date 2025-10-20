@@ -10,8 +10,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ReminderForm } from "@/components/reminder-form";
-import { Calendar, Clock, User, Briefcase, Building, ChevronLeft, ChevronRight, Bell, X, RotateCcw } from "lucide-react";
+import { Calendar, Clock, User, Briefcase, Building, ChevronLeft, ChevronRight, Bell, X, RotateCcw, Edit } from "lucide-react";
 import type { ReminderWithDetails, InterviewEventWithDetails } from "@shared/schema";
+
+type CalendarEvent = (ReminderWithDetails & { type: 'reminder' }) | (InterviewEventWithDetails & { type: 'interview' });
 
 export default function CalendarPage() {
   const { toast } = useToast();
@@ -243,8 +245,9 @@ export default function CalendarPage() {
     }
   };
 
-  const getEventReason = (event: ReminderWithDetails | InterviewEventWithDetails) => {
-    if (event.type === 'interview') {
+  const getEventReason = (event: CalendarEvent | ReminderWithDetails) => {
+    const eventType = 'type' in event ? event.type : 'reminder';
+    if (eventType === 'interview') {
       const interviewEvent = event as InterviewEventWithDetails;
       switch (interviewEvent.eventType) {
         case 'phone': return 'ראיון טלפוני';
@@ -408,8 +411,8 @@ export default function CalendarPage() {
         </div>
 
         {/* Hour Rows */}
-        {Array.from({ length: 11 }, (_, i) => {
-          const hour = i + 8; // Hours from 8 to 18
+        {Array.from({ length: 24 }, (_, i) => {
+          const hour = i; // Hours from 0 to 23
           const hourString = `${hour.toString().padStart(2, '0')}:00`;
           
           return (
@@ -484,6 +487,12 @@ export default function CalendarPage() {
                           {event.type === 'interview' && (event as InterviewEventWithDetails).description && (
                             <div className="text-xs opacity-75 mb-1">
                               📝 {(event as InterviewEventWithDetails).description}
+                            </div>
+                          )}
+                          
+                          {event.type === 'reminder' && event.createdByUser && (
+                            <div className="text-xs opacity-75 mb-1">
+                              👨‍💼 {event.createdByUser.firstName} {event.createdByUser.lastName}
                             </div>
                           )}
                           
