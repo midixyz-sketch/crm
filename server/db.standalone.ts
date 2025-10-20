@@ -14,7 +14,7 @@ const pool = new Pool({
   // הגדרות אופטימליות לשרת מקומי עם תמיכה ב-OCR ממושך
   max: 20,
   idleTimeoutMillis: 600000, // 10 דקות - לתמיכה ב-OCR ארוך
-  connectionTimeoutMillis: 120000, // 2 דקות - timeout גבוה יותר
+  connectionTimeoutMillis: 600000, // 10 דקות - מונע timeout בייבוא מרובה עם OCR
 });
 
 // בדיקת חיבור

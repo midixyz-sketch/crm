@@ -1308,10 +1308,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "לא נבחרו קבצים לייבוא" });
       }
 
-      console.log(`📥 מתחיל ייבוא מרובה של ${files.length} קבצי CV (עיבוד במקביל של 10 קבצים בכל פעם)`);
+      console.log(`📥 מתחיל ייבוא מרובה של ${files.length} קבצי CV (עיבוד במקביל של 3 קבצים בכל פעם)`);
 
       const BATCH_SIZE = 1000; // Logical batch for logging
-      const CONCURRENT_LIMIT = 10; // Process only 10 files in parallel at a time
+      const CONCURRENT_LIMIT = 3; // Process only 3 files in parallel to prevent DB timeout
       const allResults = [];
       const { extractTextFromCVFile } = await import('./storage');
       const { extractCandidateDataFromText } = await import('./cpanel-email');
