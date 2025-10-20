@@ -1095,7 +1095,19 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createClient(client: InsertClient): Promise<Client> {
-    const [newClient] = await db.insert(clients).values(client).returning();
+    // יצירת מספר לקוח אוטומטי
+    const maxClientNumber = await db
+      .select({ max: sql<number>`MAX(${clients.clientNumber})` })
+      .from(clients);
+    
+    const nextClientNumber = (maxClientNumber[0]?.max || 0) + 1;
+    
+    const clientWithNumber = {
+      ...client,
+      clientNumber: nextClientNumber,
+    };
+    
+    const [newClient] = await db.insert(clients).values(clientWithNumber).returning();
     return newClient;
   }
 
