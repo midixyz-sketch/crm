@@ -2155,8 +2155,11 @@ ${extractedData.achievements ? `הישגים ופעילות נוספת: ${cleanS
 
   app.post('/api/jobs', isAuthenticated, async (req, res) => {
     try {
+      console.log("📝 Creating job - Raw body:", JSON.stringify(req.body, null, 2));
       const jobData = insertJobSchema.parse(req.body);
+      console.log("✅ Parsed job data:", JSON.stringify(jobData, null, 2));
       const job = await storage.createJob(jobData);
+      console.log("💾 Created job in DB:", JSON.stringify(job, null, 2));
       res.status(201).json(job);
     } catch (error) {
       console.error("Error creating job:", error);
@@ -2169,8 +2172,11 @@ ${extractedData.achievements ? `הישגים ופעילות נוספת: ${cleanS
 
   app.put('/api/jobs/:id', isAuthenticated, async (req, res) => {
     try {
+      console.log("📝 Updating job - Raw body:", JSON.stringify(req.body, null, 2));
       const jobData = insertJobSchema.partial().parse(req.body);
+      console.log("✅ Parsed job data:", JSON.stringify(jobData, null, 2));
       const job = await storage.updateJob(req.params.id, jobData);
+      console.log("💾 Updated job in DB:", JSON.stringify(job, null, 2));
       res.json(job);
     } catch (error) {
       console.error("Error updating job:", error);
