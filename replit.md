@@ -34,7 +34,6 @@ Preferred communication style: Simple, everyday language.
     -   API: GET/POST/PUT/DELETE `/api/candidate-statuses`
 -   **Jobs Management Fields**:
     -   `contactEmails`: Array of email addresses for receiving candidate referrals (minimum 1 required)
-    -   `internalNotes`: Internal notes field (not visible to clients)
     -   `isUrgent`: Boolean flag for urgent jobs (displayed at top of lists with green highlight)
     -   `autoSendToClient`: Boolean flag for automatic candidate sending without manual filtering (applies to candidates from all sources: import, email, landing page)
 

@@ -37,15 +37,11 @@ export default function JobForm({ job, onSuccess }: JobFormProps) {
       location: job?.location || "",
       salaryRange: job?.salaryRange || "",
       jobType: job?.jobType || "",
-      isRemote: job?.isRemote || false,
       status: job?.status || "active",
-      priority: job?.priority || "medium",
-      deadline: job?.deadline ? new Date(job.deadline).toISOString().split('T')[0] : undefined,
       clientId: job?.clientId || "",
       positions: job?.positions || 1,
       additionalCodes: job?.additionalCodes || [],
       contactEmails: job?.contactEmails || [],
-      internalNotes: job?.internalNotes || "",
       isUrgent: job?.isUrgent || false,
       autoSendToClient: job?.autoSendToClient || false,
     },
@@ -120,15 +116,12 @@ export default function JobForm({ job, onSuccess }: JobFormProps) {
   });
 
   const onSubmit = (data: any) => {
-    // Convert deadline to Date if provided
     const submitData = {
       ...data,
-      deadline: data.deadline ? new Date(data.deadline) : null,
       requirements: data.requirements || null,
       location: data.location || null,
       salaryRange: data.salaryRange || null,
       jobType: data.jobType || null,
-      priority: data.priority || "medium",
       additionalCodes: data.additionalCodes || [],
     };
 
@@ -159,30 +152,9 @@ export default function JobForm({ job, onSuccess }: JobFormProps) {
                   name="title"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-right">שם תפקיד:</FormLabel>
+                      <FormLabel className="text-right">שם המשרה:</FormLabel>
                       <FormControl>
                         <Input {...field} data-testid="input-job-title" className="text-right" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="deadline"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-right">תאריך סיום:</FormLabel>
-                      <FormControl>
-                        <div className="relative">
-                          <Input 
-                            type="date" 
-                            {...field}
-                            data-testid="input-deadline"
-                            className="text-right"
-                          />
-                        </div>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -364,25 +336,6 @@ export default function JobForm({ job, onSuccess }: JobFormProps) {
 
                 <FormField
                   control={form.control}
-                  name="internalNotes"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-right">הערה פנימית:</FormLabel>
-                      <FormControl>
-                        <Textarea 
-                          {...field}
-                          data-testid="textarea-internal-notes"
-                          className="min-h-[80px] text-right"
-                          placeholder="הערות פנימיות למשרה (לא יופיע ללקוח)"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
                   name="contactEmails"
                   render={({ field }) => (
                     <FormItem>
@@ -495,24 +448,6 @@ export default function JobForm({ job, onSuccess }: JobFormProps) {
                   />
                 </div>
 
-                <FormField
-                  control={form.control}
-                  name="isRemote"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-center space-x-3 space-x-reverse space-y-0">
-                      <FormControl>
-                        <Checkbox
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                          data-testid="checkbox-is-remote"
-                        />
-                      </FormControl>
-                      <div className="space-y-1 leading-none">
-                        <FormLabel>עבודה מרחוק</FormLabel>
-                      </div>
-                    </FormItem>
-                  )}
-                />
               </div>
             </div>
 
@@ -521,29 +456,6 @@ export default function JobForm({ job, onSuccess }: JobFormProps) {
               <h2 className="text-lg font-semibold text-gray-900 mb-6">פרטים אדמיניסטרטיביים</h2>
 
               <div className="space-y-6">
-                <FormField
-                  control={form.control}
-                  name="priority"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-right">עדיפות:</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger data-testid="select-job-priority" className="text-right">
-                            <SelectValue placeholder="בחר עדיפות" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="low">נמוכה</SelectItem>
-                          <SelectItem value="medium">בינונית</SelectItem>
-                          <SelectItem value="high">גבוהה</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
                 <FormField
                   control={form.control}
                   name="status"
