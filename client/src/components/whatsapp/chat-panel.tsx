@@ -1,13 +1,18 @@
-import { useState, useEffect, useRef } from 'react';
-import { X, Search, Send, Paperclip, Phone, Video, MoreVertical } from 'lucide-react';
+import { useState, useEffect, useRef, useMemo } from 'react';
+import { X, Search, Send, Paperclip, Phone, Video, MoreVertical, Pin, Tag, Archive, User, Users, Archive as ArchiveIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
-import { queryClient } from '@/lib/queryClient';
+import { queryClient, apiRequest } from '@/lib/queryClient';
+import { useToast } from '@/hooks/use-toast';
 
 interface WhatsAppChatPanelProps {
   isOpen: boolean;
@@ -22,6 +27,10 @@ interface Chat {
   lastMessageAt: string;
   lastMessagePreview: string;
   unreadCount: number;
+  chatType?: 'individual' | 'group' | 'archived';
+  isPinned?: boolean;
+  tags?: string[];
+  candidateId?: string;
 }
 
 interface Message {
@@ -39,20 +48,25 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedChat, setSelectedChat] = useState<Chat | null>(null);
   const [newMessage, setNewMessage] = useState('');
+  const [activeTab, setActiveTab] = useState<'individual' | 'group' | 'archived'>('individual');
+  const [selectedTagFilter, setSelectedTagFilter] = useState<string | null>(null);
+  const [tagsDialogOpen, setTagsDialogOpen] = useState(false);
+  const [newTag, setNewTag] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { toast } = useToast();
 
   // Fetch chats
   const { data: chats = [], isLoading: chatsLoading } = useQuery<Chat[]>({
     queryKey: ['/api/whatsapp/chats'],
     enabled: isOpen,
-    refetchInterval: 5000, // Refresh every 5 seconds
+    refetchInterval: 5000,
   });
 
   // Fetch messages for selected chat
   const { data: messages = [], isLoading: messagesLoading } = useQuery<Message[]>({
     queryKey: ['/api/whatsapp/messages', selectedChat?.remoteJid],
     enabled: !!selectedChat,
-    refetchInterval: 3000, // Refresh every 3 seconds
+    refetchInterval: 3000,
   });
 
   // Send message mutation
@@ -89,6 +103,58 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
     },
   });
 
+  // Toggle pin mutation
+  const togglePinMutation = useMutation({
+    mutationFn: async ({ candidateId, isPinned }: { candidateId: string; isPinned: boolean }) => {
+      return apiRequest(`/api/candidates/${candidateId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ isPinned }),
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/whatsapp/chats'] });
+      toast({
+        title: 'עודכן בהצלחה',
+        description: 'השיחה עודכנה',
+      });
+    },
+  });
+
+  // Update tags mutation
+  const updateTagsMutation = useMutation({
+    mutationFn: async ({ candidateId, tags }: { candidateId: string; tags: string[] }) => {
+      return apiRequest(`/api/candidates/${candidateId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ tags }),
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/whatsapp/chats'] });
+      toast({
+        title: 'תגיות עודכנו',
+        description: 'התגיות נשמרו בהצלחה',
+      });
+    },
+  });
+
+  // Toggle archive mutation
+  const toggleArchiveMutation = useMutation({
+    mutationFn: async ({ candidateId, chatType, previousChatType }: { candidateId: string; chatType: string; previousChatType?: string }) => {
+      return apiRequest(`/api/candidates/${candidateId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ chatType, previousChatType }),
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/whatsapp/chats'] });
+      setSelectedChat(null);
+      toast({
+        title: selectedChat?.chatType === 'archived' ? 'שוחזר מהארכיון' : 'הועבר לארכיון',
+        description: selectedChat?.chatType === 'archived' ? 'השיחה שוחזרה בהצלחה' : 'השיחה הועברה לארכיון',
+      });
+    },
+  });
+
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -117,10 +183,44 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
     };
   }, [chats]);
 
-  // Filter chats by search
-  const filteredChats = chats.filter(chat =>
-    (chat.name || '').toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Get unique tags
+  const allTags = useMemo(() => {
+    const tagsSet = new Set<string>();
+    chats.forEach(chat => {
+      (chat.tags || []).forEach(tag => tagsSet.add(tag));
+    });
+    return Array.from(tagsSet).sort((a, b) => a.localeCompare(b, 'he'));
+  }, [chats]);
+
+  // Filter chats by tab, search, and tags
+  const filteredChats = useMemo(() => {
+    let filtered = chats.filter(chat => {
+      const chatType = chat.chatType || 'individual';
+      return chatType === activeTab;
+    });
+
+    // Apply search filter
+    if (searchQuery) {
+      filtered = filtered.filter(chat => {
+        const nameMatch = (chat.name || '').toLowerCase().includes(searchQuery.toLowerCase());
+        const phoneMatch = (chat.remoteJid || '').toLowerCase().includes(searchQuery.toLowerCase());
+        const tagMatch = (chat.tags || []).some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()));
+        return nameMatch || phoneMatch || tagMatch;
+      });
+    }
+
+    // Apply tag filter
+    if (selectedTagFilter) {
+      filtered = filtered.filter(chat => (chat.tags || []).includes(selectedTagFilter));
+    }
+
+    // Sort: pinned first, then by last message time
+    return filtered.sort((a, b) => {
+      if (a.isPinned && !b.isPinned) return -1;
+      if (!a.isPinned && b.isPinned) return 1;
+      return new Date(b.lastMessageAt || 0).getTime() - new Date(a.lastMessageAt || 0).getTime();
+    });
+  }, [chats, activeTab, searchQuery, selectedTagFilter]);
 
   // Handle send message
   const handleSendMessage = async (e: React.FormEvent) => {
@@ -130,6 +230,50 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
     sendMessageMutation.mutate({
       to: selectedChat.remoteJid,
       text: newMessage,
+    });
+  };
+
+  // Handle toggle pin
+  const handleTogglePin = () => {
+    if (!selectedChat?.candidateId) return;
+    togglePinMutation.mutate({
+      candidateId: selectedChat.candidateId,
+      isPinned: !selectedChat.isPinned,
+    });
+  };
+
+  // Handle toggle archive
+  const handleToggleArchive = () => {
+    if (!selectedChat?.candidateId) return;
+    const isCurrentlyArchived = selectedChat.chatType === 'archived';
+    
+    toggleArchiveMutation.mutate({
+      candidateId: selectedChat.candidateId,
+      chatType: isCurrentlyArchived ? (selectedChat as any).previousChatType || 'individual' : 'archived',
+      previousChatType: isCurrentlyArchived ? undefined : selectedChat.chatType || 'individual',
+    });
+  };
+
+  // Handle add tag
+  const handleAddTag = () => {
+    if (!selectedChat?.candidateId || !newTag.trim()) return;
+    const currentTags = selectedChat.tags || [];
+    if (!currentTags.includes(newTag.trim())) {
+      updateTagsMutation.mutate({
+        candidateId: selectedChat.candidateId,
+        tags: [...currentTags, newTag.trim()],
+      });
+      setNewTag('');
+    }
+  };
+
+  // Handle remove tag
+  const handleRemoveTag = (tag: string) => {
+    if (!selectedChat?.candidateId) return;
+    const currentTags = selectedChat.tags || [];
+    updateTagsMutation.mutate({
+      candidateId: selectedChat.candidateId,
+      tags: currentTags.filter(t => t !== tag),
     });
   };
 
@@ -160,7 +304,7 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
         <div className="flex flex-col flex-1">
           {/* Chat Header */}
           <div className="flex items-center justify-between p-3 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 flex-1">
               <Button
                 variant="ghost"
                 size="sm"
@@ -171,19 +315,74 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
               </Button>
               <Avatar className="h-10 w-10">
                 <AvatarImage src={selectedChat.profilePicUrl} />
-                <AvatarFallback className="bg-green-500 text-white">
-                  {selectedChat.name.charAt(0)}
-                </AvatarFallback>
+                <AvatarFallback className="bg-green-500 text-white"></AvatarFallback>
               </Avatar>
-              <div className="flex-1">
-                <p className="font-medium text-sm">{selectedChat.name}</p>
+              <div className="flex-1 min-w-0">
+                <p className="font-medium text-sm truncate">{selectedChat.name}</p>
                 <p className="text-xs text-gray-500">מקוון</p>
               </div>
             </div>
-            <div className="flex gap-2">
-              <Button variant="ghost" size="sm"><Phone className="h-4 w-4" /></Button>
-              <Button variant="ghost" size="sm"><Video className="h-4 w-4" /></Button>
-              <Button variant="ghost" size="sm"><MoreVertical className="h-4 w-4" /></Button>
+            <div className="flex gap-1">
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button 
+                      variant={selectedChat.isPinned ? "secondary" : "ghost"}
+                      size="sm"
+                      className="h-7 w-7"
+                      onClick={handleTogglePin}
+                      data-testid="button-pin-header"
+                    >
+                      <Pin className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">
+                    <p>{selectedChat.isPinned ? 'בטל נעיצה' : 'נעץ שיחה'}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button 
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 w-7"
+                      onClick={() => setTagsDialogOpen(true)}
+                      data-testid="button-tags-header"
+                    >
+                      <Tag className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">
+                    <p>נהל תגיות</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button 
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 w-7"
+                      onClick={handleToggleArchive}
+                      data-testid="button-archive-header"
+                    >
+                      <Archive className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">
+                    <p>{selectedChat.chatType === 'archived' ? 'שחזר מארכיון' : 'העבר לארכיון'}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+
+              <Button variant="ghost" size="sm" className="h-7 w-7"><Phone className="h-4 w-4" /></Button>
+              <Button variant="ghost" size="sm" className="h-7 w-7"><Video className="h-4 w-4" /></Button>
+              <Button variant="ghost" size="sm" className="h-7 w-7"><MoreVertical className="h-4 w-4" /></Button>
             </div>
           </div>
 
@@ -251,70 +450,227 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
       ) : (
         // Chats List View
         <>
-          {/* Search */}
-          <div className="p-3 border-b border-gray-200 dark:border-gray-700">
-            <div className="relative">
-              <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-              <Input
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="חפש שיחה..."
-                className="pr-10"
-                data-testid="input-search-chats"
-              />
-            </div>
-          </div>
+          {/* Tabs */}
+          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="flex-1 flex flex-col">
+            <TabsList className="grid w-full grid-cols-3 bg-gray-100 dark:bg-gray-800">
+              <TabsTrigger value="individual" className="gap-2">
+                <User className="h-4 w-4" />
+                <span>צ'אטים</span>
+              </TabsTrigger>
+              <TabsTrigger value="group" className="gap-2">
+                <Users className="h-4 w-4" />
+                <span>קבוצות</span>
+              </TabsTrigger>
+              <TabsTrigger value="archived" className="gap-2">
+                <ArchiveIcon className="h-4 w-4" />
+                <span>ארכיון</span>
+              </TabsTrigger>
+            </TabsList>
 
-          {/* Chats List */}
-          <ScrollArea className="flex-1">
-            {chatsLoading ? (
-              <div className="text-center py-8">טוען שיחות...</div>
-            ) : filteredChats.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
-                {searchQuery ? 'לא נמצאו שיחות' : 'אין שיחות פעילות'}
+            <TabsContent value={activeTab} className="flex-1 flex flex-col mt-0">
+              {/* Search */}
+              <div className="p-3 border-b border-gray-200 dark:border-gray-700">
+                <div className="relative">
+                  <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                  <Input
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="חפש שיחה..."
+                    className="pr-10"
+                    data-testid="input-search-chats"
+                  />
+                </div>
               </div>
-            ) : (
-              <div>
-                {filteredChats.map((chat) => (
-                  <button
-                    key={chat.id}
-                    onClick={() => setSelectedChat(chat)}
-                    className="w-full flex items-center gap-3 p-3 hover:bg-gray-50 dark:hover:bg-gray-800 border-b border-gray-200 dark:border-gray-700 text-right transition-colors"
-                    data-testid={`chat-${chat.id}`}
-                  >
-                    <Avatar className="h-12 w-12">
-                      <AvatarImage src={chat.profilePicUrl} />
-                      <AvatarFallback className="bg-green-500 text-white">
-                        {chat.name.charAt(0)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between mb-1">
-                        <p className="font-medium text-sm truncate">{chat.name}</p>
-                        <span className="text-xs text-gray-500">
-                          {chat.lastMessageAt
-                            ? format(new Date(chat.lastMessageAt), 'HH:mm', { locale: he })
-                            : ''}
-                        </span>
+
+              {/* Tag Filters */}
+              {allTags.length > 0 && (
+                <div className="p-3 border-b border-gray-200 dark:border-gray-700">
+                  <div className="flex flex-wrap gap-2">
+                    <Badge
+                      variant={selectedTagFilter === null ? "default" : "outline"}
+                      className="cursor-pointer"
+                      onClick={() => setSelectedTagFilter(null)}
+                    >
+                      הכל
+                    </Badge>
+                    {allTags.map(tag => (
+                      <Badge
+                        key={tag}
+                        variant={selectedTagFilter === tag ? "default" : "outline"}
+                        className="cursor-pointer"
+                        onClick={() => setSelectedTagFilter(tag)}
+                      >
+                        {tag}
+                      </Badge>
+                    ))}
+                  </div>
+                  <p className="text-xs text-gray-500 mt-2">
+                    {filteredChats.length} מתוך {chats.filter(c => (c.chatType || 'individual') === activeTab).length} שיחות
+                  </p>
+                </div>
+              )}
+
+              {/* Chats List */}
+              <ScrollArea className="flex-1">
+                {chatsLoading ? (
+                  <div className="text-center py-8">טוען שיחות...</div>
+                ) : filteredChats.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    {searchQuery || selectedTagFilter ? 'לא נמצאו שיחות' : 'אין שיחות פעילות'}
+                  </div>
+                ) : (
+                  <div>
+                    {filteredChats.map((chat) => (
+                      <div key={chat.id} className="relative">
+                        <button
+                          onClick={() => setSelectedChat(chat)}
+                          className="w-full flex items-center gap-3 p-3 hover:bg-gray-50 dark:hover:bg-gray-800 border-b border-gray-200 dark:border-gray-700 text-right transition-colors"
+                          data-testid={`chat-${chat.id}`}
+                        >
+                          <Avatar className="h-12 w-12">
+                            <AvatarImage src={chat.profilePicUrl} />
+                            <AvatarFallback className="bg-green-500 text-white"></AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between mb-1">
+                              <div className="flex items-center gap-2">
+                                <p className="font-medium text-sm truncate">{chat.name}</p>
+                                {chat.isPinned && <Pin className="h-3 w-3 text-amber-500" />}
+                              </div>
+                              <span className="text-xs text-gray-500">
+                                {chat.lastMessageAt
+                                  ? format(new Date(chat.lastMessageAt), 'HH:mm', { locale: he })
+                                  : ''}
+                              </span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <p className="text-sm text-gray-500 truncate">
+                                {chat.lastMessagePreview}
+                              </p>
+                              {chat.unreadCount > 0 && (
+                                <span className="bg-green-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center flex-shrink-0">
+                                  {chat.unreadCount}
+                                </span>
+                              )}
+                            </div>
+                            {(chat.tags || []).length > 0 && (
+                              <div className="flex flex-wrap gap-1 mt-1">
+                                {chat.tags!.map(tag => (
+                                  <Badge key={tag} variant="secondary" className="text-xs">
+                                    {tag}
+                                  </Badge>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </button>
+                        
+                        {/* Pin and Tags buttons at bottom of chat row */}
+                        <div className="absolute bottom-2 left-2 flex gap-1">
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-5 w-5 p-0"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (chat.candidateId) {
+                                      togglePinMutation.mutate({
+                                        candidateId: chat.candidateId,
+                                        isPinned: !chat.isPinned,
+                                      });
+                                    }
+                                  }}
+                                  data-testid={`button-pin-${chat.id}`}
+                                >
+                                  <Pin className={`h-3 w-3 ${chat.isPinned ? 'text-amber-500' : 'text-gray-400'}`} />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent side="bottom">
+                                <p>{chat.isPinned ? 'בטל נעיצת שיחה' : 'נעץ שיחה למעלה'}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-5 w-5 p-0"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedChat(chat);
+                                    setTagsDialogOpen(true);
+                                  }}
+                                  data-testid={`button-tags-${chat.id}`}
+                                >
+                                  <Tag className="h-3 w-3 text-blue-500" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent side="bottom">
+                                <p>נהל תגיות למיון ושיוך</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </div>
                       </div>
-                      <div className="flex items-center justify-between">
-                        <p className="text-sm text-gray-500 truncate">
-                          {chat.lastMessagePreview}
-                        </p>
-                        {chat.unreadCount > 0 && (
-                          <span className="bg-green-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                            {chat.unreadCount}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            )}
-          </ScrollArea>
+                    ))}
+                  </div>
+                )}
+              </ScrollArea>
+            </TabsContent>
+          </Tabs>
         </>
       )}
+
+      {/* Tags Management Dialog */}
+      <Dialog open={tagsDialogOpen} onOpenChange={setTagsDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>ניהול תגיות</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="flex gap-2">
+              <Input
+                value={newTag}
+                onChange={(e) => setNewTag(e.target.value)}
+                placeholder="הוסף תגית חדשה..."
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleAddTag();
+                  }
+                }}
+              />
+              <Button onClick={handleAddTag} disabled={!newTag.trim()}>
+                הוסף
+              </Button>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {(selectedChat?.tags || []).map(tag => (
+                <Badge key={tag} variant="default" className="gap-2">
+                  {tag}
+                  <button
+                    onClick={() => handleRemoveTag(tag)}
+                    className="text-white hover:text-gray-200"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </Badge>
+              ))}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setTagsDialogOpen(false)}>
+              סגור
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
