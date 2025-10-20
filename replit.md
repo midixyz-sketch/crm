@@ -102,6 +102,11 @@ Preferred communication style: Simple, everyday language.
     -   **Connection**: Click on Linkjob logo in sidebar to open WhatsApp connection dialog with QR code scanning
     -   **Backend**: Baileys (@whiskeysockets/baileys) library for WhatsApp Web protocol
     -   **Database**: 3 tables - whatsapp_sessions (connection state), whatsapp_chats (conversation list), whatsapp_messages (message history)
+    -   **Initialization Logic** (Fixed October 2025):
+        -   Checks only `isConnected` status, not socket existence - prevents stale sockets from blocking new QR generation
+        -   `currentQR` variable stores latest QR code for reliable retrieval
+        -   QR cleared on successful connection or logout
+        -   Auth directory (`whatsapp_auth/`) must be clean for first-time setup to avoid 401 errors
     -   **Singleton Pattern**: Global lock mechanism at routes level prevents concurrent WhatsApp connections
         -   `safeWhatsAppInit()` function with request queuing system
         -   Prevents "Stream Errored (conflict)" issues caused by multiple simultaneous connections
