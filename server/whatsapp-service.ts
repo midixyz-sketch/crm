@@ -648,6 +648,23 @@ class WhatsAppService {
   }
 
   /**
+   * Get profile picture URL for a contact
+   */
+  async getProfilePicture(jid: string): Promise<string | null> {
+    try {
+      if (!this.state.socket || !this.state.isConnected) {
+        throw new Error('WhatsApp not connected');
+      }
+
+      const profilePicUrl = await this.state.socket.profilePictureUrl(jid, 'image');
+      return profilePicUrl || null;
+    } catch (error) {
+      logger.error(`Error getting profile picture for ${jid}: ${error}`);
+      return null;
+    }
+  }
+
+  /**
    * Get connection status
    */
   getStatus() {
