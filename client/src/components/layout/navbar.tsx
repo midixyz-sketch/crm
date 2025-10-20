@@ -56,14 +56,14 @@ export default function Navbar() {
           <div className="flex items-center">
             <Link href="/" data-testid="link-logo" className="hover:opacity-80 transition-opacity">
               <div className="flex flex-col items-start">
-                <h1 className="text-2xl font-bold text-primary">Linkjob</h1>
-                <p className="text-xs text-gray-600 dark:text-gray-300">מערכת לניהול הגיוס</p>
+                <h1 className="text-3xl font-bold text-primary">Linkjob</h1>
+                <p className="text-sm text-gray-600 dark:text-gray-300">מערכת לניהול הגיוס</p>
               </div>
             </Link>
           </div>
 
           {/* User Menu */}
-          <div className="hidden lg:flex items-center">
+          <div className="hidden lg:flex items-center ml-8">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button className="w-10 h-10 bg-primary text-white rounded-full flex items-center justify-center cursor-pointer hover:opacity-80 transition-opacity focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2">

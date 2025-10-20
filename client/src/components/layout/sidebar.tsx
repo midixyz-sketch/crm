@@ -22,8 +22,8 @@ export default function Sidebar() {
       <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex justify-center">
         <Link href="/" data-testid="link-logo-sidebar" className="hover:opacity-80 transition-opacity">
           <div className="flex flex-col items-center text-center">
-            <h1 className="text-2xl font-bold text-primary">Linkjob</h1>
-            <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">מערכת לניהול הגיוס</p>
+            <h1 className="text-3xl font-bold text-primary">Linkjob</h1>
+            <p className="text-base text-gray-600 dark:text-gray-300 mt-1">מערכת לניהול הגיוס</p>
           </div>
         </Link>
       </div>
