@@ -199,7 +199,7 @@ export default function JobForm({ job, onSuccess }: JobFormProps) {
                   name="clientId"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-right">*לקוח נשרת ראשית:</FormLabel>
+                      <FormLabel className="text-right">לקוח:</FormLabel>
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
                           <SelectTrigger data-testid="select-client" className="text-right">
@@ -224,7 +224,7 @@ export default function JobForm({ job, onSuccess }: JobFormProps) {
                   name="jobType"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-right">סוג נשרת תפקידי:</FormLabel>
+                      <FormLabel className="text-right">סוג משרה:</FormLabel>
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
                           <SelectTrigger data-testid="select-job-type" className="text-right">
@@ -248,7 +248,7 @@ export default function JobForm({ job, onSuccess }: JobFormProps) {
                   name="positions"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-right">*מיועש קטני:</FormLabel>
+                      <FormLabel className="text-right">מספר משרות:</FormLabel>
                       <FormControl>
                         <Input 
                           type="number" 
@@ -354,7 +354,7 @@ export default function JobForm({ job, onSuccess }: JobFormProps) {
                   name="requirements"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-right">*תאור נשרת פנימיות:</FormLabel>
+                      <FormLabel className="text-right">דרישות:</FormLabel>
                       <FormControl>
                         <Textarea 
                           {...field}
@@ -380,7 +380,7 @@ export default function JobForm({ job, onSuccess }: JobFormProps) {
                         />
                       </FormControl>
                       <div className="space-y-1 leading-none">
-                        <FormLabel>האם נערכה פגישת בעלים ראשונים</FormLabel>
+                        <FormLabel>עבודה מרחוק</FormLabel>
                       </div>
                     </FormItem>
                   )}
@@ -388,9 +388,9 @@ export default function JobForm({ job, onSuccess }: JobFormProps) {
               </div>
             </div>
 
-            {/* עדות אדמיניסטרטיביים */}
+            {/* פרטים אדמיניסטרטיביים */}
             <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-6">עדות אדמיניסטרטיביים</h2>
+              <h2 className="text-lg font-semibold text-gray-900 mb-6">פרטים אדמיניסטרטיביים</h2>
 
               <div className="space-y-6">
                 <FormField
@@ -398,7 +398,7 @@ export default function JobForm({ job, onSuccess }: JobFormProps) {
                   name="priority"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-right">רמת צניון אנטיביו:</FormLabel>
+                      <FormLabel className="text-right">עדיפות:</FormLabel>
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
                           <SelectTrigger data-testid="select-job-priority" className="text-right">
@@ -421,7 +421,7 @@ export default function JobForm({ job, onSuccess }: JobFormProps) {
                   name="status"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-right">יסטת שלווה:</FormLabel>
+                      <FormLabel className="text-right">סטטוס:</FormLabel>
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
                           <SelectTrigger data-testid="select-job-status" className="text-right">
@@ -444,7 +444,7 @@ export default function JobForm({ job, onSuccess }: JobFormProps) {
                   name="salaryRange"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-right">שילוח תחתותני:</FormLabel>
+                      <FormLabel className="text-right">טווח שכר:</FormLabel>
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
                           <SelectTrigger className="text-right">
@@ -466,7 +466,7 @@ export default function JobForm({ job, onSuccess }: JobFormProps) {
                   name="location"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-right">רכב עטמני:</FormLabel>
+                      <FormLabel className="text-right">מיקום:</FormLabel>
                       <Select>
                         <FormControl>
                           <SelectTrigger className="text-right">
@@ -526,7 +526,7 @@ export default function JobForm({ job, onSuccess }: JobFormProps) {
                 disabled={createJob.isPending || updateJob.isPending}
                 data-testid="button-save-job"
               >
-                {createJob.isPending || updateJob.isPending ? "שומר..." : job ? "עדכן משרה" : "צור משרה המזל"}
+                {createJob.isPending || updateJob.isPending ? "שומר..." : job ? "עדכן משרה" : "צור משרה חדשה"}
               </Button>
             </div>
           </form>
