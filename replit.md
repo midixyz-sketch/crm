@@ -72,6 +72,17 @@ Preferred communication style: Simple, everyday language.
     -   Templates accessible from candidate detail page (`/candidates/:id`) and interview review page (`/interviews/:jobId`)
     -   API endpoints: GET/POST/PUT/DELETE `/api/message-templates`
     -   Fallback to hardcoded templates if database is empty
+-   **Calendar & Reminders System**: Full-featured calendar with reminders and interview events management accessible from `/calendar`
+    -   **Full day coverage**: Calendar displays all 24 hours (0-23) instead of limited business hours
+    -   **Reminder creation and editing**: Create new reminders or edit existing ones via inline edit button
+    -   **Candidate linking**: Reminders can be linked to candidates with clickable names for quick navigation
+    -   **Creator tracking**: Each reminder displays the name of the user who created it (createdByUser field)
+    -   **Priority levels**: Low, medium, and high priority indicators
+    -   **Status management**: Mark reminders as completed or pending
+    -   **Due reminder alerts**: Popup notifications for due reminders with snooze functionality
+    -   ReminderWithDetails type includes: candidate, job, client, and createdByUser relations
+    -   Backend returns full user details for reminder creators in all queries
+    -   API endpoints: GET/POST/PUT/DELETE `/api/reminders`
 
 # External Dependencies
 
