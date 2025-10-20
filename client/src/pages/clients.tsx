@@ -163,10 +163,10 @@ export default function Clients() {
                   <Table>
                     <TableHeader>
                       <TableRow className="bg-gray-50 dark:bg-gray-900">
-                        <TableHead className="text-right font-medium text-gray-700 dark:text-gray-300">מס' לקוח</TableHead>
+                        <TableHead className="text-right font-medium text-gray-700 dark:text-gray-300">מספר לקוח</TableHead>
                         <TableHead className="text-right font-medium text-gray-700 dark:text-gray-300">שם החברה</TableHead>
-                        <TableHead className="text-right font-medium text-gray-700 dark:text-gray-300">סטטוס</TableHead>
-                        <TableHead className="text-right font-medium text-gray-700 dark:text-gray-300">תחום</TableHead>
+                        <TableHead className="text-right font-medium text-gray-700 dark:text-gray-300">מצב</TableHead>
+                        <TableHead className="text-right font-medium text-gray-700 dark:text-gray-300">תחום פעילות</TableHead>
                         <TableHead className="text-right font-medium text-gray-700 dark:text-gray-300">פעולות</TableHead>
                       </TableRow>
                     </TableHeader>
