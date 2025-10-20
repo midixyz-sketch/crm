@@ -178,11 +178,13 @@ class WhatsAppService {
         }
 
         if (connection === 'close') {
-          const shouldReconnect = 
-            (lastDisconnect?.error as Boom)?.output?.statusCode !== 
-            DisconnectReason.loggedOut;
+          const statusCode = (lastDisconnect?.error as Boom)?.output?.statusCode;
+          const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
 
-          logger.info(`Connection closed. Reconnecting: ${shouldReconnect}`);
+          // Check if it's a conflict error
+          const isConflict = lastDisconnect?.error?.message?.includes('conflict');
+          
+          logger.info(`Connection closed. Status: ${statusCode}, Reconnecting: ${shouldReconnect}, Conflict: ${isConflict}`);
 
           this.state.isConnected = false;
           this.state.qrCode = null;
@@ -199,8 +201,12 @@ class WhatsAppService {
               .where(eq(whatsappSessions.id, existingSession.id));
           }
 
-          if (shouldReconnect) {
+          // Don't reconnect on conflict - it means another instance is running
+          if (shouldReconnect && !isConflict) {
+            logger.info('Scheduling reconnection in 3 seconds...');
             setTimeout(() => this.initialize(userId), 3000);
+          } else if (isConflict) {
+            logger.warn('Connection closed due to conflict - another instance may be running. Not reconnecting.');
           }
         } else if (connection === 'open') {
           logger.info('WhatsApp connection opened');
@@ -232,61 +238,55 @@ class WhatsAppService {
             currentSession = newSession;
           }
 
-          // Import existing chats immediately after connection
+          // Wait for chats to sync naturally, then fallback to manual fetch if needed
           setTimeout(async () => {
             try {
-              logger.info('Fetching existing chats from store...');
+              logger.info('Checking if chats were synced...');
               
-              // Get chats from Baileys store
-              const store = (socket as any).ev?.store;
-              if (!store || !store.chats) {
-                logger.warn('No store or chats available');
+              // Check if we have any chats in DB for this session
+              const existingChats = await db.query.whatsappChats.findMany({
+                where: eq(whatsappChats.sessionId, currentSession.id)
+              });
+
+              if (existingChats.length > 0) {
+                logger.info(`Found ${existingChats.length} existing chats, no need to import`);
                 return;
               }
 
-              const allChats = Object.values(store.chats.all());
-              logger.info(`Found ${allChats.length} chats in store`);
+              // No chats found - manually fetch from WhatsApp
+              logger.info('No chats found, manually fetching from WhatsApp...');
+              
+              // Fetch all group chats
+              try {
+                const groups = await socket.groupFetchAllParticipating();
+                const groupIds = Object.keys(groups);
+                logger.info(`Found ${groupIds.length} group chats`);
 
-              for (const chat of allChats as any[]) {
-                try {
-                  const remoteJid = chat.id;
-                  const name = chat.name || chat.conversationTimestamp || remoteJid.split('@')[0];
-                  const phoneNumber = remoteJid.split('@')[0];
-                  
-                  const candidate = await db.query.candidates.findFirst({
-                    where: eq(candidates.mobile, phoneNumber)
-                  });
-
-                  const existingChat = await db.query.whatsappChats.findFirst({
-                    where: eq(whatsappChats.remoteJid, remoteJid)
-                  });
-
-                  const lastMessageAt = chat.conversationTimestamp 
-                    ? new Date(Number(chat.conversationTimestamp) * 1000)
-                    : new Date();
-
-                  if (!existingChat) {
+                for (const id of groupIds) {
+                  try {
+                    const group = groups[id];
                     await db.insert(whatsappChats).values({
                       sessionId: currentSession.id,
-                      candidateId: candidate?.id || null,
-                      remoteJid,
-                      name,
-                      lastMessageAt,
+                      candidateId: null,
+                      remoteJid: id,
+                      name: group.subject || id.split('@')[0],
+                      lastMessageAt: new Date(group.creation * 1000),
                       lastMessagePreview: '',
-                      unreadCount: chat.unreadCount || 0,
+                      unreadCount: 0,
                     });
-                    logger.info(`Imported chat: ${name} (${remoteJid})`);
+                  } catch (err) {
+                    logger.error(`Error importing group ${id}: ${err}`);
                   }
-                } catch (err) {
-                  logger.error(`Error importing chat: ${err}`);
                 }
+              } catch (err) {
+                logger.error(`Error fetching groups: ${err}`);
               }
 
-              logger.info(`Successfully processed ${allChats.length} chats`);
+              logger.info('Manual chat import completed');
             } catch (error) {
-              logger.error(`Error importing existing chats: ${error}`);
+              logger.error(`Error in chat sync fallback: ${error}`);
             }
-          }, 3000); // Wait 3 seconds after connection to fetch chats
+          }, 5000); // Wait 5 seconds to let natural sync happen first
         }
       });
 

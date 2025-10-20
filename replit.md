@@ -102,8 +102,16 @@ Preferred communication style: Simple, everyday language.
     -   **Connection**: Click on Linkjob logo in sidebar to open WhatsApp connection dialog with QR code scanning
     -   **Backend**: Baileys (@whiskeysockets/baileys) library for WhatsApp Web protocol
     -   **Database**: 3 tables - whatsapp_sessions (connection state), whatsapp_chats (conversation list), whatsapp_messages (message history)
+    -   **Singleton Pattern**: Global lock mechanism at routes level prevents concurrent WhatsApp connections
+        -   `safeWhatsAppInit()` function with request queuing system
+        -   Prevents "Stream Errored (conflict)" issues caused by multiple simultaneous connections
+        -   All initialization requests wait in queue if another is in progress
     -   **Floating Button**: Draggable WhatsApp button in bottom-left corner with unread message counter
     -   **Chat Panel**: Side panel with chat list and conversation view, polls for new messages every 5 seconds
+    -   **Chat Sync**: Intelligent fallback system for syncing chats from WhatsApp
+        -   Primary: Natural sync via `chats.set` and `chats.upsert` events
+        -   Fallback: Manual fetch from WhatsApp if no chats detected after 5 seconds
+        -   Fetches group chats via `groupFetchAllParticipating()` API
     -   **Message Sending**: From candidate detail page - select template, edit message, send via WhatsApp API
     -   **Status Updates**: Automatically updates candidate status to "נשלחה הודעת ווצאפ" after sending
     -   **Event Logging**: All WhatsApp interactions automatically logged in candidate event history
@@ -112,9 +120,12 @@ Preferred communication style: Simple, everyday language.
     -   **Notifications**: Toast notifications for incoming messages with auto-refresh
     -   **CV Import**: Automatic detection of PDF/DOCX attachments with user confirmation dialog
     -   **Phone Formatting**: Supports +972, 972, and 05X formats with automatic normalization
+    -   **Reconnection Logic**: Smart reconnection system
+        -   Detects conflict errors and prevents reconnection loops
+        -   Only reconnects on genuine disconnections (not logouts or conflicts)
+        -   Logs connection status and conflict detection for debugging
     -   **Error Handling**: "Slower but never crash" principle - comprehensive error handling throughout
     -   **API Endpoints**: 9 endpoints for initialize, logout, send, get chats, get messages, mark read, send by number
-    -   **Auto-reconnect**: Automatic QR refresh and reconnection on connection loss
     -   **Stability Priority**: System prioritizes stability over speed, will never crash even with connection issues
 
 # External Dependencies
