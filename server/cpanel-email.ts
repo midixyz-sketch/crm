@@ -294,8 +294,23 @@ export async function checkCpanelEmails(): Promise<void> {
         });
 
         debugFetch.once("end", () => {
-          // Now search for unread emails
-          imap.search(["UNSEEN"], (err, results) => {
+          // Search for emails from the last 24 hours (regardless of UNSEEN status)
+          // This ensures we process emails even if they were read
+          const yesterday = new Date();
+          yesterday.setDate(yesterday.getDate() - 1);
+          const dateStr = yesterday.toISOString().split('T')[0].replace(/-/g, '-'); // Format: DD-MMM-YYYY
+          
+          // Format date for IMAP: DD-Mon-YYYY (e.g., "19-Oct-2025")
+          const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+          const day = yesterday.getDate();
+          const month = months[yesterday.getMonth()];
+          const year = yesterday.getFullYear();
+          const imapDateStr = `${day}-${month}-${year}`;
+          
+          console.log(`🔍 מחפש מיילים מ-${imapDateStr} ואילך (כולל מיילים שכבר נקראו)`);
+          
+          // Search for emails since yesterday - IMAP needs the date as a separate element in a nested array
+          imap.search([['SINCE', yesterday]], (err, results) => {
             if (err) {
               console.error("❌ שגיאה בחיפוש מיילים:", err.message);
               if (!resolved) {
