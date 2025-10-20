@@ -33,7 +33,7 @@ interface ImportSummary {
 }
 
 export default function BulkImportCandidates() {
-  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null);
   const [importing, setImporting] = useState(false);
   const [progress, setProgress] = useState(0);
   const [results, setResults] = useState<ImportResult[]>([]);
@@ -42,6 +42,8 @@ export default function BulkImportCandidates() {
   const { toast } = useToast();
   const { isSuperAdmin, isLoading } = usePermissions();
   const [, setLocation] = useLocation();
+
+  const fileCount = selectedFiles?.length || 0;
 
   useEffect(() => {
     // Only redirect if loading is done and user is not super admin
@@ -90,16 +92,15 @@ export default function BulkImportCandidates() {
   }
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      const files = Array.from(e.target.files);
-      setSelectedFiles(files);
+    if (e.target.files && e.target.files.length > 0) {
+      setSelectedFiles(e.target.files);
       setResults([]);
       setSummary(null);
     }
   };
 
   const handleImport = async () => {
-    if (selectedFiles.length === 0) {
+    if (!selectedFiles || selectedFiles.length === 0) {
       toast({
         title: "שגיאה",
         description: "אנא בחר קבצים לייבוא",
@@ -118,18 +119,19 @@ export default function BulkImportCandidates() {
     let totalSuccess = 0;
     let totalDuplicate = 0;
     let totalFailed = 0;
+    const totalFiles = selectedFiles.length;
 
     try {
-      const totalBatches = Math.ceil(selectedFiles.length / BATCH_SIZE);
+      const totalBatches = Math.ceil(totalFiles / BATCH_SIZE);
 
-      for (let i = 0; i < selectedFiles.length; i += BATCH_SIZE) {
-        const batchFiles = selectedFiles.slice(i, i + BATCH_SIZE);
+      for (let i = 0; i < totalFiles; i += BATCH_SIZE) {
         const currentBatch = Math.floor(i / BATCH_SIZE) + 1;
+        const batchEnd = Math.min(i + BATCH_SIZE, totalFiles);
 
         const formData = new FormData();
-        batchFiles.forEach(file => {
-          formData.append('cvFiles', file);
-        });
+        for (let j = i; j < batchEnd; j++) {
+          formData.append('cvFiles', selectedFiles[j]);
+        }
 
         const response = await fetch('/api/candidates/bulk-import', {
           method: 'POST',
@@ -153,7 +155,7 @@ export default function BulkImportCandidates() {
         setProgress(progressPercent);
         setResults([...allResults]);
         setSummary({
-          total: selectedFiles.length,
+          total: totalFiles,
           success: totalSuccess,
           duplicate: totalDuplicate,
           failed: totalFailed
@@ -162,7 +164,7 @@ export default function BulkImportCandidates() {
 
       toast({
         title: "ייבוא הושלם!",
-        description: `${totalSuccess} מועמדים נוצרו בהצלחה מתוך ${selectedFiles.length} קבצים`,
+        description: `${totalSuccess} מועמדים נוצרו בהצלחה מתוך ${totalFiles} קבצים`,
       });
 
     } catch (error) {
@@ -178,7 +180,7 @@ export default function BulkImportCandidates() {
   };
 
   const handleReset = () => {
-    setSelectedFiles([]);
+    setSelectedFiles(null);
     setResults([]);
     setSummary(null);
     setProgress(0);
@@ -251,18 +253,18 @@ export default function BulkImportCandidates() {
                 className="hidden"
                 data-testid="input-file-upload"
               />
-              {selectedFiles.length > 0 && (
+              {fileCount > 0 && (
                 <span className="text-sm text-muted-foreground">
-                  {selectedFiles.length} קבצים נבחרו
+                  {fileCount.toLocaleString()} קבצים נבחרו
                 </span>
               )}
             </div>
 
-            {selectedFiles.length > 0 && selectedFiles.length <= 100 && (
+            {fileCount > 0 && fileCount <= 100 && (
               <div className="space-y-2">
                 <h3 className="font-medium">קבצים שנבחרו:</h3>
                 <div className="max-h-40 overflow-y-auto space-y-1">
-                  {selectedFiles.map((file, index) => (
+                  {selectedFiles && Array.from(selectedFiles).map((file, index) => (
                     <div key={index} className="flex items-center gap-2 text-sm p-2 bg-muted rounded" data-testid={`file-item-${index}`}>
                       <FileText className="h-4 w-4" />
                       <span>{file.name}</span>
@@ -274,10 +276,10 @@ export default function BulkImportCandidates() {
                 </div>
               </div>
             )}
-            {selectedFiles.length > 100 && (
+            {fileCount > 100 && (
               <Alert>
                 <AlertDescription>
-                  נבחרו {selectedFiles.length.toLocaleString()} קבצים. המערכת מוכנה לייבוא - לחץ על "התחל ייבוא"
+                  נבחרו {fileCount.toLocaleString()} קבצים. המערכת מוכנה לייבוא - לחץ על "התחל ייבוא"
                 </AlertDescription>
               </Alert>
             )}
@@ -285,12 +287,12 @@ export default function BulkImportCandidates() {
             <div className="flex gap-2">
               <Button
                 onClick={handleImport}
-                disabled={importing || selectedFiles.length === 0}
+                disabled={importing || fileCount === 0}
                 data-testid="button-start-import"
               >
                 {importing ? 'מייבא...' : 'התחל ייבוא'}
               </Button>
-              {(selectedFiles.length > 0 || results.length > 0) && (
+              {(fileCount > 0 || results.length > 0) && (
                 <Button
                   onClick={handleReset}
                   variant="outline"
