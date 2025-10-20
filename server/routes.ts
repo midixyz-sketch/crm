@@ -1361,10 +1361,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 recruitmentSource: `ייבוא מרובה - ${req.user?.email?.split('@')[0] || 'מנהל'}`
               };
 
-              // Check for duplicates
+              // Check for duplicates - בייבוא מרובה רק לפי טלפון נייד!
               const existingCandidate = await storage.findCandidateByContactInfo(
                 candidateData.mobile || '',
-                candidateData.email || '',
+                '', // לא בודקים מייל בייבוא מרובה - רק טלפון!
                 ''
               );
 
