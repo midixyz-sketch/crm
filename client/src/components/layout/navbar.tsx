@@ -22,11 +22,8 @@ const navigation = [
   { name: "מאגר לקוחות", href: "/clients", icon: Building2 },
   { name: "מאגר משרות", href: "/jobs", icon: Briefcase },
   { name: "ראיונות", href: "/interviews", icon: UserCheck },
-  { name: "מערכת מיילים", href: "/emails", icon: Mail },
-  { name: "הגדרות מייל", href: "/email-settings", icon: Settings },
-  { name: "ניהול משתמשים", href: "/user-management", icon: Shield },
   { name: "דוחות ואנליטיקה", href: "/reports", icon: BarChart3 },
-  { name: "הגדרות מערכת", href: "/settings", icon: Settings },
+  { name: "הגדרות", href: "/settings", icon: Settings },
 ];
 
 export default function Navbar() {
@@ -132,21 +129,6 @@ export default function Navbar() {
                 </Link>
               );
             })}
-            {isSuperAdmin && (
-              <Link
-                href="/candidates/bulk-import"
-                className={cn(
-                  "flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors",
-                  location === "/candidates/bulk-import"
-                    ? "text-primary bg-blue-50 dark:bg-blue-900/20" 
-                    : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-                )}
-                data-testid="link-bulk-import-navbar"
-              >
-                <Upload className="h-4 w-4 ml-2" />
-                ייבוא מרובה
-              </Link>
-            )}
           </div>
 
           {/* Mobile menu button */}
@@ -167,15 +149,7 @@ export default function Navbar() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
-                {navigation
-                  .filter((item) => {
-                    // Show user management only if user has permission
-                    if (item.href === '/user-management') {
-                      return canManageUsers;
-                    }
-                    return true;
-                  })
-                  .map((item) => {
+                {navigation.map((item) => {
                     const Icon = item.icon;
                     const isActive = location === item.href;
                     
@@ -195,22 +169,6 @@ export default function Navbar() {
                       </DropdownMenuItem>
                     );
                   })}
-                {isSuperAdmin && (
-                  <DropdownMenuItem asChild>
-                    <Link
-                      href="/candidates/bulk-import"
-                      className={cn(
-                        "flex items-center w-full px-2 py-2",
-                        location === "/candidates/bulk-import" && "bg-blue-50 dark:bg-blue-900/20"
-                      )}
-                      onClick={() => setIsMenuOpen(false)}
-                      data-testid="link-bulk-import"
-                    >
-                      <Upload className="h-4 w-4 ml-2" />
-                      ייבוא מרובה
-                    </Link>
-                  </DropdownMenuItem>
-                )}
                 <DropdownMenuItem asChild>
                   <button
                     onClick={handleLogout}

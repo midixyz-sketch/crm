@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { usePermissions } from "@/hooks/usePermissions";
-import { Settings as SettingsIcon, Plus, Edit, Trash2, Shield, Users } from "lucide-react";
+import { Settings as SettingsIcon, Plus, Edit, Trash2, Shield, Users, Mail, Send, Upload, Inbox } from "lucide-react";
 import { Link } from "wouter";
 
 interface MessageTemplate {
@@ -135,11 +135,71 @@ export default function Settings() {
           <SettingsIcon className="w-6 h-6" />
           <h1 className="text-2xl font-bold">הגדרות מערכת</h1>
         </div>
-        <p className="text-gray-600">נהל הגדרות המערכת ותבניות הודעות</p>
+        <p className="text-gray-600">נהל הגדרות המערכת, תבניות הודעות ומערכות ניהול</p>
       </div>
 
       {/* System Settings Cards */}
-      <div className="grid gap-6 mb-6">
+      <div className="grid gap-6 mb-6 md:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-3">
+              <SettingsIcon className="w-5 h-5" />
+              סטטוסי מועמדים
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-gray-600 mb-4">
+              נהל וערוך סטטוסים של מועמדים, צבעים ותצוגה
+            </p>
+            <Link href="/system-settings">
+              <Button className="flex items-center gap-2" data-testid="button-open-system-settings">
+                <SettingsIcon className="w-4 h-4" />
+                פתח הגדרות סטטוסים
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-3">
+              <Mail className="w-5 h-5" />
+              מערכת מיילים
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-gray-600 mb-4">
+              צפה ונהל מיילים נכנסים ויוצאים
+            </p>
+            <Link href="/emails">
+              <Button className="flex items-center gap-2" data-testid="button-open-emails">
+                <Mail className="w-4 h-4" />
+                פתח מערכת מיילים
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-3">
+              <Send className="w-5 h-5" />
+              הגדרות מייל
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-gray-600 mb-4">
+              הגדר חיבורי SMTP ו-IMAP לשליחת וקבלת מיילים
+            </p>
+            <Link href="/email-settings">
+              <Button className="flex items-center gap-2" data-testid="button-open-email-settings">
+                <Inbox className="w-4 h-4" />
+                פתח הגדרות מייל
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+
         {canManageUsers && (
           <Card>
             <CardHeader>
@@ -153,9 +213,31 @@ export default function Settings() {
                 נהל משתמשי המערכת, תפקידים והרשאות גישה
               </p>
               <Link href="/user-management">
-                <Button className="flex items-center gap-2">
+                <Button className="flex items-center gap-2" data-testid="button-open-user-management">
                   <Users className="w-4 h-4" />
                   פתח ניהול משתמשים
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+        )}
+
+        {canManageUsers && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-3">
+                <Upload className="w-5 h-5" />
+                ייבוא מרובה של קורות חיים
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-gray-600 mb-4">
+                ייבוא כמות גדולה של קורות חיים בבת אחת (עד 20,000 קבצים)
+              </p>
+              <Link href="/candidates/bulk-import">
+                <Button className="flex items-center gap-2" data-testid="button-open-bulk-import">
+                  <Upload className="w-4 h-4" />
+                  פתח ייבוא מרובה
                 </Button>
               </Link>
             </CardContent>
