@@ -188,6 +188,7 @@ class WhatsAppService {
 
           this.state.isConnected = false;
           this.state.qrCode = null;
+          this.state.socket = null;
           whatsappEvents.emit('disconnected');
 
           // Update session in DB
