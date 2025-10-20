@@ -1135,7 +1135,7 @@ export class DatabaseStorage implements IStorage {
         deadline: jobs.deadline,
         clientId: jobs.clientId,
         positions: jobs.positions,
-        contactEmails: jobs.contactEmails,
+        selectedContactPersonIds: jobs.selectedContactPersonIds,
         isUrgent: jobs.isUrgent,
         autoSendToClient: jobs.autoSendToClient,
         createdAt: jobs.createdAt,
@@ -1152,6 +1152,7 @@ export class DatabaseStorage implements IStorage {
           commissionRate: clients.commissionRate,
           paymentTerms: clients.paymentTerms,
           notes: clients.notes,
+          contactPersons: clients.contactPersons,
           isActive: clients.isActive,
           createdAt: clients.createdAt,
           updatedAt: clients.updatedAt,
@@ -1193,7 +1194,7 @@ export class DatabaseStorage implements IStorage {
         deadline: jobs.deadline,
         clientId: jobs.clientId,
         positions: jobs.positions,
-        contactEmails: jobs.contactEmails,
+        selectedContactPersonIds: jobs.selectedContactPersonIds,
         isUrgent: jobs.isUrgent,
         autoSendToClient: jobs.autoSendToClient,
         createdAt: jobs.createdAt,
@@ -1210,6 +1211,7 @@ export class DatabaseStorage implements IStorage {
           commissionRate: clients.commissionRate,
           paymentTerms: clients.paymentTerms,
           notes: clients.notes,
+          contactPersons: clients.contactPersons,
           isActive: clients.isActive,
           createdAt: clients.createdAt,
           updatedAt: clients.updatedAt,
@@ -1255,8 +1257,8 @@ export class DatabaseStorage implements IStorage {
     if (job.autoSendToClient === true && 
         currentJob && 
         !currentJob.autoSendToClient && 
-        updatedJob.contactEmails && 
-        updatedJob.contactEmails.length > 0) {
+        updatedJob.selectedContactPersonIds && 
+        updatedJob.selectedContactPersonIds.length > 0) {
       console.log(`📧 משרה עודכנה לשליחה אוטומטית - שולח את כל המועמדים הקיימים...`);
       
       // Get all candidates for this job
@@ -1265,36 +1267,50 @@ export class DatabaseStorage implements IStorage {
       if (applications.length > 0) {
         console.log(`📤 נמצאו ${applications.length} מועמדים קיימים - שולח למעסיק...`);
         
+        // Get the full job with client info
+        const fullJob = await this.getJob(id);
+        if (!fullJob || !fullJob.client || !fullJob.client.contactPersons) {
+          console.error(`❌ לא נמצאו אנשי קשר עבור משרה ${id}`);
+          return updatedJob;
+        }
+        
         // Import email service dynamically
         const { sendCandidateToEmployer } = await import("./emailService");
         
-        // Send each candidate to all contact emails
+        // Filter selected contact persons
+        const selectedContactPersons = (fullJob.client.contactPersons as any[]).filter(
+          (cp: any) => updatedJob.selectedContactPersonIds!.includes(cp.id)
+        );
+        
+        // Send each candidate to all selected contact persons
         for (const application of applications) {
           if (!application.candidate) continue;
           
-          for (const email of updatedJob.contactEmails) {
+          for (const contactPerson of selectedContactPersons) {
             try {
-              console.log(`📤 שולח מועמד ${application.candidate.candidateNumber} למייל: ${email}`);
+              console.log(`📤 שולח מועמד ${application.candidate.candidateNumber} למייל: ${contactPerson.email} (${contactPerson.name || 'ללא שם'})`);
               
               const result = await sendCandidateToEmployer({
                 candidateId: application.candidateId,
-                to: email,
+                to: contactPerson.email,
+                toName: contactPerson.name,
                 jobTitle: updatedJob.title,
                 reviewerFeedback: `מועמד קיים נשלח אוטומטית למעסיק לאחר הפעלת שליחה אוטומטית למשרה: ${updatedJob.title}`,
               });
               
               if (result.success) {
-                console.log(`✅ מועמד ${application.candidate.candidateNumber} נשלח בהצלחה למייל: ${email}`);
+                console.log(`✅ מועמד ${application.candidate.candidateNumber} נשלח בהצלחה למייל: ${contactPerson.email}`);
                 
                 // Add event to candidate
                 await this.addCandidateEvent({
                   candidateId: application.candidateId,
                   eventType: "candidate_sent",
-                  description: `מועמד נשלח אוטומטית למעסיק: ${email}`,
+                  description: `מועמד נשלח אוטומטית למעסיק: ${contactPerson.name || contactPerson.email}`,
                   metadata: {
                     jobId: updatedJob.id,
                     jobTitle: updatedJob.title,
-                    sentTo: email,
+                    sentTo: contactPerson.email,
+                    sentToName: contactPerson.name,
                     automatic: true,
                     trigger: "job_updated_to_auto_send"
                   },
@@ -1305,7 +1321,7 @@ export class DatabaseStorage implements IStorage {
                   status: "נשלח למעסיק",
                 });
               } else {
-                console.error(`❌ שגיאה בשליחת מועמד למייל ${email}:`, result.error);
+                console.error(`❌ שגיאה בשליחת מועמד למייל ${contactPerson.email}:`, result.error);
               }
             } catch (error: any) {
               console.error(`❌ שגיאה בשליחת מועמד קיים למעסיק:`, error.message);
@@ -1571,36 +1587,50 @@ export class DatabaseStorage implements IStorage {
     
     // Check if job has autoSendToClient enabled
     const job = await this.getJob(application.jobId);
-    if (job && job.autoSendToClient && job.contactEmails && job.contactEmails.length > 0) {
+    if (job && job.autoSendToClient && job.selectedContactPersonIds && job.selectedContactPersonIds.length > 0) {
       console.log(`📧 משרה מוגדרת לשליחה אוטומטית - שולח מועמד למעסיק...`);
+      
+      // Get contact persons from client
+      const client = job.client;
+      if (!client || !client.contactPersons) {
+        console.error(`❌ לא נמצאו אנשי קשר עבור לקוח ${job.clientId}`);
+        return newApplication;
+      }
       
       // Import email service dynamically to avoid circular dependency
       const { sendCandidateToEmployer } = await import("./emailService");
       
-      // Send to all contact emails
-      for (const email of job.contactEmails) {
+      // Filter selected contact persons
+      const selectedContactPersons = (client.contactPersons as any[]).filter(
+        (cp: any) => job.selectedContactPersonIds!.includes(cp.id)
+      );
+      
+      // Send to all selected contact persons
+      for (const contactPerson of selectedContactPersons) {
         try {
-          console.log(`📤 שולח מועמד ${application.candidateId} למייל: ${email}`);
+          console.log(`📤 שולח מועמד ${application.candidateId} למייל: ${contactPerson.email} (${contactPerson.name || 'ללא שם'})`);
           
           const result = await sendCandidateToEmployer({
             candidateId: application.candidateId,
-            to: email,
+            to: contactPerson.email,
+            toName: contactPerson.name,
             jobTitle: job.title,
             reviewerFeedback: `מועמד חדש התקבל אוטומטית ממערכת הגיוס למשרה: ${job.title}`,
           });
           
           if (result.success) {
-            console.log(`✅ מועמד נשלח בהצלחה למייל: ${email}`);
+            console.log(`✅ מועמד נשלח בהצלחה למייל: ${contactPerson.email}`);
             
             // Add event to candidate
             await this.addCandidateEvent({
               candidateId: application.candidateId,
               eventType: "candidate_sent",
-              description: `מועמד נשלח אוטומטית למעסיק: ${email}`,
+              description: `מועמד נשלח אוטומטית למעסיק: ${contactPerson.name || contactPerson.email}`,
               metadata: {
                 jobId: job.id,
                 jobTitle: job.title,
-                sentTo: email,
+                sentTo: contactPerson.email,
+                sentToName: contactPerson.name,
                 automatic: true,
               },
             });
@@ -1610,7 +1640,7 @@ export class DatabaseStorage implements IStorage {
               status: "נשלח למעסיק",
             });
           } else {
-            console.error(`❌ שגיאה בשליחת מועמד למייל ${email}:`, result.error);
+            console.error(`❌ שגיאה בשליחת מועמד למייל ${contactPerson.email}:`, result.error);
           }
         } catch (error: any) {
           console.error(`❌ שגיאה בשליחת מועמד למעסיק:`, error.message);

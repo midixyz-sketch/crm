@@ -422,21 +422,27 @@ export default function CandidateDetail() {
         const selectedJob = jobs.find((job: any) => job.id === jobId);
         if (!selectedJob) continue;
 
-        // Send email to employer
-        if (selectedJob.client?.email) {
+        // Send email to employer (using selected contact persons from job)
+        if (selectedJob.selectedContactPersonIds && selectedJob.selectedContactPersonIds.length > 0) {
           try {
-            await apiRequest('POST', '/api/send-candidate-profile', {
+            const result: any = await apiRequest('POST', '/api/send-candidate-profile', {
               candidateId: id,
               jobId: jobId,
               reviewerFeedback: recommendation,
-              recipientEmail: selectedJob.client.email,
-              recipientName: selectedJob.client.contactName,
             });
-            emailsSent++;
+            
+            if (result.success) {
+              emailsSent += result.sentCount || 1;
+              if (result.failedCount) {
+                emailsFailed += result.failedCount;
+              }
+            }
           } catch (emailError) {
             console.error('Failed to send email for job:', jobId, emailError);
             emailsFailed++;
           }
+        } else {
+          console.warn('No contact persons selected for job:', jobId);
         }
 
         // Create event for the referral

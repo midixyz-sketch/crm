@@ -3060,7 +3060,7 @@ ${extractedData.achievements ? `הישגים ופעילות נוספת: ${cleanS
   // Send candidate profile to employer
   app.post('/api/send-candidate-profile', isAuthenticated, async (req: any, res) => {
     try {
-      const { candidateId, jobId, reviewerFeedback, recipientEmail, recipientName } = req.body;
+      const { candidateId, jobId, reviewerFeedback } = req.body;
       
       const candidate = await storage.getCandidate(candidateId);
       if (!candidate) {
@@ -3070,6 +3070,26 @@ ${extractedData.achievements ? `הישגים ופעילות נוספת: ${cleanS
       const job = await storage.getJob(jobId);
       if (!job) {
         return res.status(404).json({ message: "Job not found" });
+      }
+
+      // Get client to access contact persons
+      const client = await storage.getClient(job.clientId);
+      if (!client) {
+        return res.status(404).json({ message: "Client not found" });
+      }
+
+      // Get selected contact persons
+      const selectedContactPersonIds = job.selectedContactPersonIds || [];
+      if (selectedContactPersonIds.length === 0) {
+        return res.status(400).json({ message: "No contact persons selected for this job" });
+      }
+
+      const contactPersons = (client.contactPersons as any[] || []).filter((person: any) => 
+        selectedContactPersonIds.includes(person.id)
+      );
+
+      if (contactPersons.length === 0) {
+        return res.status(400).json({ message: "No valid contact persons found" });
       }
 
       // Get sender's name
@@ -3151,29 +3171,59 @@ ${extractedData.achievements ? `הישגים ופעילות נוספת: ${cleanS
         }
       }
 
-      const emailData = {
-        to: recipientEmail,
-        subject: `מועמד/ת לתפקיד ${job.title}`,
-        html: emailContent,
-        attachments: attachments
-      };
+      // Send email to each contact person
+      let successCount = 0;
+      let failureCount = 0;
+      const recipientEmails: string[] = [];
 
-      const result = await sendEmail(emailData);
-      
-      if (result.success) {
-        await storage.createEmail({
-          from: process.env.GMAIL_USER || 'noreply@h-group.org.il',
-          to: recipientEmail,
-          subject: emailData.subject,
-          body: emailContent,
-          isHtml: true,
-          status: 'sent',
-          sentAt: new Date(),
-          candidateId,
-          sentBy: req.user.id,
-        });
+      for (const person of contactPersons) {
+        const emailData = {
+          to: person.email,
+          subject: `מועמד/ת לתפקיד ${job.title}`,
+          html: emailContent,
+          attachments: attachments
+        };
+
+        const result = await sendEmail(emailData);
         
-        // Add event for candidate sent to employer
+        if (result.success) {
+          recipientEmails.push(person.email);
+          successCount++;
+          
+          await storage.createEmail({
+            from: process.env.GMAIL_USER || 'noreply@h-group.org.il',
+            to: person.email,
+            subject: emailData.subject,
+            body: emailContent,
+            isHtml: true,
+            status: 'sent',
+            sentAt: new Date(),
+            candidateId,
+            jobId,
+            clientId: client.id,
+            sentBy: req.user.id,
+          });
+        } else {
+          failureCount++;
+          
+          await storage.createEmail({
+            from: process.env.GMAIL_USER || 'noreply@h-group.org.il',
+            to: person.email,
+            subject: emailData.subject,
+            body: emailContent,
+            isHtml: true,
+            status: 'failed',
+            candidateId,
+            jobId,
+            clientId: client.id,
+            sentBy: req.user.id,
+            errorMessage: result.error,
+          });
+        }
+      }
+
+      // Add event for candidate sent to employer (only if at least one email succeeded)
+      if (successCount > 0) {
         await storage.addCandidateEvent({
           candidateId,
           eventType: 'sent_to_employer',
@@ -3181,27 +3231,25 @@ ${extractedData.achievements ? `הישגים ופעילות נוספת: ${cleanS
           metadata: {
             jobTitle: job.title,
             jobId: jobId,
-            recipientEmail: recipientEmail,
+            recipientEmails: recipientEmails,
+            contactPersonsCount: contactPersons.length,
+            successCount,
+            failureCount,
             reviewerFeedback: reviewerFeedback,
             timestamp: new Date().toISOString()
           }
         });
-        
-        res.json({ success: true });
+
+        // Update candidate status to sent_to_employer
+        await storage.updateCandidate(candidateId, { status: 'sent_to_employer' });
+      }
+
+      if (successCount === contactPersons.length) {
+        res.json({ success: true, sentCount: successCount });
+      } else if (successCount > 0) {
+        res.json({ success: true, partial: true, sentCount: successCount, failedCount: failureCount });
       } else {
-        await storage.createEmail({
-          from: process.env.GMAIL_USER || 'noreply@h-group.org.il',
-          to: recipientEmail,
-          subject: emailData.subject,
-          body: emailContent,
-          isHtml: true,
-          status: 'failed',
-          candidateId,
-          sentBy: req.user.id,
-          errorMessage: result.error,
-        });
-        
-        res.status(500).json({ success: false, error: result.error });
+        res.status(500).json({ success: false, error: `Failed to send to all ${failureCount} recipients` });
       }
     } catch (error) {
       console.error("Error sending candidate profile:", error);

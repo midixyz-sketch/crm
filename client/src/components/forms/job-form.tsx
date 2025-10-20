@@ -22,7 +22,6 @@ interface JobFormProps {
 export default function JobForm({ job, onSuccess }: JobFormProps) {
   const { toast } = useToast();
   const [additionalCodesInput, setAdditionalCodesInput] = useState("");
-  const [contactEmailInput, setContactEmailInput] = useState("");
 
   const { data: clientsData } = useQuery<{ clients: Client[]; total: number }>({
     queryKey: ["/api/clients"],
@@ -41,11 +40,16 @@ export default function JobForm({ job, onSuccess }: JobFormProps) {
       clientId: job?.clientId || "",
       positions: job?.positions || 1,
       additionalCodes: job?.additionalCodes || [],
-      contactEmails: job?.contactEmails || [],
+      selectedContactPersonIds: job?.selectedContactPersonIds || [],
       isUrgent: job?.isUrgent || false,
       autoSendToClient: job?.autoSendToClient || false,
     },
   });
+
+  // Get the selected client's contact persons
+  const selectedClientId = form.watch("clientId");
+  const selectedClient = clientsData?.clients.find(c => c.id === selectedClientId);
+  const contactPersons = selectedClient?.contactPersons || [];
 
   const createJob = useMutation({
     mutationFn: async (data: InsertJob) => {
@@ -123,7 +127,7 @@ export default function JobForm({ job, onSuccess }: JobFormProps) {
       salaryRange: data.salaryRange || null,
       jobType: data.jobType || null,
       additionalCodes: data.additionalCodes || [],
-      contactEmails: data.contactEmails || [],
+      selectedContactPersonIds: data.selectedContactPersonIds || [],
       isUrgent: data.isUrgent || false,
       autoSendToClient: data.autoSendToClient || false,
     };
@@ -339,66 +343,51 @@ export default function JobForm({ job, onSuccess }: JobFormProps) {
 
                 <FormField
                   control={form.control}
-                  name="contactEmails"
+                  name="selectedContactPersonIds"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-right">אנשי קשר (מינימום 1):</FormLabel>
                       <FormControl>
-                        <div className="space-y-2">
-                          <div className="flex gap-2">
-                            <Input
-                              type="email"
-                              value={contactEmailInput}
-                              onChange={(e) => setContactEmailInput(e.target.value)}
-                              placeholder="הזן כתובת מייל"
-                              className="text-right"
-                              data-testid="input-contact-email"
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter' && contactEmailInput.trim()) {
-                                  e.preventDefault();
-                                  const currentEmails = field.value || [];
-                                  if (!currentEmails.includes(contactEmailInput.trim())) {
-                                    field.onChange([...currentEmails, contactEmailInput.trim()]);
-                                    setContactEmailInput("");
-                                  }
-                                }
-                              }}
-                            />
-                            <Button
-                              type="button"
-                              variant="outline"
-                              onClick={() => {
-                                if (contactEmailInput.trim()) {
-                                  const currentEmails = field.value || [];
-                                  if (!currentEmails.includes(contactEmailInput.trim())) {
-                                    field.onChange([...currentEmails, contactEmailInput.trim()]);
-                                    setContactEmailInput("");
-                                  }
-                                }
-                              }}
-                              data-testid="button-add-contact-email"
-                            >
-                              הוסף
-                            </Button>
-                          </div>
-                          {field.value && field.value.length > 0 && (
-                            <div className="flex flex-wrap gap-2">
-                              {field.value.map((email: string, index: number) => (
-                                <div key={index} className="flex items-center gap-1 bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm" data-testid={`contact-email-${index}`}>
-                                  <span>{email}</span>
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      const newEmails = field.value.filter((_: string, i: number) => i !== index);
-                                      field.onChange(newEmails);
-                                    }}
-                                    className="text-blue-600 hover:text-blue-800"
-                                    data-testid={`button-remove-contact-email-${index}`}
+                        <div className="space-y-3">
+                          {!selectedClientId ? (
+                            <p className="text-sm text-gray-500 text-right">נא לבחור לקוח תחילה</p>
+                          ) : contactPersons.length === 0 ? (
+                            <p className="text-sm text-amber-600 text-right">ללקוח זה אין אנשי קשר. נא להוסיף אנשי קשר בדף הלקוח.</p>
+                          ) : (
+                            <div className="border rounded-lg p-4 bg-white space-y-2">
+                              <p className="text-sm text-gray-600 mb-2">בחר אנשי קשר שיקבלו מועמדים:</p>
+                              {contactPersons.map((person: any, index: number) => {
+                                const isSelected = field.value?.includes(person.id);
+                                return (
+                                  <div 
+                                    key={person.id} 
+                                    className="flex items-center space-x-2 space-x-reverse p-2 hover:bg-gray-50 rounded"
+                                    data-testid={`contact-person-${index}`}
                                   >
-                                    <X size={14} />
-                                  </button>
-                                </div>
-                              ))}
+                                    <Checkbox
+                                      checked={isSelected}
+                                      onCheckedChange={(checked) => {
+                                        if (checked) {
+                                          field.onChange([...(field.value || []), person.id]);
+                                        } else {
+                                          field.onChange(field.value?.filter((id: string) => id !== person.id) || []);
+                                        }
+                                      }}
+                                      data-testid={`checkbox-contact-person-${index}`}
+                                    />
+                                    <div className="flex-1 text-right">
+                                      <div className="text-sm font-medium">
+                                        {person.name || "ללא שם"} 
+                                        {person.title && <span className="text-gray-500"> ({person.title})</span>}
+                                      </div>
+                                      <div className="text-xs text-gray-600">
+                                        {person.email}
+                                        {person.mobile && <span className="mr-2">• {person.mobile}</span>}
+                                      </div>
+                                    </div>
+                                  </div>
+                                );
+                              })}
                             </div>
                           )}
                         </div>
