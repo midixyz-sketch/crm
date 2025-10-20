@@ -196,11 +196,11 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
                 {messages.map((message) => (
                   <div
                     key={message.id}
-                    className={`flex ${message.fromMe ? 'justify-start' : 'justify-end'}`}
+                    className={`flex ${message.fromMe ? 'justify-end' : 'justify-start'}`}
                     data-testid={`message-${message.id}`}
                   >
                     <div
-                      className={`max-w-[70%] rounded-lg p-3 ${
+                      className={`max-w-[70%] rounded-2xl p-3 shadow-sm ${
                         message.fromMe
                           ? 'bg-green-500 text-white'
                           : 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100'
