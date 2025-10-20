@@ -886,10 +886,25 @@ export class DatabaseStorage implements IStorage {
     return newEvent;
   }
 
-  async getCandidateEvents(candidateId: string): Promise<CandidateEvent[]> {
+  async getCandidateEvents(candidateId: string): Promise<any[]> {
     return await db
-      .select()
+      .select({
+        id: candidateEvents.id,
+        candidateId: candidateEvents.candidateId,
+        eventType: candidateEvents.eventType,
+        description: candidateEvents.description,
+        metadata: candidateEvents.metadata,
+        createdBy: candidateEvents.createdBy,
+        createdAt: candidateEvents.createdAt,
+        createdByUser: {
+          id: users.id,
+          username: users.username,
+          firstName: users.firstName,
+          lastName: users.lastName,
+        }
+      })
       .from(candidateEvents)
+      .leftJoin(users, eq(candidateEvents.createdBy, users.id))
       .where(eq(candidateEvents.candidateId, candidateId))
       .orderBy(desc(candidateEvents.createdAt));
   }
