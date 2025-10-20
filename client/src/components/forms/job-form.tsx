@@ -144,24 +144,14 @@ export default function JobForm({ job, onSuccess }: JobFormProps) {
       <div className="max-w-4xl mx-auto pt-8 pb-12">
         {/* Header */}
         <div className="mb-8">
-          <div className="flex items-center gap-2 text-sm text-blue-600 mb-4">
-            <span>לקוחות</span>
-            <span>›</span>
-            <span>אימון פיתוח</span>
-            <span>›</span>
-            <span className="text-gray-600">משרה חדשה</span>
-          </div>
-          <h1 className="text-2xl font-bold text-gray-900">פרסום משרה</h1>
+          <h1 className="text-2xl font-bold text-gray-900">{job ? "עריכת משרה" : "פרסום משרה חדשה"}</h1>
         </div>
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
             {/* פרטי משרה */}
             <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-6 pb-3 border-b border-blue-600">
-                פרטי משרה
-                <span className="text-sm text-blue-600 font-normal mr-4">אימון פיתוח</span>
-              </h2>
+              <h2 className="text-lg font-semibold text-gray-900 mb-6">פרטי משרה</h2>
 
               <div className="space-y-6">
                 <FormField
@@ -540,7 +530,7 @@ export default function JobForm({ job, onSuccess }: JobFormProps) {
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
                           <SelectTrigger data-testid="select-job-priority" className="text-right">
-                            <SelectValue placeholder="טלפוני" />
+                            <SelectValue placeholder="בחר עדיפות" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
@@ -563,7 +553,7 @@ export default function JobForm({ job, onSuccess }: JobFormProps) {
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
                           <SelectTrigger data-testid="select-job-status" className="text-right">
-                            <SelectValue placeholder="האייל" />
+                            <SelectValue placeholder="בחר סטטוס" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
@@ -621,38 +611,6 @@ export default function JobForm({ job, onSuccess }: JobFormProps) {
                   )}
                 />
 
-                <div className="grid grid-cols-1">
-                  <FormItem>
-                    <FormLabel className="text-right">רכב תוכן:</FormLabel>
-                    <Select>
-                      <FormControl>
-                        <SelectTrigger className="text-right">
-                          <SelectValue placeholder="..." />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="option1">אופציה 1</SelectItem>
-                        <SelectItem value="option2">אופציה 2</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </FormItem>
-                </div>
-
-                <div>
-                  <FormLabel className="text-right">תקים פתוחים:</FormLabel>
-                  <Input className="mt-2 text-right" />
-                </div>
-
-                <div className="flex items-center gap-8">
-                  <div className="flex items-center space-x-2 space-x-reverse">
-                    <Checkbox />
-                    <span>נשרת רחוקה</span>
-                  </div>
-                  <div className="flex items-center space-x-2 space-x-reverse">
-                    <Checkbox />
-                    <span>נשרת מופר טלפוני</span>
-                  </div>
-                </div>
               </div>
             </div>
 
