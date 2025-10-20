@@ -518,6 +518,26 @@ export default function CalendarPage() {
                                     ממתין
                                   </Button>
                                 )}
+                                <ReminderForm
+                                  reminder={{
+                                    id: event.id,
+                                    title: event.title,
+                                    description: event.description,
+                                    reminderDate: new Date(event.reminderDate),
+                                    priority: event.priority,
+                                  }}
+                                  onSuccess={() => queryClient.invalidateQueries({ queryKey: ["/api/reminders"] })}
+                                  trigger={
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="h-5 w-5 p-0 text-xs"
+                                      data-testid={`button-edit-reminder-${event.id}`}
+                                    >
+                                      <Edit className="h-3 w-3" />
+                                    </Button>
+                                  }
+                                />
                               </>
                             )}
                             {event.type === 'interview' && (
