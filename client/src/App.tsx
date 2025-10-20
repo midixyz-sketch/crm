@@ -30,6 +30,7 @@ import Calendar from "@/pages/calendar";
 import UserManagement from "@/pages/user-management";
 import BulkImportCandidates from "@/pages/bulk-import-candidates";
 import RecentlyUpdated from "@/pages/recently-updated";
+import WhatsAppChats from "@/pages/whatsapp-chats";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -74,6 +75,7 @@ function Router() {
           <Route path="/system-settings" component={SystemSettings} />
           <Route path="/user-management" component={UserManagement} />
           <Route path="/settings" component={Settings} />
+          <Route path="/whatsapp-chats" component={WhatsAppChats} />
           <Route component={NotFound} />
         </Switch>
       </main>

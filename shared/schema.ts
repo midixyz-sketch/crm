@@ -171,6 +171,9 @@ export const candidates = pgTable("candidates", {
   rating: integer("rating"), // 1-5 rating
   notes: text("notes"),
   tags: text("tags").array(), // array of tags
+  isPinned: boolean("is_pinned").default(false), // נעוץ בראש רשימת הצ'אטים
+  chatType: varchar("chat_type").default('individual'), // individual, group, archived
+  previousChatType: varchar("previous_chat_type"), // שמירת סוג הצ'אט לפני העברה לארכיון
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => [
