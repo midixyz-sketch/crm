@@ -1121,7 +1121,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         candidateId: req.params.id,
         eventType,
         description,
-        metadata
+        metadata,
+        createdBy: req.user?.id || null
       });
       
       console.log("✅ אירוע נוסף בהצלחה:", result);
@@ -1243,11 +1244,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         description: `מועמד נוצר ידנית על ידי ${candidateData.recruitmentSource || 'משתמש'}`,
         metadata: {
           source: 'manual_entry',
-          createdBy: req.user?.id || null,
           createdByUsername: candidateData.recruitmentSource,
           cvUploaded: !!candidateData.cvPath,
           timestamp: new Date().toISOString()
-        }
+        },
+        createdBy: req.user?.id || null
       });
       
       // Create job application automatically if jobId is provided
@@ -1268,7 +1269,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
               jobId: jobId,
               source: 'manual_assignment',
               timestamp: new Date().toISOString()
-            }
+            },
+            createdBy: req.user?.id || null
           });
         } catch (error) {
           console.error("Error creating job application:", error);
@@ -1583,7 +1585,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             changes: fieldChanges,
             cvUpdated: !!candidateData.cvPath,
             timestamp: new Date().toISOString()
-          }
+          },
+          createdBy: req.user?.id || null
         });
       }
       
@@ -1624,7 +1627,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             changeType: 'manual',
             updatedBy: req.user?.id,
             timestamp: new Date().toISOString()
-          }
+          },
+          createdBy: req.user?.id || null
         });
       }
       

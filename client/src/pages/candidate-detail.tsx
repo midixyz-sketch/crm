@@ -1386,11 +1386,18 @@ export default function CandidateDetail() {
                               </span>
                             </div>
                             <p className="text-sm text-gray-600 mb-2">{event.description}</p>
-                            {event.metadata && (
+                            {(event.metadata || event.createdByUser) && (
                               <div className="text-xs text-gray-500">
-                                {event.metadata.source && <span>מקור: {event.metadata.source === 'manual_entry' ? 'הכנסה ידנית' : event.metadata.source === 'cv_upload' ? 'העלאת קורות חיים' : event.metadata.source}</span>}
-                                {event.metadata.createdBy && <span> | נוצר על ידי: {event.metadata.createdBy}</span>}
-                                {event.metadata.jobCode && <span> | קוד משרה: {event.metadata.jobCode}</span>}
+                                {event.createdByUser && (
+                                  <span className="font-medium text-blue-600">
+                                    נוצר על ידי: {event.createdByUser.firstName && event.createdByUser.lastName 
+                                      ? `${event.createdByUser.firstName} ${event.createdByUser.lastName}` 
+                                      : event.createdByUser.username}
+                                  </span>
+                                )}
+                                {event.metadata?.source && <span>{event.createdByUser ? ' | ' : ''}מקור: {event.metadata.source === 'manual_entry' ? 'הכנסה ידנית' : event.metadata.source === 'cv_upload' ? 'העלאת קורות חיים' : event.metadata.source}</span>}
+                                {event.metadata?.createdBy && !event.createdByUser && <span> | נוצר על ידי: {event.metadata.createdBy}</span>}
+                                {event.metadata?.jobCode && <span> | קוד משרה: {event.metadata.jobCode}</span>}
                                 {event.metadata.jobTitle && <span> | משרה: {event.metadata.jobTitle}</span>}
                                 {event.metadata.emailSubject && <span> | נושא: {event.metadata.emailSubject}</span>}
                                 {event.metadata.recipient && <span> | נשלח אל: {event.metadata.recipient}</span>}
