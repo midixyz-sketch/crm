@@ -5639,7 +5639,34 @@ ${recommendation}
     }
   });
 
-  // GET /api/whatsapp/messages - Get messages for a chat
+  // GET /api/whatsapp/messages - Get all WhatsApp messages
+  app.get('/api/whatsapp/messages', isAuthenticated, async (req, res) => {
+    try {
+      const messages = await db.query.whatsappMessages.findMany({
+        orderBy: [desc(whatsappMessages.timestamp)],
+        limit: 1000,
+      });
+
+      // Transform messages to match expected frontend format
+      const formattedMessages = messages.map(msg => ({
+        id: msg.messageId,
+        candidateId: msg.candidateId || '',
+        phone: msg.remoteJid.split('@')[0],
+        message: msg.messageText || msg.caption || `[${msg.messageType}]`,
+        status: msg.fromMe ? 'delivered' : 'received',
+        direction: msg.fromMe ? 'outgoing' : 'incoming',
+        sentAt: msg.timestamp.toISOString(),
+        deliveredAt: msg.timestamp.toISOString(),
+      }));
+
+      res.json(formattedMessages);
+    } catch (error) {
+      console.error('שגיאה בקבלת הודעות:', error);
+      res.status(500).json({ message: 'שגיאה בקבלת הודעות' });
+    }
+  });
+
+  // GET /api/whatsapp/messages/:remoteJid - Get messages for a specific chat
   app.get('/api/whatsapp/messages/:remoteJid', isAuthenticated, async (req, res) => {
     try {
       const { remoteJid } = req.params;
@@ -5692,6 +5719,34 @@ ${recommendation}
     } catch (error) {
       console.error('שגיאה בסימון הודעות כנקראו:', error);
       res.status(500).json({ message: 'שגיאה בסימון הודעות' });
+    }
+  });
+
+  // GET /api/whatsapp/profile-picture/:phone - Get WhatsApp profile picture
+  app.get('/api/whatsapp/profile-picture/:phone', isAuthenticated, async (req, res) => {
+    try {
+      const { phone } = req.params;
+      
+      // Format phone number to WhatsApp format
+      let whatsappNumber = phone.replace(/[-\s()]/g, '');
+      if (whatsappNumber.startsWith('0')) {
+        whatsappNumber = '972' + whatsappNumber.substring(1);
+      } else if (!whatsappNumber.startsWith('972') && !whatsappNumber.startsWith('+')) {
+        whatsappNumber = '972' + whatsappNumber;
+      }
+      if (whatsappNumber.startsWith('+')) {
+        whatsappNumber = whatsappNumber.substring(1);
+      }
+      
+      const remoteJid = whatsappNumber + '@s.whatsapp.net';
+      
+      // Get profile picture URL from WhatsApp
+      const profilePicUrl = await whatsappService.getProfilePicture(remoteJid);
+      
+      res.json({ profilePicUrl });
+    } catch (error) {
+      console.error('שגיאה בקבלת תמונת פרופיל:', error);
+      res.status(404).json({ profilePicUrl: null });
     }
   });
 
