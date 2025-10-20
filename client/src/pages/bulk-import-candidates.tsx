@@ -114,7 +114,7 @@ export default function BulkImportCandidates() {
     setResults([]);
     setSummary(null);
 
-    const BATCH_SIZE = 100;
+    const BATCH_SIZE = 10;
     const allResults: ImportResult[] = [];
     let totalSuccess = 0;
     let totalDuplicate = 0;
