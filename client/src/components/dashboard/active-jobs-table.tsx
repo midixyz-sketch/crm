@@ -82,7 +82,6 @@ export default function ActiveJobsTable() {
                   <th className="text-right p-4 text-sm font-medium text-gray-700 dark:text-gray-300">כותרת משרה</th>
                   <th className="text-right p-4 text-sm font-medium text-gray-700 dark:text-gray-300">לקוח</th>
                   <th className="text-right p-4 text-sm font-medium text-gray-700 dark:text-gray-300">סטטוס</th>
-                  <th className="text-right p-4 text-sm font-medium text-gray-700 dark:text-gray-300">תאריך יעד</th>
                   <th className="text-right p-4 text-sm font-medium text-gray-700 dark:text-gray-300">פעולות</th>
                 </tr>
               </thead>
@@ -155,7 +154,6 @@ export default function ActiveJobsTable() {
                 <th className="text-right p-4 text-sm font-medium text-gray-700 dark:text-gray-300">כותרת משרה</th>
                 <th className="text-right p-4 text-sm font-medium text-gray-700 dark:text-gray-300">לקוח</th>
                 <th className="text-right p-4 text-sm font-medium text-gray-700 dark:text-gray-300">סטטוס</th>
-                <th className="text-right p-4 text-sm font-medium text-gray-700 dark:text-gray-300">תאריך יעד</th>
                 <th className="text-right p-4 text-sm font-medium text-gray-700 dark:text-gray-300">פעולות</th>
               </tr>
             </thead>
@@ -169,7 +167,7 @@ export default function ActiveJobsTable() {
                           {job.title}
                         </p>
                         <p className="text-sm text-gray-600 dark:text-gray-300" data-testid={`text-job-location-${job.id}`}>
-                          {job.location && `${job.location}${job.isRemote ? ', עבודה מהבית' : ''}`}
+                          {job.location || ''}
                         </p>
                       </div>
                     </td>
@@ -182,11 +180,6 @@ export default function ActiveJobsTable() {
                       <Badge className={getStatusColor(job.status || 'active')}>
                         {getStatusText(job.status || 'active')}
                       </Badge>
-                    </td>
-                    <td className="p-4">
-                      <p className="text-secondary dark:text-white" data-testid={`text-job-deadline-${job.id}`}>
-                        {job.deadline ? formatDate(job.deadline.toString()) : "לא צוין"}
-                      </p>
                     </td>
                     <td className="p-4">
                       <div className="flex space-x-2 space-x-reverse">

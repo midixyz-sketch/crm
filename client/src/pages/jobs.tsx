@@ -118,24 +118,6 @@ export default function Jobs() {
     }
   };
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'high': return 'bg-red-100 text-red-800';
-      case 'medium': return 'bg-orange-100 text-orange-800';
-      case 'low': return 'bg-green-100 text-green-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getPriorityText = (priority: string) => {
-    switch (priority) {
-      case 'high': return 'גבוהה';
-      case 'medium': return 'בינונית';
-      case 'low': return 'נמוכה';
-      default: return priority || 'לא הוגדר';
-    }
-  };
-
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -236,8 +218,6 @@ export default function Jobs() {
                         <TableHead className="text-right font-medium text-gray-700 dark:text-gray-300">שכר</TableHead>
                         <TableHead className="text-right font-medium text-gray-700 dark:text-gray-300">סוג משרה</TableHead>
                         <TableHead className="text-right font-medium text-gray-700 dark:text-gray-300">סטטוס</TableHead>
-                        <TableHead className="text-right font-medium text-gray-700 dark:text-gray-300">עדיפות</TableHead>
-                        <TableHead className="text-right font-medium text-gray-700 dark:text-gray-300">תאריך יעד</TableHead>
                         <TableHead className="text-right font-medium text-gray-700 dark:text-gray-300">פעולות</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -278,7 +258,7 @@ export default function Jobs() {
                             {job.location ? (
                               <div className="flex items-center">
                                 <MapPin className="h-3 w-3 ml-1" />
-                                {job.location}{job.isRemote && " (מהבית)"}
+                                {job.location}
                               </div>
                             ) : "-"}
                           </TableCell>
@@ -292,19 +272,6 @@ export default function Jobs() {
                             <Badge className={getStatusColor(job.status || 'active')}>
                               {getStatusText(job.status || 'active')}
                             </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <Badge className={getPriorityColor(job.priority || 'medium')}>
-                              {getPriorityText(job.priority || 'medium')}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            {job.deadline ? (
-                              <div className="flex items-center">
-                                <Calendar className="h-3 w-3 ml-1" />
-                                {format(new Date(job.deadline.toString()), 'dd/MM/yyyy')}
-                              </div>
-                            ) : "-"}
                           </TableCell>
                           <TableCell>
                             <div className="flex space-x-2 space-x-reverse">
