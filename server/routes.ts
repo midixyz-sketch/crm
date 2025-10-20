@@ -5426,6 +5426,36 @@ ${recommendation}
   // Import WhatsApp service
   const { whatsappService, whatsappEvents } = await import('./whatsapp-service');
 
+  // Global lock for WhatsApp initialization - prevents concurrent connections
+  let whatsappInitLock = false;
+  let whatsappInitQueue: Array<{ resolve: () => void; reject: (err: any) => void }> = [];
+
+  async function safeWhatsAppInit(userId: string): Promise<void> {
+    // If already initializing, queue this request
+    if (whatsappInitLock) {
+      console.log('WhatsApp init already in progress, queueing request...');
+      return new Promise((resolve, reject) => {
+        whatsappInitQueue.push({ resolve, reject });
+      });
+    }
+
+    whatsappInitLock = true;
+    try {
+      await whatsappService.initialize(userId);
+      
+      // Resolve all queued requests
+      whatsappInitQueue.forEach(({ resolve }) => resolve());
+      whatsappInitQueue = [];
+    } catch (error) {
+      // Reject all queued requests
+      whatsappInitQueue.forEach(({ reject }) => reject(error));
+      whatsappInitQueue = [];
+      throw error;
+    } finally {
+      whatsappInitLock = false;
+    }
+  }
+
   // GET /api/whatsapp/status - Get WhatsApp connection status
   app.get('/api/whatsapp/status', isAuthenticated, async (req, res) => {
     try {
@@ -5441,7 +5471,7 @@ ${recommendation}
   app.post('/api/whatsapp/initialize', isAuthenticated, async (req, res) => {
     try {
       const user = req.user as any;
-      await whatsappService.initialize(user.id);
+      await safeWhatsAppInit(user.id);
       res.json({ message: 'WhatsApp מאותחל' });
     } catch (error) {
       console.error('שגיאה באתחול WhatsApp:', error);
