@@ -258,7 +258,7 @@ export default function BulkImportCandidates() {
               )}
             </div>
 
-            {selectedFiles.length > 0 && (
+            {selectedFiles.length > 0 && selectedFiles.length <= 100 && (
               <div className="space-y-2">
                 <h3 className="font-medium">קבצים שנבחרו:</h3>
                 <div className="max-h-40 overflow-y-auto space-y-1">
@@ -273,6 +273,13 @@ export default function BulkImportCandidates() {
                   ))}
                 </div>
               </div>
+            )}
+            {selectedFiles.length > 100 && (
+              <Alert>
+                <AlertDescription>
+                  נבחרו {selectedFiles.length.toLocaleString()} קבצים. המערכת מוכנה לייבוא - לחץ על "התחל ייבוא"
+                </AlertDescription>
+              </Alert>
             )}
 
             <div className="flex gap-2">
