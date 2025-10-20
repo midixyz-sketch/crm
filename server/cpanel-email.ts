@@ -1005,7 +1005,7 @@ async function processParsedEmailAttachments(parsed: any): Promise<void> {
         mobile: extractedData.mobile || "",
         phone: extractedData.phone || "",
         profession: extractedData.profession || "",
-        status: "פעיל",
+        status: "ממתין",
         recruitmentSource: recruitmentSourceText,
         notes: `מועמד שנוסף אוטומטית מהמייל. נושא המייל: "${parsed.subject || "ללא נושא"}"${senderEmail ? `\nנשלח מ: ${senderEmail}` : ""}`,
         cvPath: `${timestamp}_${cleanFilename}`,
@@ -1211,7 +1211,7 @@ async function processCVEmailAttachment(
                           city: "", // Leave empty
                           mobile: "", // Leave empty
                           profession: "", // Leave empty
-                          status: "פעיל",
+                          status: "ממתין",
                           recruitmentSource: recruitmentSourceText,
                           notes: `מועמד שנוסף אוטומטית מהמייל. נושא המייל: "${parsed.subject || "ללא נושא"}"`,
                           cvPath: `${timestamp}-${cleanFilename.toLowerCase().replace(/[^a-z0-9.-]/g, "")}`,
