@@ -3138,7 +3138,7 @@ ${extractedData.achievements ? `הישגים ופעילות נוספת: ${cleanS
 
       const emailData = {
         to: recipientEmail,
-        subject: `המלצה על מועמד: ${candidate.firstName} ${candidate.lastName} - ${job.title}`,
+        subject: `מועמד/ת לתפקיד ${job.title}`,
         html: emailContent,
         attachments: attachments
       };
