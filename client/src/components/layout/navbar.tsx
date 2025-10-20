@@ -54,12 +54,11 @@ export default function Navbar() {
         <div className="flex justify-between h-16">
           {/* Logo and Brand */}
           <div className="flex items-center">
-            <Link href="/" data-testid="link-logo" className="flex items-center hover:opacity-80 transition-opacity">
-              <svg width="140" height="48" viewBox="0 0 1024 1024" className="cursor-pointer">
-                <text x="50%" y="50%" dominantBaseline="middle" textAnchor="middle" fill="#4F6B8C" fontSize="180" fontWeight="600" fontFamily="system-ui, -apple-system, sans-serif">
-                  Linkjob
-                </text>
-              </svg>
+            <Link href="/" data-testid="link-logo" className="hover:opacity-80 transition-opacity">
+              <div className="flex flex-col items-start">
+                <h1 className="text-2xl font-bold text-primary">Linkjob</h1>
+                <p className="text-xs text-gray-600 dark:text-gray-300">מערכת לניהול הגיוס</p>
+              </div>
             </Link>
           </div>
 
