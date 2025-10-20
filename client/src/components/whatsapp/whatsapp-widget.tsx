@@ -52,7 +52,7 @@ export function WhatsAppWidget() {
     }
   }, [status?.isConnected]);
 
-  // Show toast when WhatsApp connects/disconnects
+  // Show toast when WhatsApp connects/disconnects and auto-open chat panel
   useEffect(() => {
     if (status?.isConnected && status.phoneNumber) {
       toast({
@@ -60,8 +60,11 @@ export function WhatsAppWidget() {
         description: `מחובר למספר: ${status.phoneNumber}`,
         duration: 3000,
       });
+      // Close connection dialog and open chat panel
+      setConnectionDialogOpen(false);
+      setIsPanelOpen(true);
     }
-  }, [status?.isConnected, status?.phoneNumber]);
+  }, [status?.isConnected, status?.phoneNumber, toast]);
 
   // Listen for CV file detection
   useEffect(() => {
