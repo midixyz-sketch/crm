@@ -480,13 +480,7 @@ export default function Candidates() {
                           )}
                           <TableHead className="text-right font-medium text-gray-700 dark:text-gray-300 sticky right-0 bg-gray-50 dark:bg-gray-900 z-10">שם המועמד</TableHead>
                           <TableHead className="text-right font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">עיר</TableHead>
-                          <TableHead className="text-right font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">עדכון</TableHead>
-                          <TableHead className="text-right font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">משרה אחרונה</TableHead>
-                          <TableHead className="text-right font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">מקור גיוס</TableHead>
                           <TableHead className="text-right font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">נייד</TableHead>
-                          <TableHead className="text-right font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">דוא״ל</TableHead>
-                          <TableHead className="text-right font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">הפניה אחרונה</TableHead>
-                          <TableHead className="text-right font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">שינוי סטטוס</TableHead>
                           <TableHead className="text-right font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">סטטוס</TableHead>
                           <TableHead className="text-right font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">מס' מועמד</TableHead>
                           <TableHead className="text-right font-medium text-gray-700 dark:text-gray-300 sticky left-0 bg-gray-50 dark:bg-gray-900 z-10">פעולות</TableHead>
@@ -517,32 +511,8 @@ export default function Candidates() {
                           <TableCell className="text-sm">
                             {candidate.city || "-"}
                           </TableCell>
-                          <TableCell className="text-sm whitespace-nowrap">
-                            {candidate.updatedAt ? new Date(candidate.updatedAt).toLocaleDateString('he-IL') : "-"}
-                          </TableCell>
-                          <TableCell className="text-sm">
-                            {candidate.lastJobTitle || "-"}
-                          </TableCell>
-                          <TableCell className="text-sm">
-                            <Badge variant={candidate.source === 'landing_page' ? 'default' : candidate.source === 'email' ? 'secondary' : 'outline'} className="text-xs">
-                              {candidate.source === 'landing_page' ? 'דף פרסום' :
-                               candidate.source === 'email' ? 'מייל' :
-                               candidate.source === 'manual' ? candidate.recruitmentSource :
-                               candidate.source === 'cv_upload' ? 'העלאת קורות חיים' :
-                               candidate.recruitmentSource}
-                            </Badge>
-                          </TableCell>
                           <TableCell data-testid={`text-candidate-mobile-${candidate.id}`} className="text-sm">
                             {candidate.mobile || "-"}
-                          </TableCell>
-                          <TableCell data-testid={`text-candidate-email-${candidate.id}`} className="text-sm">
-                            {candidate.email || "-"}
-                          </TableCell>
-                          <TableCell className="text-sm whitespace-nowrap">
-                            {candidate.lastReferralDate ? new Date(candidate.lastReferralDate).toLocaleDateString('he-IL') : "-"}
-                          </TableCell>
-                          <TableCell className="text-sm whitespace-nowrap">
-                            {candidate.lastStatusChange ? new Date(candidate.lastStatusChange).toLocaleDateString('he-IL') : "-"}
                           </TableCell>
                           <TableCell className="text-sm">
                             <Badge className={getStatusColor(candidate.status || 'available')}>
