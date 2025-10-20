@@ -1524,6 +1524,9 @@ export default function CandidateDetail() {
                             src={`/uploads/${candidate.cvPath?.replace('uploads/', '')}`}
                             className="w-full h-full border-0"
                             title="קורות חיים"
+                            data-testid="cv-iframe"
+                            onLoad={() => console.log('✅ PDF loaded successfully')}
+                            onError={(e) => console.error('❌ PDF failed to load:', e)}
                           />
                         ) : candidate.cvPath?.toLowerCase().includes('.doc') ? (
                           <div className="flex items-center justify-center h-full bg-gray-50">
