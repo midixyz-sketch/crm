@@ -1498,6 +1498,56 @@ export class DatabaseStorage implements IStorage {
 
     const [newApplication] = await db.insert(jobApplications).values(application).returning();
     console.log(`✅ נוצרה מועמדות חדשה: מועמד ${application.candidateId} למשרה ${application.jobId}`);
+    
+    // Check if job has autoSendToClient enabled
+    const job = await this.getJob(application.jobId);
+    if (job && job.autoSendToClient && job.contactEmails && job.contactEmails.length > 0) {
+      console.log(`📧 משרה מוגדרת לשליחה אוטומטית - שולח מועמד למעסיק...`);
+      
+      // Import email service dynamically to avoid circular dependency
+      const { sendCandidateToEmployer } = await import("./emailService");
+      
+      // Send to all contact emails
+      for (const email of job.contactEmails) {
+        try {
+          console.log(`📤 שולח מועמד ${application.candidateId} למייל: ${email}`);
+          
+          const result = await sendCandidateToEmployer({
+            candidateId: application.candidateId,
+            to: email,
+            jobTitle: job.title,
+            reviewerFeedback: `מועמד חדש התקבל אוטומטית ממערכת הגיוס למשרה: ${job.title}`,
+          });
+          
+          if (result.success) {
+            console.log(`✅ מועמד נשלח בהצלחה למייל: ${email}`);
+            
+            // Add event to candidate
+            await this.addCandidateEvent({
+              candidateId: application.candidateId,
+              eventType: "candidate_sent",
+              description: `מועמד נשלח אוטומטית למעסיק: ${email}`,
+              metadata: {
+                jobId: job.id,
+                jobTitle: job.title,
+                sentTo: email,
+                automatic: true,
+              },
+            });
+            
+            // Update candidate status
+            await this.updateCandidate(application.candidateId, {
+              status: "נשלח למעסיק",
+            });
+          } else {
+            console.error(`❌ שגיאה בשליחת מועמד למייל ${email}:`, result.error);
+          }
+        } catch (error: any) {
+          console.error(`❌ שגיאה בשליחת מועמד למעסיק:`, error.message);
+        }
+      }
+    }
+    
     return newApplication;
   }
 
