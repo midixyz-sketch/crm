@@ -163,9 +163,9 @@ export default function Clients() {
                   <Table>
                     <TableHeader>
                       <TableRow className="bg-gray-50 dark:bg-gray-900">
-                        <TableHead className="text-right font-medium text-gray-700 dark:text-gray-300">מק"ח</TableHead>
-                        <TableHead className="text-right font-medium text-gray-700 dark:text-gray-300">שם</TableHead>
-                        <TableHead className="text-right font-medium text-gray-700 dark:text-gray-300">לחזור</TableHead>
+                        <TableHead className="text-right font-medium text-gray-700 dark:text-gray-300">מס' לקוח</TableHead>
+                        <TableHead className="text-right font-medium text-gray-700 dark:text-gray-300">שם החברה</TableHead>
+                        <TableHead className="text-right font-medium text-gray-700 dark:text-gray-300">סטטוס</TableHead>
                         <TableHead className="text-right font-medium text-gray-700 dark:text-gray-300">תחום</TableHead>
                         <TableHead className="text-right font-medium text-gray-700 dark:text-gray-300">פעולות</TableHead>
                       </TableRow>
@@ -173,8 +173,8 @@ export default function Clients() {
                     <TableBody>
                       {clientsData.clients.map((client: Client) => (
                         <TableRow key={client.id} className="hover:bg-gray-50 dark:hover:bg-gray-700" data-testid={`row-client-${client.id}`}>
-                          <TableCell data-testid={`text-client-contact-${client.id}`}>
-                            {client.contactName || "-"}
+                          <TableCell className="font-bold text-primary" data-testid={`text-client-number-${client.id}`}>
+                            {client.clientNumber || "-"}
                           </TableCell>
                           <TableCell className="font-medium">
                             <div>
@@ -190,7 +190,7 @@ export default function Clients() {
                           </TableCell>
                           <TableCell>
                             <Badge className={client.isActive ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'}>
-                              {client.isActive ? 'לחזור' : 'הושלם'}
+                              {client.isActive ? 'פעיל' : 'לא פעיל'}
                             </Badge>
                           </TableCell>
                           <TableCell data-testid={`text-client-industry-${client.id}`}>

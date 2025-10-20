@@ -28,6 +28,9 @@ Preferred communication style: Simple, everyday language.
 ## Database
 -   **PostgreSQL** with **Drizzle ORM** for type-safe operations.
 -   Schema-first approach with core entities like Users, Candidates, Clients, Jobs, Applications, and Tasks.
+-   **Auto-incrementing Numbers**:
+    -   Each candidate automatically receives a unique `candidateNumber` (starting from 1)
+    -   Each client automatically receives a unique `clientNumber` (starting from 1)
 -   Dynamic `candidate_statuses` stored in the database, allowing admin customization and system-defined protected statuses.
     -   8 system statuses (isSystem=true, cannot be deleted): available (זמין), pending (ממתין), sent_to_employer (נשלח למעסיק), in_interview (בתהליך ראיון), hired (התקבל לעבודה), rejected (נדחה), rejected_by_employer (נפסל), not_relevant (לא רלוונטי)
     -   Management UI: `/system-settings` → "סטטוסי מועמדים" tab

@@ -188,6 +188,7 @@ export const candidates = pgTable("candidates", {
 // Clients table
 export const clients = pgTable("clients", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  clientNumber: integer("client_number").unique(), // מספר לקוח אוטומטי
   companyName: varchar("company_name").notNull(),
   contactName: varchar("contact_name"), // Legacy field - kept for backward compatibility, now optional
   email: varchar("email").notNull(),
