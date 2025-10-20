@@ -2,7 +2,7 @@ import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 import { LayoutDashboard, Users, Building2, Briefcase, Mail, BarChart3, Settings, UserCheck, Search, Calendar, Upload } from "lucide-react";
 import { usePermissions } from "@/hooks/usePermissions";
-import logoPath from "@assets/לוגו כחול רקע אפור_1760960190059.png";
+import logoPath from "@assets/linkjob-logo.png";
 
 const navigation = [
   { name: "מאגר מועמדים", href: "/candidates", icon: Users },

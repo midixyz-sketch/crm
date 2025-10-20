@@ -13,7 +13,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import logoPath from "@assets/לוגו כחול רקע אפור_1760960190059.png";
+import logoPath from "@assets/linkjob-logo.png";
 
 const navigation = [
   { name: "מאגר מועמדים", href: "/candidates", icon: Users },
