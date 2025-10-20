@@ -32,6 +32,11 @@ Preferred communication style: Simple, everyday language.
     -   8 system statuses (isSystem=true, cannot be deleted): available (זמין), pending (ממתין), sent_to_employer (נשלח למעסיק), in_interview (בתהליך ראיון), hired (התקבל לעבודה), rejected (נדחה), rejected_by_employer (נפסל), not_relevant (לא רלוונטי)
     -   Management UI: `/system-settings` → "סטטוסי מועמדים" tab
     -   API: GET/POST/PUT/DELETE `/api/candidate-statuses`
+-   **Jobs Management Fields**:
+    -   `contactEmails`: Array of email addresses for receiving candidate referrals (minimum 1 required)
+    -   `internalNotes`: Internal notes field (not visible to clients)
+    -   `isUrgent`: Boolean flag for urgent jobs (displayed at top of lists with green highlight)
+    -   `autoSendToClient`: Boolean flag for automatic candidate sending without manual filtering (applies to candidates from all sources: import, email, landing page)
 
 ## Key Features & Implementations
 -   **Advanced CV Data Extraction**: Supports various document formats (PDF, DOCX, DOC, images) with format-aware text extraction, OCR (Tesseract.js for Hebrew/English/Arabic), Hebrew-aware name extraction, international phone number parsing, and enhanced email extraction.

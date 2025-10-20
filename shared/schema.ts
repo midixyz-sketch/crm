@@ -233,6 +233,11 @@ export const jobs = pgTable("jobs", {
   landingPageActive: boolean("landing_page_active").default(true), // האם דף הנחיתה פעיל
   landingViews: integer("landing_views").default(0), // מספר צפיות בדף הנחיתה
   landingApplications: integer("landing_applications").default(0), // מספר הגשות מועמדות מדף הנחיתה
+  // Job management fields
+  contactEmails: text("contact_emails").array(), // אנשי קשר שיקבלו הפניות מועמדים
+  internalNotes: text("internal_notes"), // הערה פנימית
+  isUrgent: boolean("is_urgent").default(false), // משרה דחופה - תופיע בראש הרשימות
+  autoSendToClient: boolean("auto_send_to_client").default(false), // שליחה אוטומטית ללקוח ללא סינון
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => [

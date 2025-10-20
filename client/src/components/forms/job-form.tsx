@@ -22,6 +22,7 @@ interface JobFormProps {
 export default function JobForm({ job, onSuccess }: JobFormProps) {
   const { toast } = useToast();
   const [additionalCodesInput, setAdditionalCodesInput] = useState("");
+  const [contactEmailInput, setContactEmailInput] = useState("");
 
   const { data: clientsData } = useQuery<{ clients: Client[]; total: number }>({
     queryKey: ["/api/clients"],
@@ -43,6 +44,10 @@ export default function JobForm({ job, onSuccess }: JobFormProps) {
       clientId: job?.clientId || "",
       positions: job?.positions || 1,
       additionalCodes: job?.additionalCodes || [],
+      contactEmails: job?.contactEmails || [],
+      internalNotes: job?.internalNotes || "",
+      isUrgent: job?.isUrgent || false,
+      autoSendToClient: job?.autoSendToClient || false,
     },
   });
 
@@ -366,6 +371,139 @@ export default function JobForm({ job, onSuccess }: JobFormProps) {
                     </FormItem>
                   )}
                 />
+
+                <FormField
+                  control={form.control}
+                  name="internalNotes"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-right">הערה פנימית:</FormLabel>
+                      <FormControl>
+                        <Textarea 
+                          {...field}
+                          data-testid="textarea-internal-notes"
+                          className="min-h-[80px] text-right"
+                          placeholder="הערות פנימיות למשרה (לא יופיע ללקוח)"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="contactEmails"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-right">אנשי קשר (מינימום 1):</FormLabel>
+                      <FormControl>
+                        <div className="space-y-2">
+                          <div className="flex gap-2">
+                            <Input
+                              type="email"
+                              value={contactEmailInput}
+                              onChange={(e) => setContactEmailInput(e.target.value)}
+                              placeholder="הזן כתובת מייל"
+                              className="text-right"
+                              data-testid="input-contact-email"
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' && contactEmailInput.trim()) {
+                                  e.preventDefault();
+                                  const currentEmails = field.value || [];
+                                  if (!currentEmails.includes(contactEmailInput.trim())) {
+                                    field.onChange([...currentEmails, contactEmailInput.trim()]);
+                                    setContactEmailInput("");
+                                  }
+                                }
+                              }}
+                            />
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={() => {
+                                if (contactEmailInput.trim()) {
+                                  const currentEmails = field.value || [];
+                                  if (!currentEmails.includes(contactEmailInput.trim())) {
+                                    field.onChange([...currentEmails, contactEmailInput.trim()]);
+                                    setContactEmailInput("");
+                                  }
+                                }
+                              }}
+                              data-testid="button-add-contact-email"
+                            >
+                              הוסף
+                            </Button>
+                          </div>
+                          {field.value && field.value.length > 0 && (
+                            <div className="flex flex-wrap gap-2">
+                              {field.value.map((email: string, index: number) => (
+                                <div key={index} className="flex items-center gap-1 bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm" data-testid={`contact-email-${index}`}>
+                                  <span>{email}</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const newEmails = field.value.filter((_: string, i: number) => i !== index);
+                                      field.onChange(newEmails);
+                                    }}
+                                    className="text-blue-600 hover:text-blue-800"
+                                    data-testid={`button-remove-contact-email-${index}`}
+                                  >
+                                    <X size={14} />
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <div className="flex gap-6">
+                  <FormField
+                    control={form.control}
+                    name="isUrgent"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-center space-x-3 space-x-reverse space-y-0">
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                            data-testid="checkbox-is-urgent"
+                          />
+                        </FormControl>
+                        <div className="space-y-1 leading-none">
+                          <FormLabel>משרה דחופה (יופיע בראש הרשימות מובלט בצבע ירוק)</FormLabel>
+                        </div>
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div className="flex gap-6">
+                  <FormField
+                    control={form.control}
+                    name="autoSendToClient"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-center space-x-3 space-x-reverse space-y-0">
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                            data-testid="checkbox-auto-send"
+                          />
+                        </FormControl>
+                        <div className="space-y-1 leading-none">
+                          <FormLabel className="font-bold text-orange-600">שליחה אוטומטית ללקוח ללא סינון ידני</FormLabel>
+                          <p className="text-xs text-gray-500">כל מועמד חדש (מייבוא, מייל, דף נחיתה) יישלח אוטומטית ללקוח</p>
+                        </div>
+                      </FormItem>
+                    )}
+                  />
+                </div>
 
                 <FormField
                   control={form.control}
