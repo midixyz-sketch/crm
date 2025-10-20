@@ -32,12 +32,17 @@ Preferred communication style: Simple, everyday language.
     -   8 system statuses (isSystem=true, cannot be deleted): available (זמין), pending (ממתין), sent_to_employer (נשלח למעסיק), in_interview (בתהליך ראיון), hired (התקבל לעבודה), rejected (נדחה), rejected_by_employer (נפסל), not_relevant (לא רלוונטי)
     -   Management UI: `/system-settings` → "סטטוסי מועמדים" tab
     -   API: GET/POST/PUT/DELETE `/api/candidate-statuses`
+-   **Contact Person Management**:
+    -   Contact persons are managed at the **client level**, not job level
+    -   Each client can have up to 20 contact persons stored in `contactPersons` JSONB field
+    -   Each contact person has: unique ID (nanoid), name (optional), title/role (optional), email (required), mobile (optional)
+    -   Jobs reference contact persons via `selectedContactPersonIds` array (stores IDs for stability)
 -   **Jobs Management Fields**:
-    -   `contactEmails`: Array of email addresses for receiving candidate referrals (minimum 1 required)
+    -   `selectedContactPersonIds`: Array of contact person IDs selected from the client's contact persons (minimum 1 required)
     -   `isUrgent`: Boolean flag for urgent jobs (displayed at top of lists with green highlight)
     -   `autoSendToClient`: Boolean flag for automatic candidate sending. When enabled:
-        -   **New candidates**: Any candidate assigned to this job (via email, import, manual addition) is automatically sent to all contactEmails
-        -   **Existing candidates**: When toggling autoSendToClient from false to true, all existing candidates for this job are immediately sent to all contactEmails
+        -   **New candidates**: Any candidate assigned to this job (via email, import, manual addition) is automatically sent to all selected contact persons
+        -   **Existing candidates**: When toggling autoSendToClient from false to true, all existing candidates for this job are immediately sent to all selected contact persons
         -   Automatic emails include candidate details and CV attachment
         -   Candidate status updated to "נשלח למעסיק" and event logged in history
 

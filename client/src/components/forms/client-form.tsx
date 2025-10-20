@@ -10,6 +10,9 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { X, Plus } from "lucide-react";
+import { useState } from "react";
+import { nanoid } from "nanoid";
 
 interface ClientFormProps {
   client?: Client | null;
@@ -32,6 +35,7 @@ export default function ClientForm({ client, onSuccess }: ClientFormProps) {
       commissionRate: client?.commissionRate || undefined,
       paymentTerms: client?.paymentTerms || "",
       notes: client?.notes || "",
+      contactPersons: client?.contactPersons || [],
       isActive: client?.isActive ?? true,
     },
   });
@@ -294,6 +298,117 @@ export default function ClientForm({ client, onSuccess }: ClientFormProps) {
             </FormItem>
           )}
         />
+
+        {/* Contact Persons Section */}
+        <div className="border-t pt-6">
+          <h3 className="text-lg font-medium mb-4">אנשי קשר (עד 20)</h3>
+          
+          <FormField
+            control={form.control}
+            name="contactPersons"
+            render={({ field }) => (
+              <FormItem>
+                <div className="space-y-4">
+                  {field.value && field.value.map((person: any, index: number) => (
+                    <div key={index} className="border rounded-lg p-4 bg-gray-50">
+                      <div className="flex justify-between items-start mb-3">
+                        <h4 className="font-medium">איש קשר #{index + 1}</h4>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            const newPersons = field.value.filter((_: any, i: number) => i !== index);
+                            field.onChange(newPersons);
+                          }}
+                          data-testid={`button-remove-contact-person-${index}`}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div>
+                          <label className="text-sm font-medium">שם</label>
+                          <Input
+                            placeholder="שם מלא"
+                            value={person.name || ""}
+                            onChange={(e) => {
+                              const newPersons = [...field.value];
+                              newPersons[index] = { ...newPersons[index], name: e.target.value };
+                              field.onChange(newPersons);
+                            }}
+                            data-testid={`input-contact-name-${index}`}
+                          />
+                        </div>
+                        
+                        <div>
+                          <label className="text-sm font-medium">תפקיד</label>
+                          <Input
+                            placeholder="תפקיד"
+                            value={person.title || ""}
+                            onChange={(e) => {
+                              const newPersons = [...field.value];
+                              newPersons[index] = { ...newPersons[index], title: e.target.value };
+                              field.onChange(newPersons);
+                            }}
+                            data-testid={`input-contact-title-${index}`}
+                          />
+                        </div>
+                        
+                        <div>
+                          <label className="text-sm font-medium">מייל *</label>
+                          <Input
+                            type="email"
+                            placeholder="email@example.com"
+                            value={person.email || ""}
+                            onChange={(e) => {
+                              const newPersons = [...field.value];
+                              newPersons[index] = { ...newPersons[index], email: e.target.value };
+                              field.onChange(newPersons);
+                            }}
+                            data-testid={`input-contact-email-${index}`}
+                          />
+                        </div>
+                        
+                        <div>
+                          <label className="text-sm font-medium">טלפון נייד</label>
+                          <Input
+                            placeholder="05X-XXXXXXX"
+                            value={person.mobile || ""}
+                            onChange={(e) => {
+                              const newPersons = [...field.value];
+                              newPersons[index] = { ...newPersons[index], mobile: e.target.value };
+                              field.onChange(newPersons);
+                            }}
+                            data-testid={`input-contact-mobile-${index}`}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  
+                  {(!field.value || field.value.length < 20) && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        const newPerson = { id: nanoid(), name: "", title: "", email: "", mobile: "" };
+                        field.onChange([...(field.value || []), newPerson]);
+                      }}
+                      data-testid="button-add-contact-person"
+                      className="w-full"
+                    >
+                      <Plus className="h-4 w-4 ml-2" />
+                      הוסף איש קשר
+                    </Button>
+                  )}
+                </div>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
 
         <div className="flex justify-end space-x-4 space-x-reverse">
           <Button 

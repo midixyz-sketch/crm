@@ -198,6 +198,13 @@ export const clients = pgTable("clients", {
   commissionRate: integer("commission_rate"), // percentage
   paymentTerms: varchar("payment_terms"),
   notes: text("notes"),
+  contactPersons: jsonb("contact_persons").$type<Array<{
+    id: string; // UUID של איש הקשר
+    name?: string;
+    title?: string;
+    email: string;
+    mobile?: string;
+  }>>().default([]), // אנשי קשר - עד 20
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -234,7 +241,7 @@ export const jobs = pgTable("jobs", {
   landingViews: integer("landing_views").default(0), // מספר צפיות בדף הנחיתה
   landingApplications: integer("landing_applications").default(0), // מספר הגשות מועמדות מדף הנחיתה
   // Job management fields
-  contactEmails: text("contact_emails").array(), // אנשי קשר שיקבלו הפניות מועמדים
+  selectedContactPersonIds: text("selected_contact_person_ids").array(), // IDs של אנשי קשר נבחרים מהלקוח
   internalNotes: text("internal_notes"), // הערה פנימית
   isUrgent: boolean("is_urgent").default(false), // משרה דחופה - תופיע בראש הרשימות
   autoSendToClient: boolean("auto_send_to_client").default(false), // שליחה אוטומטית ללקוח ללא סינון
@@ -481,10 +488,21 @@ export const insertCandidateSchema = createInsertSchema(candidates).omit({
   updatedAt: true,
 });
 
+// Contact person schema for validation
+export const contactPersonSchema = z.object({
+  id: z.string(), // UUID של איש הקשר
+  name: z.string().optional(),
+  title: z.string().optional(),
+  email: z.string().email("כתובת מייל לא תקינה"),
+  mobile: z.string().optional(),
+});
+
 export const insertClientSchema = createInsertSchema(clients).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+}).extend({
+  contactPersons: z.array(contactPersonSchema).max(20, "ניתן להוסיף עד 20 אנשי קשר").optional().default([]),
 });
 
 export const insertJobSchema = createInsertSchema(jobs).omit({
