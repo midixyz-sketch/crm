@@ -63,7 +63,7 @@ export default function Navbar() {
           </div>
 
           {/* User Menu */}
-          <div className="hidden lg:flex items-center ml-8">
+          <div className="hidden lg:flex items-center ml-4">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button className="w-10 h-10 bg-primary text-white rounded-full flex items-center justify-center cursor-pointer hover:opacity-80 transition-opacity focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2">
