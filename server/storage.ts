@@ -2115,12 +2115,19 @@ export class DatabaseStorage implements IStorage {
         id: clients.id,
         companyName: clients.companyName,
         contactName: clients.contactName,
+      },
+      createdByUser: {
+        id: users.id,
+        username: users.username,
+        firstName: users.firstName,
+        lastName: users.lastName,
       }
     })
     .from(reminders)
     .leftJoin(candidates, eq(reminders.candidateId, candidates.id))
     .leftJoin(jobs, eq(reminders.jobId, jobs.id))
     .leftJoin(clients, eq(reminders.clientId, clients.id))
+    .leftJoin(users, eq(reminders.createdBy, users.id))
     .orderBy(desc(reminders.reminderDate));
 
     if (userId) {
@@ -2160,12 +2167,19 @@ export class DatabaseStorage implements IStorage {
         id: clients.id,
         companyName: clients.companyName,
         contactName: clients.contactName,
+      },
+      createdByUser: {
+        id: users.id,
+        username: users.username,
+        firstName: users.firstName,
+        lastName: users.lastName,
       }
     })
     .from(reminders)
     .leftJoin(candidates, eq(reminders.candidateId, candidates.id))
     .leftJoin(jobs, eq(reminders.jobId, jobs.id))
     .leftJoin(clients, eq(reminders.clientId, clients.id))
+    .leftJoin(users, eq(reminders.createdBy, users.id))
     .where(eq(reminders.id, id));
 
     return reminder;
@@ -2219,12 +2233,19 @@ export class DatabaseStorage implements IStorage {
         id: clients.id,
         companyName: clients.companyName,
         contactName: clients.contactName,
+      },
+      createdByUser: {
+        id: users.id,
+        username: users.username,
+        firstName: users.firstName,
+        lastName: users.lastName,
       }
     })
     .from(reminders)
     .leftJoin(candidates, eq(reminders.candidateId, candidates.id))
     .leftJoin(jobs, eq(reminders.jobId, jobs.id))
     .leftJoin(clients, eq(reminders.clientId, clients.id))
+    .leftJoin(users, eq(reminders.createdBy, users.id))
     .where(and(
       eq(reminders.isCompleted, false),
       sql`${reminders.reminderDate} <= ${new Date()}`
