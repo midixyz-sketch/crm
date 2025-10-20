@@ -32,9 +32,15 @@ Preferred communication style: Simple, everyday language.
     -   Each candidate automatically receives a unique `candidateNumber` (starting from 1)
     -   Each client automatically receives a unique `clientNumber` (starting from 1)
 -   Dynamic `candidate_statuses` stored in the database, allowing admin customization and system-defined protected statuses.
-    -   8 system statuses (isSystem=true, cannot be deleted): available (זמין), pending (ממתין), sent_to_employer (נשלח למעסיק), in_interview (בתהליך ראיון), hired (התקבל לעבודה), rejected (נדחה), rejected_by_employer (נפסל), not_relevant (לא רלוונטי)
-    -   Management UI: `/system-settings` → "סטטוסי מועמדים" tab
+    -   8 system statuses (isSystem=true, cannot be deleted but can be edited): available (זמין), pending (ממתין), sent_to_employer (נשלח למעסיק), in_interview (בתהליך ראיון), hired (התקבל לעבודה), rejected (נדחה), rejected_by_employer (נפסל), not_relevant (לא רלוונטי)
+    -   Management UI: `/system-settings` → "סטטוסי מועמדים" tab with inline editing table
+        -   Editable table with columns: status name, color, preview, actions
+        -   Click "ערוך" to enter inline edit mode for any status
+        -   Live preview of name and color changes while editing
+        -   Save/cancel buttons for each edit operation
+        -   8 available colors: green, blue, yellow, orange, red, purple, pink, gray
     -   API: GET/POST/PUT/DELETE `/api/candidate-statuses`
+    -   Email imports automatically assign status "ממתין" (pending) to new candidates
 -   **Contact Person Management**:
     -   Contact persons are managed at the **client level**, not job level
     -   Each client can have up to 20 contact persons stored in `contactPersons` JSONB field

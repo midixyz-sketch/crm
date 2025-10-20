@@ -44,6 +44,9 @@ export default function SystemSettings() {
   const [candidateStatuses, setCandidateStatuses] = useState<Array<{id: string, key: string, name: string, color: string, isSystem?: boolean, displayOrder?: number}>>([]);
   const [newStatusName, setNewStatusName] = useState('');
   const [selectedStatusColor, setSelectedStatusColor] = useState('bg-blue-100 text-blue-800');
+  const [editingStatusId, setEditingStatusId] = useState<string | null>(null);
+  const [editingStatusName, setEditingStatusName] = useState('');
+  const [editingStatusColor, setEditingStatusColor] = useState('');
 
   // Load candidate statuses on component mount
   useEffect(() => {
@@ -301,6 +304,58 @@ export default function SystemSettings() {
       toast({
         title: "שגיאה",
         description: error.message || "לא ניתן למחוק את הסטטוס",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const startEditingStatus = (status: {id: string, name: string, color: string}) => {
+    setEditingStatusId(status.id);
+    setEditingStatusName(status.name);
+    setEditingStatusColor(status.color);
+  };
+
+  const cancelEditingStatus = () => {
+    setEditingStatusId(null);
+    setEditingStatusName('');
+    setEditingStatusColor('');
+  };
+
+  const saveStatusEdit = async () => {
+    if (!editingStatusId || !editingStatusName.trim()) return;
+
+    const status = candidateStatuses.find(s => s.id === editingStatusId);
+    if (!status) return;
+
+    try {
+      const response = await fetch(`/api/candidate-statuses/${editingStatusId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          key: status.key,
+          name: editingStatusName.trim(),
+          color: editingStatusColor,
+          isSystem: status.isSystem,
+          displayOrder: status.displayOrder
+        }),
+      });
+
+      if (response.ok) {
+        await loadCandidateStatuses();
+        cancelEditingStatus();
+        toast({
+          title: "סטטוס עודכן",
+          description: `הסטטוס "${editingStatusName}" עודכן בהצלחה`,
+        });
+      } else {
+        throw new Error('Failed to update status');
+      }
+    } catch (error) {
+      toast({
+        title: "שגיאה",
+        description: "לא ניתן לעדכן את הסטטוס",
         variant: "destructive",
       });
     }
@@ -618,49 +673,150 @@ export default function SystemSettings() {
                       </div>
                     </div>
 
-                    {/* Current statuses */}
+                    {/* Current statuses - Editable Table */}
                     <div className="space-y-4">
                       <h3 className="font-medium">סטטוסי מועמדים קיימים:</h3>
-                      <div className="grid grid-cols-2 gap-3">
-                        {candidateStatuses.map((status) => (
-                          <div 
-                            key={status.id} 
-                            className="flex items-center justify-between p-3 border rounded-lg"
-                          >
-                            <div className="flex items-center gap-3">
-                              <div className={`px-3 py-1 rounded-full text-sm ${status.color}`}>
-                                {status.name}
-                              </div>
-                            </div>
-                            {!['available', 'employed', 'inactive', 'blacklisted'].includes(status.id) && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => removeCandidateStatus(status.id)}
-                                className="text-red-600 hover:bg-red-100"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            )}
-                          </div>
-                        ))}
+                      <div className="border rounded-lg overflow-hidden">
+                        <table className="w-full" dir="rtl">
+                          <thead className="bg-gray-50">
+                            <tr>
+                              <th className="px-4 py-3 text-right text-sm font-medium text-gray-700">שם הסטטוס</th>
+                              <th className="px-4 py-3 text-right text-sm font-medium text-gray-700">צבע</th>
+                              <th className="px-4 py-3 text-right text-sm font-medium text-gray-700">תצוגה מקדימה</th>
+                              <th className="px-4 py-3 text-right text-sm font-medium text-gray-700">פעולות</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-200">
+                            {candidateStatuses.map((status) => (
+                              <tr key={status.id} className="hover:bg-gray-50">
+                                {editingStatusId === status.id ? (
+                                  <>
+                                    {/* Edit mode */}
+                                    <td className="px-4 py-3">
+                                      <Input
+                                        value={editingStatusName}
+                                        onChange={(e) => setEditingStatusName(e.target.value)}
+                                        className="w-full"
+                                        data-testid={`input-status-name-${status.id}`}
+                                      />
+                                    </td>
+                                    <td className="px-4 py-3">
+                                      <select
+                                        value={editingStatusColor}
+                                        onChange={(e) => setEditingStatusColor(e.target.value)}
+                                        className="w-full px-3 py-2 border rounded-md"
+                                        data-testid={`select-status-color-${status.id}`}
+                                      >
+                                        <option value="bg-green-100 text-green-800">ירוק</option>
+                                        <option value="bg-blue-100 text-blue-800">כחול</option>
+                                        <option value="bg-yellow-100 text-yellow-800">צהוב</option>
+                                        <option value="bg-orange-100 text-orange-800">כתום</option>
+                                        <option value="bg-red-100 text-red-800">אדום</option>
+                                        <option value="bg-purple-100 text-purple-800">סגול</option>
+                                        <option value="bg-pink-100 text-pink-800">ורוד</option>
+                                        <option value="bg-gray-100 text-gray-800">אפור</option>
+                                      </select>
+                                    </td>
+                                    <td className="px-4 py-3">
+                                      <Badge className={editingStatusColor}>
+                                        {editingStatusName}
+                                      </Badge>
+                                    </td>
+                                    <td className="px-4 py-3">
+                                      <div className="flex gap-2">
+                                        <Button
+                                          size="sm"
+                                          onClick={saveStatusEdit}
+                                          className="bg-green-600 hover:bg-green-700"
+                                          data-testid={`button-save-status-${status.id}`}
+                                        >
+                                          <CheckCircle className="h-4 w-4" />
+                                        </Button>
+                                        <Button
+                                          size="sm"
+                                          variant="outline"
+                                          onClick={cancelEditingStatus}
+                                          data-testid={`button-cancel-edit-${status.id}`}
+                                        >
+                                          <X className="h-4 w-4" />
+                                        </Button>
+                                      </div>
+                                    </td>
+                                  </>
+                                ) : (
+                                  <>
+                                    {/* View mode */}
+                                    <td className="px-4 py-3 font-medium" data-testid={`text-status-name-${status.id}`}>
+                                      {status.name}
+                                      {status.isSystem && (
+                                        <Badge variant="outline" className="mr-2 text-xs">
+                                          סטטוס מערכת
+                                        </Badge>
+                                      )}
+                                    </td>
+                                    <td className="px-4 py-3 text-sm text-gray-600" data-testid={`text-status-color-${status.id}`}>
+                                      {status.color.includes('green') && 'ירוק'}
+                                      {status.color.includes('blue') && 'כחול'}
+                                      {status.color.includes('yellow') && 'צהוב'}
+                                      {status.color.includes('orange') && 'כתום'}
+                                      {status.color.includes('red') && 'אדום'}
+                                      {status.color.includes('purple') && 'סגול'}
+                                      {status.color.includes('pink') && 'ורוד'}
+                                      {status.color.includes('gray') && 'אפור'}
+                                    </td>
+                                    <td className="px-4 py-3">
+                                      <Badge className={status.color} data-testid={`badge-status-${status.id}`}>
+                                        {status.name}
+                                      </Badge>
+                                    </td>
+                                    <td className="px-4 py-3">
+                                      <div className="flex gap-2">
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          onClick={() => startEditingStatus(status)}
+                                          className="text-blue-600 hover:bg-blue-100"
+                                          data-testid={`button-edit-status-${status.id}`}
+                                        >
+                                          ערוך
+                                        </Button>
+                                        {!status.isSystem && (
+                                          <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => removeCandidateStatus(status.id)}
+                                            className="text-red-600 hover:bg-red-100"
+                                            data-testid={`button-delete-status-${status.id}`}
+                                          >
+                                            <Trash2 className="h-4 w-4" />
+                                          </Button>
+                                        )}
+                                      </div>
+                                    </td>
+                                  </>
+                                )}
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
                       </div>
                       
                       {candidateStatuses.length === 0 && (
-                        <p className="text-gray-500 text-sm">אין סטטוסים מותאמים אישית. הוסף סטטוס ראשון...</p>
+                        <p className="text-gray-500 text-sm">אין סטטוסים. הוסף סטטוס ראשון...</p>
                       )}
                     </div>
 
                     <div className="pt-4 border-t">
                       <div className="bg-blue-50 p-4 rounded-lg mb-4">
-                        <h4 className="font-medium mb-2">הערה חשובה:</h4>
+                        <h4 className="font-medium mb-2">הערות שימוש:</h4>
                         <ul className="text-sm text-gray-700 space-y-1">
-                          <li>• הסטטוסים הבסיסיים (זמין, מועסק, לא פעיל, ברשימה שחורה) אינם ניתנים למחיקה</li>
-                          <li>• ניתן להוסיף סטטוסים מותאמים אישית לפי צרכי הארגון</li>
-                          <li>• בחר צבע מתאים לכל סטטוס לזיהוי חזותי טוב יותר</li>
+                          <li>• <strong>עריכת סטטוס:</strong> לחץ על כפתור "ערוך" בכל שורה לעריכת השם והצבע</li>
+                          <li>• <strong>סטטוסי מערכת:</strong> 8 סטטוסים בסיסיים מסומנים כסטטוסי מערכת - ניתן לערוך אך לא למחוק</li>
+                          <li>• <strong>סטטוסים מותאמים אישית:</strong> ניתן להוסיף, לערוך ולמחוק סטטוסים לפי צרכי הארגון</li>
+                          <li>• <strong>תצוגה מקדימה:</strong> הצבע והשם מוצגים בזמן אמת בעת עריכה</li>
                         </ul>
                         <p className="text-sm text-muted-foreground mt-2">
-                          💡 השינויים נשמרים אוטומטית בעת הוספה או מחיקה של סטטוס
+                          💡 השינויים נשמרים מיידית לאחר לחיצה על כפתור השמירה
                         </p>
                       </div>
                     </div>
