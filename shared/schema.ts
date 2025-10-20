@@ -189,7 +189,7 @@ export const candidates = pgTable("candidates", {
 export const clients = pgTable("clients", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   companyName: varchar("company_name").notNull(),
-  contactName: varchar("contact_name").notNull(),
+  contactName: varchar("contact_name"), // Legacy field - kept for backward compatibility, now optional
   email: varchar("email").notNull(),
   phone: varchar("phone"),
   address: text("address"),
