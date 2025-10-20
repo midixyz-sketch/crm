@@ -54,11 +54,16 @@ export default function Navbar() {
         <div className="flex justify-between h-16">
           {/* Logo and Brand */}
           <div className="flex items-center">
-            <Link href="/" data-testid="link-logo">
+            <Link href="/" data-testid="link-logo" className="flex items-center">
               <img 
                 src="/linkjob-logo.png" 
-                alt="Linkjob" 
-                className="h-12 cursor-pointer hover:opacity-80 transition-opacity"
+                alt="Linkjob Logo" 
+                className="h-12 w-auto cursor-pointer hover:opacity-80 transition-opacity"
+                onError={(e) => {
+                  console.error('Logo failed to load');
+                  e.currentTarget.style.display = 'none';
+                  e.currentTarget.parentElement!.innerHTML = '<span class="text-xl font-bold text-primary">Linkjob</span>';
+                }}
               />
             </Link>
           </div>

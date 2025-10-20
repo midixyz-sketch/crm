@@ -20,11 +20,16 @@ export default function Sidebar() {
   return (
     <aside className="bg-surface w-64 shadow-lg border-l border-gray-200 dark:border-gray-700 flex-shrink-0 sidebar-transition">
       <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex justify-center">
-        <Link href="/" data-testid="link-logo-sidebar">
+        <Link href="/" data-testid="link-logo-sidebar" className="flex items-center">
           <img 
             src="/linkjob-logo.png" 
-            alt="Linkjob" 
-            className="h-16 cursor-pointer hover:opacity-80 transition-opacity"
+            alt="Linkjob Logo" 
+            className="h-16 w-auto cursor-pointer hover:opacity-80 transition-opacity"
+            onError={(e) => {
+              console.error('Sidebar logo failed to load');
+              e.currentTarget.style.display = 'none';
+              e.currentTarget.parentElement!.innerHTML = '<span class="text-xl font-bold text-primary">Linkjob</span>';
+            }}
           />
         </Link>
       </div>
