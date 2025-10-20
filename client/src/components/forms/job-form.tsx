@@ -573,17 +573,14 @@ export default function JobForm({ job, onSuccess }: JobFormProps) {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-right">טווח שכר:</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger className="text-right">
-                            <SelectValue placeholder="כן" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="yes">כן</SelectItem>
-                          <SelectItem value="no">לא</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <FormControl>
+                        <Input 
+                          {...field}
+                          data-testid="input-salary-range"
+                          className="text-right"
+                          placeholder="לדוגמה: 10,000-15,000 ₪"
+                        />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -595,17 +592,14 @@ export default function JobForm({ job, onSuccess }: JobFormProps) {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-right">מיקום:</FormLabel>
-                      <Select>
-                        <FormControl>
-                          <SelectTrigger className="text-right">
-                            <SelectValue placeholder="..." />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="option1">אופציה 1</SelectItem>
-                          <SelectItem value="option2">אופציה 2</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <FormControl>
+                        <Input 
+                          {...field}
+                          data-testid="input-location"
+                          className="text-right"
+                          placeholder="לדוגמה: תל אביב, חיפה"
+                        />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
