@@ -189,13 +189,79 @@ class WhatsAppService {
             updatedAt: new Date()
           };
 
+          let currentSession;
           if (existingSession) {
             await db.update(whatsappSessions)
               .set(sessionData)
               .where(eq(whatsappSessions.id, existingSession.id));
+            currentSession = existingSession;
           } else {
-            await db.insert(whatsappSessions).values(sessionData);
+            const [newSession] = await db.insert(whatsappSessions).values(sessionData).returning();
+            currentSession = newSession;
           }
+
+          // Import existing chats immediately after connection
+          setTimeout(async () => {
+            try {
+              logger.info('Fetching existing chats from WhatsApp...');
+              const chats = await socket.groupFetchAllParticipating();
+              const chatIds = Object.keys(chats);
+              logger.info(`Found ${chatIds.length} group chats`);
+
+              // Also get individual chats from store
+              const allChats: any[] = [];
+              
+              // Process group chats
+              for (const id of chatIds) {
+                allChats.push({
+                  id,
+                  name: chats[id].subject || id.split('@')[0],
+                  conversationTimestamp: chats[id].creation,
+                  unreadCount: 0
+                });
+              }
+
+              logger.info(`Importing ${allChats.length} existing chats to database...`);
+
+              for (const chat of allChats) {
+                try {
+                  const remoteJid = chat.id;
+                  const name = chat.name || remoteJid.split('@')[0];
+                  const phoneNumber = remoteJid.split('@')[0];
+                  
+                  const candidate = await db.query.candidates.findFirst({
+                    where: eq(candidates.mobile, phoneNumber)
+                  });
+
+                  const existingChat = await db.query.whatsappChats.findFirst({
+                    where: eq(whatsappChats.remoteJid, remoteJid)
+                  });
+
+                  const lastMessageAt = chat.conversationTimestamp 
+                    ? new Date(Number(chat.conversationTimestamp) * 1000)
+                    : new Date();
+
+                  if (!existingChat) {
+                    await db.insert(whatsappChats).values({
+                      sessionId: currentSession.id,
+                      candidateId: candidate?.id || null,
+                      remoteJid,
+                      name,
+                      lastMessageAt,
+                      lastMessagePreview: '',
+                      unreadCount: chat.unreadCount || 0,
+                    });
+                  }
+                } catch (err) {
+                  logger.error(`Error importing chat ${chat.id}: ${err}`);
+                }
+              }
+
+              logger.info(`Successfully imported ${allChats.length} chats`);
+            } catch (error) {
+              logger.error(`Error importing existing chats: ${error}`);
+            }
+          }, 5000); // Wait 5 seconds after connection to fetch chats
         }
       });
 
@@ -208,6 +274,123 @@ class WhatsAppService {
           for (const message of messages) {
             await this.handleIncomingMessage(message);
           }
+        }
+      });
+
+      // Handle chats sync - Import existing chats when connected
+      socket.ev.on('chats.set', async ({ chats }) => {
+        try {
+          logger.info(`Syncing ${chats.length} chats from WhatsApp`);
+          
+          const session = await db.query.whatsappSessions.findFirst({
+            where: eq(whatsappSessions.sessionId, this.state.sessionId!)
+          });
+
+          if (!session) {
+            logger.error('No session found for chat sync');
+            return;
+          }
+
+          for (const chat of chats) {
+            try {
+              const remoteJid = chat.id;
+              const name = chat.name || remoteJid.split('@')[0];
+              const phoneNumber = remoteJid.split('@')[0];
+              
+              // Check if we have a candidate with this phone number
+              const candidate = await db.query.candidates.findFirst({
+                where: eq(candidates.mobile, phoneNumber)
+              });
+
+              // Check if chat already exists
+              const existingChat = await db.query.whatsappChats.findFirst({
+                where: eq(whatsappChats.remoteJid, remoteJid)
+              });
+
+              const lastMessageAt = chat.conversationTimestamp 
+                ? new Date(Number(chat.conversationTimestamp) * 1000)
+                : new Date();
+
+              if (existingChat) {
+                await db.update(whatsappChats)
+                  .set({
+                    name,
+                    lastMessageAt,
+                    unreadCount: chat.unreadCount || 0,
+                    updatedAt: new Date()
+                  })
+                  .where(eq(whatsappChats.id, existingChat.id));
+              } else {
+                await db.insert(whatsappChats).values({
+                  sessionId: session.id,
+                  candidateId: candidate?.id || null,
+                  remoteJid,
+                  name,
+                  lastMessageAt,
+                  lastMessagePreview: '',
+                  unreadCount: chat.unreadCount || 0,
+                });
+              }
+            } catch (err) {
+              logger.error(`Error syncing chat ${chat.id}: ${err}`);
+            }
+          }
+
+          logger.info(`Successfully synced ${chats.length} chats`);
+        } catch (error) {
+          logger.error(`Error in chats.set handler: ${error}`);
+        }
+      });
+
+      // Handle individual chat updates
+      socket.ev.on('chats.upsert', async (chats) => {
+        try {
+          const session = await db.query.whatsappSessions.findFirst({
+            where: eq(whatsappSessions.sessionId, this.state.sessionId!)
+          });
+
+          if (!session) return;
+
+          for (const chat of chats) {
+            const remoteJid = chat.id;
+            const name = chat.name || remoteJid.split('@')[0];
+            const phoneNumber = remoteJid.split('@')[0];
+            
+            const candidate = await db.query.candidates.findFirst({
+              where: eq(candidates.mobile, phoneNumber)
+            });
+
+            const existingChat = await db.query.whatsappChats.findFirst({
+              where: eq(whatsappChats.remoteJid, remoteJid)
+            });
+
+            const lastMessageAt = chat.conversationTimestamp 
+              ? new Date(Number(chat.conversationTimestamp) * 1000)
+              : new Date();
+
+            if (existingChat) {
+              await db.update(whatsappChats)
+                .set({
+                  name,
+                  lastMessageAt,
+                  unreadCount: chat.unreadCount || 0,
+                  updatedAt: new Date()
+                })
+                .where(eq(whatsappChats.id, existingChat.id));
+            } else {
+              await db.insert(whatsappChats).values({
+                sessionId: session.id,
+                candidateId: candidate?.id || null,
+                remoteJid,
+                name,
+                lastMessageAt,
+                lastMessagePreview: '',
+                unreadCount: chat.unreadCount || 0,
+              });
+            }
+          }
+        } catch (error) {
+          logger.error(`Error in chats.upsert handler: ${error}`);
         }
       });
 
