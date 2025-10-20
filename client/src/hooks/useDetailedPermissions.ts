@@ -141,12 +141,6 @@ export function useDetailedPermissions() {
         icon: "Users" 
       },
       { 
-        permission: 'view_recently_updated' as PagePermission, 
-        name: "עודכנו לאחרונה", 
-        href: "/candidates/recently-updated", 
-        icon: "RefreshCw" 
-      },
-      { 
         permission: 'view_cv_search' as PagePermission, 
         name: "חיפוש בקורות חיים", 
         href: "/cv-search", 
@@ -177,18 +171,6 @@ export function useDetailedPermissions() {
         icon: "UserCheck" 
       },
       { 
-        permission: 'view_emails' as PagePermission, 
-        name: "מערכת מיילים", 
-        href: "/emails", 
-        icon: "Mail" 
-      },
-      { 
-        permission: 'manage_email_settings' as PagePermission, 
-        name: "הגדרות מייל", 
-        href: "/email-settings", 
-        icon: "Settings" 
-      },
-      { 
         permission: 'view_reports' as PagePermission, 
         name: "דוחות ואנליטיקה", 
         href: "/reports", 
@@ -196,15 +178,9 @@ export function useDetailedPermissions() {
       },
       { 
         permission: 'access_settings' as PagePermission, 
-        name: "הגדרות מערכת", 
+        name: "הגדרות", 
         href: "/settings", 
         icon: "Settings" 
-      },
-      { 
-        permission: 'manage_users' as PagePermission, 
-        name: "ניהול משתמשים", 
-        href: "/user-management", 
-        icon: "Shield" 
       }
     ];
 
