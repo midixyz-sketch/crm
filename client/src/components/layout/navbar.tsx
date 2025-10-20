@@ -54,17 +54,12 @@ export default function Navbar() {
         <div className="flex justify-between h-16">
           {/* Logo and Brand */}
           <div className="flex items-center">
-            <Link href="/" data-testid="link-logo" className="flex items-center">
-              <img 
-                src="/linkjob-logo.png" 
-                alt="Linkjob Logo" 
-                className="h-12 w-auto cursor-pointer hover:opacity-80 transition-opacity"
-                onError={(e) => {
-                  console.error('Logo failed to load');
-                  e.currentTarget.style.display = 'none';
-                  e.currentTarget.parentElement!.innerHTML = '<span class="text-xl font-bold text-primary">Linkjob</span>';
-                }}
-              />
+            <Link href="/" data-testid="link-logo" className="flex items-center hover:opacity-80 transition-opacity">
+              <svg width="140" height="48" viewBox="0 0 1024 1024" className="cursor-pointer">
+                <text x="50%" y="50%" dominantBaseline="middle" textAnchor="middle" fill="#4F6B8C" fontSize="180" fontWeight="600" fontFamily="system-ui, -apple-system, sans-serif">
+                  Linkjob
+                </text>
+              </svg>
             </Link>
           </div>
 
