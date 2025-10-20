@@ -85,10 +85,17 @@ class WhatsAppService {
       return;
     }
 
-    // If already connected (even if not fully ready), skip
-    if (this.state.socket) {
-      logger.info('WhatsApp socket already exists, skipping initialization');
+    // If already connected and socket exists, skip
+    if (this.state.socket && this.state.isConnected) {
+      logger.info('WhatsApp already connected, skipping initialization');
       return;
+    }
+
+    // If socket exists but NOT connected, clean it up first
+    if (this.state.socket && !this.state.isConnected) {
+      logger.info('WhatsApp socket exists but not connected, cleaning up...');
+      this.state.socket = null;
+      this.state.qrCode = null;
     }
 
     this.isInitializing = true;
