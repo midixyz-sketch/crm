@@ -110,33 +110,59 @@ export default function BulkImportCandidates() {
 
     setImporting(true);
     setProgress(0);
+    setResults([]);
+    setSummary(null);
 
-    const formData = new FormData();
-    selectedFiles.forEach(file => {
-      formData.append('cvFiles', file);
-    });
+    const BATCH_SIZE = 100;
+    const allResults: ImportResult[] = [];
+    let totalSuccess = 0;
+    let totalDuplicate = 0;
+    let totalFailed = 0;
 
     try {
-      const response = await fetch('/api/candidates/bulk-import', {
-        method: 'POST',
-        body: formData,
-        credentials: 'include'
-      });
+      const totalBatches = Math.ceil(selectedFiles.length / BATCH_SIZE);
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'שגיאה בייבוא');
+      for (let i = 0; i < selectedFiles.length; i += BATCH_SIZE) {
+        const batchFiles = selectedFiles.slice(i, i + BATCH_SIZE);
+        const currentBatch = Math.floor(i / BATCH_SIZE) + 1;
+
+        const formData = new FormData();
+        batchFiles.forEach(file => {
+          formData.append('cvFiles', file);
+        });
+
+        const response = await fetch('/api/candidates/bulk-import', {
+          method: 'POST',
+          body: formData,
+          credentials: 'include'
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'שגיאה בייבוא');
+        }
+
+        const data = await response.json();
+        
+        allResults.push(...data.results);
+        totalSuccess += data.summary.success;
+        totalDuplicate += data.summary.duplicate;
+        totalFailed += data.summary.failed;
+
+        const progressPercent = Math.round((currentBatch / totalBatches) * 100);
+        setProgress(progressPercent);
+        setResults([...allResults]);
+        setSummary({
+          total: selectedFiles.length,
+          success: totalSuccess,
+          duplicate: totalDuplicate,
+          failed: totalFailed
+        });
       }
-
-      const data = await response.json();
-      
-      setResults(data.results);
-      setSummary(data.summary);
-      setProgress(100);
 
       toast({
         title: "ייבוא הושלם!",
-        description: `${data.summary.success} מועמדים נוצרו בהצלחה`,
+        description: `${totalSuccess} מועמדים נוצרו בהצלחה מתוך ${selectedFiles.length} קבצים`,
       });
 
     } catch (error) {
@@ -192,7 +218,7 @@ export default function BulkImportCandidates() {
       <div className="mb-6">
         <h1 className="text-3xl font-bold">ייבוא מרובה של מועמדים</h1>
         <p className="text-muted-foreground mt-2">
-          העלה כמה שתרצה קבצי קורות חיים (PDF, DOCX, תמונות) - המערכת תעבד אותם ב-batches של 1000 ותחלץ את הפרטים אוטומטית
+          העלה עד 20,000 קבצי קורות חיים (PDF, DOCX, תמונות) - המערכת תעלה 100 קבצים בכל בקשה ותעבד 10 במקביל לחילוץ פרטים אוטומטי
         </p>
       </div>
 
@@ -202,7 +228,7 @@ export default function BulkImportCandidates() {
           <CardHeader>
             <CardTitle>בחירת קבצים</CardTitle>
             <CardDescription>
-              בחר קבצי קורות חיים בכמות בלתי מוגבלת. המערכת תעבד 1000 קבצים בכל פעם. נתמכים: PDF, DOC, DOCX, JPG, PNG
+              בחר עד 20,000 קבצי קורות חיים. המערכת תעלה 100 קבצים בכל בקשה ותעבד 10 במקביל. נתמכים: PDF, DOC, DOCX, JPG, PNG
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -273,7 +299,7 @@ export default function BulkImportCandidates() {
               <div className="space-y-2">
                 <Progress value={progress} className="w-full" />
                 <p className="text-sm text-muted-foreground text-center">
-                  מייבא מועמדים...
+                  מייבא מועמדים... {progress}%
                 </p>
               </div>
             )}
@@ -369,7 +395,7 @@ export default function BulkImportCandidates() {
           <AlertDescription className="space-y-2">
             <div className="font-medium">הוראות שימוש:</div>
             <ul className="list-disc list-inside space-y-1 text-sm">
-              <li>בחר כמה קבצים שתרצה - המערכת תעבד אותם ב-batches של 1000 קבצים בכל פעם</li>
+              <li>בחר עד 20,000 קבצים - המערכת תעלה 100 קבצים בכל בקשה ותעבד 10 במקביל</li>
               <li>המערכת תחלץ אוטומטית: שם, טלפון, מייל ומקצוע</li>
               <li>קבצים עם פרטים כפולים (טלפון/מייל זהים) לא ייוצרו ויסומנו ככפולים</li>
               <li>כל מועמד שנוצר יקבל אירוע "נוצר באמצעות ייבוא מרובה" בטיימליין שלו</li>
