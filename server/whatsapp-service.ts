@@ -64,6 +64,7 @@ class WhatsAppService {
   private authDir = path.join(process.cwd(), 'whatsapp_auth');
   private initializationPromise: Promise<void> | null = null;
   private isInitializing: boolean = false;
+  private currentQR: string | null = null;
 
   constructor() {
     // Ensure auth directory exists
@@ -85,17 +86,10 @@ class WhatsAppService {
       return;
     }
 
-    // If already connected and socket exists, skip
-    if (this.state.socket && this.state.isConnected) {
+    // If already connected, skip  
+    if (this.state.isConnected) {
       logger.info('WhatsApp already connected, skipping initialization');
       return;
-    }
-
-    // If socket exists but NOT connected, clean it up first
-    if (this.state.socket && !this.state.isConnected) {
-      logger.info('WhatsApp socket exists but not connected, cleaning up...');
-      this.state.socket = null;
-      this.state.qrCode = null;
     }
 
     this.isInitializing = true;
@@ -163,6 +157,7 @@ class WhatsAppService {
           try {
             const qrImage = await QRCode.toDataURL(qr);
             this.state.qrCode = qrImage;
+            this.currentQR = qrImage;
             logger.info('QR Code generated');
             whatsappEvents.emit('qr', qrImage);
 
@@ -220,6 +215,7 @@ class WhatsAppService {
           logger.info('WhatsApp connection opened');
           this.state.isConnected = true;
           this.state.qrCode = null;
+          this.currentQR = null;
           this.state.phoneNumber = socket.user?.id.split(':')[0] || null;
           whatsappEvents.emit('connected', this.state.phoneNumber);
 
@@ -679,11 +675,19 @@ class WhatsAppService {
         sessionId: null,
         userId: null,
       };
+      this.currentQR = null;
       logger.info('Logged out from WhatsApp');
     } catch (error) {
       logger.error(`Error logging out: ${error}`);
       throw error;
     }
+  }
+
+  /**
+   * Get current QR code (for frontend to display)
+   */
+  getCurrentQR(): string | null {
+    return this.currentQR;
   }
 }
 

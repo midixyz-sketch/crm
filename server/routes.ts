@@ -5467,6 +5467,21 @@ ${recommendation}
     }
   });
 
+  // GET /api/whatsapp/qr - Get current QR code
+  app.get('/api/whatsapp/qr', isAuthenticated, async (req, res) => {
+    try {
+      const qr = whatsappService.getCurrentQR();
+      if (qr) {
+        res.json({ qr });
+      } else {
+        res.json({ qr: null });
+      }
+    } catch (error) {
+      console.error('שגיאה בקבלת QR code:', error);
+      res.status(500).json({ message: 'שגיאה בקבלת QR code' });
+    }
+  });
+
   // POST /api/whatsapp/initialize - Initialize WhatsApp connection
   app.post('/api/whatsapp/initialize', isAuthenticated, async (req, res) => {
     try {
