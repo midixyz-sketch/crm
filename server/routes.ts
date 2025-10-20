@@ -25,7 +25,10 @@ import {
   insertRoleSchema,
   insertPermissionSchema,
   insertUserRoleSchema,
-  insertRolePermissionSchema
+  insertRolePermissionSchema,
+  whatsappChats,
+  whatsappMessages,
+  whatsappSessions
 } from "@shared/schema";
 import { z } from "zod";
 import mammoth from 'mammoth';
@@ -5416,6 +5419,276 @@ ${recommendation}
     } catch (error) {
       console.error('שגיאה בהסרת הרשאה ממשתמש:', error);
       res.status(500).json({ message: 'שגיאה בהסרת ההרשאה' });
+    }
+  });
+
+  // ==================== WhatsApp API Endpoints ====================
+  // Import WhatsApp service
+  const { whatsappService, whatsappEvents } = await import('./whatsapp-service');
+
+  // GET /api/whatsapp/status - Get WhatsApp connection status
+  app.get('/api/whatsapp/status', isAuthenticated, async (req, res) => {
+    try {
+      const status = whatsappService.getStatus();
+      res.json(status);
+    } catch (error) {
+      console.error('שגיאה בקבלת סטטוס WhatsApp:', error);
+      res.status(500).json({ message: 'שגיאה בקבלת סטטוס' });
+    }
+  });
+
+  // POST /api/whatsapp/initialize - Initialize WhatsApp connection
+  app.post('/api/whatsapp/initialize', isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      await whatsappService.initialize(user.id);
+      res.json({ message: 'WhatsApp מאותחל' });
+    } catch (error) {
+      console.error('שגיאה באתחול WhatsApp:', error);
+      res.status(500).json({ message: 'שגיאה באתחול WhatsApp' });
+    }
+  });
+
+  // POST /api/whatsapp/logout - Logout from WhatsApp
+  app.post('/api/whatsapp/logout', isAuthenticated, async (req, res) => {
+    try {
+      await whatsappService.logout();
+      res.json({ message: 'התנתקת מWhatsApp' });
+    } catch (error) {
+      console.error('שגיאה בהתנתקות מWhatsApp:', error);
+      res.status(500).json({ message: 'שגיאה בהתנתקות' });
+    }
+  });
+
+  // POST /api/whatsapp/send - Send a WhatsApp message
+  app.post('/api/whatsapp/send', isAuthenticated, async (req, res) => {
+    try {
+      const { to, text } = req.body;
+      
+      if (!to || !text) {
+        return res.status(400).json({ message: 'חסרים פרמטרים' });
+      }
+
+      const success = await whatsappService.sendMessage(to, text);
+      
+      if (success) {
+        res.json({ message: 'ההודעה נשלחה בהצלחה' });
+      } else {
+        res.status(500).json({ message: 'שגיאה בשליחת הודעה' });
+      }
+    } catch (error) {
+      console.error('שגיאה בשליחת הודעה:', error);
+      res.status(500).json({ message: 'שגיאה בשליחת הודעה' });
+    }
+  });
+
+  // POST /api/whatsapp/send-by-number - Send WhatsApp message by phone number (for candidate send flow)
+  app.post('/api/whatsapp/send-by-number', isAuthenticated, async (req, res) => {
+    try {
+      const { phoneNumber, message, candidateId } = req.body;
+      
+      if (!phoneNumber || !message) {
+        return res.status(400).json({ message: 'חסרים פרמטרים: phoneNumber ו-message נדרשים' });
+      }
+
+      // Format phone number to WhatsApp format
+      // Remove all non-digit characters including + sign
+      let formattedNumber = phoneNumber.replace(/\D/g, '');
+      
+      // For Israeli numbers, convert to international format
+      if (formattedNumber.startsWith('972')) {
+        // International format - check if there's a leading 0 after country code
+        // e.g., "9720521234567" → "972521234567"
+        if (formattedNumber.length > 3 && formattedNumber.charAt(3) === '0') {
+          formattedNumber = '972' + formattedNumber.substring(4);
+        }
+      } else if (formattedNumber.startsWith('0')) {
+        // Local format (0XX-XXX-XXXX) → 972XXXXXXXXX
+        formattedNumber = '972' + formattedNumber.substring(1);
+      } else {
+        // Assume Israeli number without any prefix
+        formattedNumber = '972' + formattedNumber;
+      }
+      
+      const remoteJid = `${formattedNumber}@s.whatsapp.net`;
+
+      // Send the message
+      const success = await whatsappService.sendMessage(remoteJid, message);
+      
+      if (!success) {
+        return res.status(500).json({ message: 'שגיאה בשליחת הודעה - ודא שWhatsApp מחובר' });
+      }
+
+      // If candidateId provided, ensure chat exists and link to candidate
+      // Use upsert to create or update the chat deterministically
+      if (candidateId) {
+        try {
+          // Get or create the chat entry
+          const existingChat = await db.query.whatsappChats.findFirst({
+            where: eq(whatsappChats.remoteJid, remoteJid),
+          });
+
+          if (existingChat) {
+            // Update existing chat with candidateId
+            await db.update(whatsappChats)
+              .set({ candidateId, lastMessageAt: new Date() })
+              .where(eq(whatsappChats.remoteJid, remoteJid));
+          } else {
+            // Create new chat entry linked to candidate
+            await db.insert(whatsappChats).values({
+              remoteJid,
+              name: null,
+              unreadCount: 0,
+              lastMessageAt: new Date(),
+              candidateId,
+            });
+          }
+        } catch (error) {
+          console.error('שגיאה בקישור צ\'אט למועמד:', error);
+          // Don't fail the whole request if linking fails
+        }
+      }
+
+      res.json({ 
+        message: 'ההודעה נשלחה בהצלחה',
+        chatId: remoteJid 
+      });
+    } catch (error: any) {
+      console.error('שגיאה בשליחת הודעה לפי מספר:', error);
+      res.status(500).json({ 
+        message: error.message || 'שגיאה בשליחת הודעה' 
+      });
+    }
+  });
+
+  // POST /api/whatsapp/send-file - Send a file via WhatsApp
+  app.post('/api/whatsapp/send-file', isAuthenticated, upload.single('file'), async (req, res) => {
+    try {
+      const { to, caption } = req.body;
+      const file = req.file;
+
+      if (!to || !file) {
+        return res.status(400).json({ message: 'חסרים פרמטרים' });
+      }
+
+      const success = await whatsappService.sendFile(
+        to,
+        file.path,
+        caption,
+        file.mimetype
+      );
+
+      // Clean up uploaded file
+      if (fs.existsSync(file.path)) {
+        fs.unlinkSync(file.path);
+      }
+
+      if (success) {
+        res.json({ message: 'הקובץ נשלח בהצלחה' });
+      } else {
+        res.status(500).json({ message: 'שגיאה בשליחת קובץ' });
+      }
+    } catch (error) {
+      console.error('שגיאה בשליחת קובץ:', error);
+      res.status(500).json({ message: 'שגיאה בשליחת קובץ' });
+    }
+  });
+
+  // GET /api/whatsapp/messages - Get messages for a chat
+  app.get('/api/whatsapp/messages/:remoteJid', isAuthenticated, async (req, res) => {
+    try {
+      const { remoteJid } = req.params;
+      const limit = parseInt(req.query.limit as string) || 50;
+
+      const messages = await db.query.whatsappMessages.findMany({
+        where: eq(whatsappMessages.remoteJid, remoteJid),
+        orderBy: [desc(whatsappMessages.timestamp)],
+        limit,
+      });
+
+      res.json(messages.reverse());
+    } catch (error) {
+      console.error('שגיאה בקבלת הודעות:', error);
+      res.status(500).json({ message: 'שגיאה בקבלת הודעות' });
+    }
+  });
+
+  // GET /api/whatsapp/chats - Get all chats
+  app.get('/api/whatsapp/chats', isAuthenticated, async (req, res) => {
+    try {
+      const chats = await db.query.whatsappChats.findMany({
+        orderBy: [desc(whatsappChats.lastMessageAt)],
+      });
+
+      res.json(chats);
+    } catch (error) {
+      console.error('שגיאה בקבלת צ\'אטים:', error);
+      res.status(500).json({ message: 'שגיאה בקבלת צ\'אטים' });
+    }
+  });
+
+  // POST /api/whatsapp/mark-read - Mark messages as read
+  app.post('/api/whatsapp/mark-read/:remoteJid', isAuthenticated, async (req, res) => {
+    try {
+      const { remoteJid } = req.params;
+
+      await db.update(whatsappMessages)
+        .set({ isRead: true })
+        .where(and(
+          eq(whatsappMessages.remoteJid, remoteJid),
+          eq(whatsappMessages.fromMe, false)
+        ));
+
+      await db.update(whatsappChats)
+        .set({ unreadCount: 0 })
+        .where(eq(whatsappChats.remoteJid, remoteJid));
+
+      res.json({ message: 'הודעות סומנו כנקראו' });
+    } catch (error) {
+      console.error('שגיאה בסימון הודעות כנקראו:', error);
+      res.status(500).json({ message: 'שגיאה בסימון הודעות' });
+    }
+  });
+
+  // GET /api/candidates/:id/whatsapp - Get WhatsApp messages for a candidate
+  app.get('/api/candidates/:id/whatsapp', isAuthenticated, async (req, res) => {
+    try {
+      const { id } = req.params;
+      
+      // Get candidate phone number
+      const candidate = await db.query.candidates.findFirst({
+        where: eq(candidates.id, id),
+      });
+
+      if (!candidate || !candidate.mobilePhone) {
+        return res.json([]);
+      }
+
+      // Format phone number to WhatsApp format (remove spaces, dashes, etc.)
+      const phoneNumber = candidate.mobilePhone.replace(/[-\s()]/g, '');
+      
+      // WhatsApp uses format: countrycode + number + @s.whatsapp.net
+      // For Israeli numbers: 972 + number without leading 0
+      let whatsappNumber = phoneNumber;
+      if (whatsappNumber.startsWith('0')) {
+        whatsappNumber = '972' + whatsappNumber.substring(1);
+      } else if (!whatsappNumber.startsWith('972')) {
+        whatsappNumber = '972' + whatsappNumber;
+      }
+      
+      const remoteJid = whatsappNumber + '@s.whatsapp.net';
+
+      // Get messages for this phone number
+      const messages = await db.query.whatsappMessages.findMany({
+        where: eq(whatsappMessages.remoteJid, remoteJid),
+        orderBy: [desc(whatsappMessages.timestamp)],
+        limit: 100,
+      });
+
+      res.json(messages.reverse());
+    } catch (error) {
+      console.error('שגיאה בקבלת הודעות WhatsApp למועמד:', error);
+      res.status(500).json({ message: 'שגיאה בקבלת הודעות' });
     }
   });
 

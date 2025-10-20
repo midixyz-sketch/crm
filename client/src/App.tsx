@@ -6,6 +6,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAuth } from "@/hooks/useAuth";
 import Navbar from "@/components/layout/navbar";
 import { ReminderPopup } from "@/components/reminder-popup";
+import { WhatsAppWidget } from "@/components/whatsapp/whatsapp-widget";
+import { WhatsAppNotificationContainer } from "@/components/whatsapp/message-notification";
 import NotFound from "@/pages/not-found";
 import Landing from "@/pages/landing";
 import Login from "@/pages/login";
@@ -47,6 +49,8 @@ function Router() {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <Navbar />
       <ReminderPopup />
+      <WhatsAppWidget />
+      <WhatsAppNotificationContainer />
       <main className="w-full px-4 sm:px-6 lg:px-8 py-6">
         <Switch>
           <Route path="/" component={Dashboard} />
