@@ -2,9 +2,9 @@ import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 import { LayoutDashboard, Users, Building2, Briefcase, Mail, BarChart3, Settings, UserCheck, Search, Calendar, Upload } from "lucide-react";
 import { usePermissions } from "@/hooks/usePermissions";
+import logoPath from "@assets/לוגו כחול רקע אפור_1760960190059.png";
 
 const navigation = [
-  { name: "לוח בקרה", href: "/", icon: LayoutDashboard },
   { name: "מאגר מועמדים", href: "/candidates", icon: Users },
   { name: "חיפוש בקורות חיים", href: "/cv-search", icon: Search },
   { name: "יומן", href: "/calendar", icon: Calendar },
@@ -21,9 +21,14 @@ export default function Sidebar() {
 
   return (
     <aside className="bg-surface w-64 shadow-lg border-l border-gray-200 dark:border-gray-700 flex-shrink-0 sidebar-transition">
-      <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-        <h1 className="text-xl font-bold text-primary">מערכת ניהול גיוס</h1>
-        <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">חברת גיוס מתקדמת</p>
+      <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex justify-center">
+        <Link href="/" data-testid="link-logo-sidebar">
+          <img 
+            src={logoPath} 
+            alt="Linkjob" 
+            className="h-16 cursor-pointer hover:opacity-80 transition-opacity"
+          />
+        </Link>
       </div>
       
       <nav className="mt-6">

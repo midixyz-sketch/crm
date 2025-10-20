@@ -13,9 +13,9 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import logoPath from "@assets/לוגו כחול רקע אפור_1760960190059.png";
 
 const navigation = [
-  { name: "לוח בקרה", href: "/", icon: LayoutDashboard },
   { name: "מאגר מועמדים", href: "/candidates", icon: Users },
   { name: "חיפוש בקורות חיים", href: "/cv-search", icon: Search },
   { name: "יומן", href: "/calendar", icon: Calendar },
@@ -56,8 +56,13 @@ export default function Navbar() {
         <div className="flex justify-between h-16">
           {/* Logo and Brand */}
           <div className="flex items-center">
-            <h1 className="text-xl font-bold text-primary">מערכת ניהול גיוס</h1>
-            <span className="text-sm text-gray-600 dark:text-gray-300 mr-2">חברת גיוס מתקדמת</span>
+            <Link href="/" data-testid="link-logo">
+              <img 
+                src={logoPath} 
+                alt="Linkjob" 
+                className="h-12 cursor-pointer hover:opacity-80 transition-opacity"
+              />
+            </Link>
           </div>
 
           {/* User Info and Logout */}
