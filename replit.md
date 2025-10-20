@@ -64,6 +64,14 @@ Preferred communication style: Simple, everyday language.
 -   **Bulk Candidate Operations**: Super admin functionality for multi-selecting and performing bulk deletions of candidates with parallel processing.
 -   **Recently Updated Candidates Page**: Tracks candidates with recent status changes (rejected or sent to employers), offering filtering by status, job, and date range.
 -   **Dashboard Statistics**: "Hired This Month" count based on `candidates` table with monthly reset, and a "Revenue" card, currently hardcoded pending future payment integration.
+-   **WhatsApp Message Templates**: Database-driven message template system accessible from `/settings`
+    -   Templates stored in `message_templates` table with fields: id, name, content, icon
+    -   Full CRUD operations: Create, Read, Update, Delete via UI
+    -   Templates use `{שם המועמד}` placeholder for automatic name replacement
+    -   4 default templates: זימון לראיון עבודה, אין מענה בנייד, בקשת עדכון פרטים, הודעת תודה
+    -   Templates accessible from candidate detail page (`/candidates/:id`) and interview review page (`/interviews/:jobId`)
+    -   API endpoints: GET/POST/PUT/DELETE `/api/message-templates`
+    -   Fallback to hardcoded templates if database is empty
 
 # External Dependencies
 
