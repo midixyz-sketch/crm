@@ -123,6 +123,9 @@ export default function JobForm({ job, onSuccess }: JobFormProps) {
       salaryRange: data.salaryRange || null,
       jobType: data.jobType || null,
       additionalCodes: data.additionalCodes || [],
+      contactEmails: data.contactEmails || [],
+      isUrgent: data.isUrgent || false,
+      autoSendToClient: data.autoSendToClient || false,
     };
 
     if (job) {
