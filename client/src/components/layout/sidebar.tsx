@@ -1,29 +1,50 @@
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
-import { LayoutDashboard, Users, Building2, Briefcase, Mail, BarChart3, Settings, UserCheck, Search, Calendar, Upload } from "lucide-react";
+import { Users, Building2, Briefcase, BarChart3, Settings, UserCheck, Search, Calendar, UserCog, Clock } from "lucide-react";
 import { usePermissions } from "@/hooks/usePermissions";
 import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useQuery } from "@tanstack/react-query";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-const navigation = [
-  { name: "מאגר מועמדים", href: "/candidates", icon: Users },
-  { name: "חיפוש בקורות חיים", href: "/cv-search", icon: Search },
-  { name: "יומן", href: "/calendar", icon: Calendar },
-  { name: "מאגר לקוחות", href: "/clients", icon: Building2 },
-  { name: "מאגר משרות", href: "/jobs", icon: Briefcase },
-  { name: "ראיונות", href: "/interviews", icon: UserCheck },
-  { name: "דוחות ואנליטיקה", href: "/reports", icon: BarChart3 },
-  { name: "הגדרות", href: "/settings", icon: Settings },
-];
 
 export default function Sidebar() {
   const [location] = useLocation();
   const { isSuperAdmin } = usePermissions();
   const [whatsappDialogOpen, setWhatsappDialogOpen] = useState(false);
   const { toast } = useToast();
+
+  // Get current user to check role
+  const { data: currentUser } = useQuery({
+    queryKey: ["/api/auth/user"],
+  });
+
+  const isExternalRecruiter = currentUser?.userRoles?.some((ur: any) => ur.role?.type === "external_recruiter");
+
+  // Build navigation based on permissions
+  const navigation = [
+    ...(isExternalRecruiter 
+      ? [{ name: "המשרות שלי", href: "/my-jobs", icon: Briefcase }]
+      : [
+          { name: "מאגר מועמדים", href: "/candidates", icon: Users },
+          { name: "חיפוש בקורות חיים", href: "/cv-search", icon: Search },
+          { name: "יומן", href: "/calendar", icon: Calendar },
+          { name: "מאגר לקוחות", href: "/clients", icon: Building2 },
+          { name: "מאגר משרות", href: "/jobs", icon: Briefcase },
+          { name: "ראיונות", href: "/interviews", icon: UserCheck },
+          { name: "דוחות ואנליטיקה", href: "/reports", icon: BarChart3 },
+        ]
+    ),
+    ...(isSuperAdmin 
+      ? [
+          { name: "ניהול רכזים", href: "/external-recruiters", icon: UserCog },
+          { name: "אישור מועמדים", href: "/pending-approvals", icon: Clock },
+        ]
+      : []
+    ),
+    { name: "הגדרות", href: "/settings", icon: Settings },
+  ];
 
   // WhatsApp status query - always enabled when dialog is open
   const { data: whatsappStatus, refetch: refetchStatus, isLoading } = useQuery({
@@ -35,7 +56,9 @@ export default function Sidebar() {
 
   const handleInitializeWhatsApp = async () => {
     try {
-      await apiRequest('POST', '/api/whatsapp/initialize', {});
+      await apiRequest('/api/whatsapp/initialize', {
+        method: 'POST',
+      });
       refetchStatus();
       toast({
         title: "WhatsApp מאותחל",
@@ -52,7 +75,9 @@ export default function Sidebar() {
 
   const handleDisconnect = async () => {
     try {
-      await apiRequest('POST', '/api/whatsapp/logout', {});
+      await apiRequest('/api/whatsapp/logout', {
+        method: 'POST',
+      });
       refetchStatus();
       toast({
         title: "התנתקת מWhatsApp",
