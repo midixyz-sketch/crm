@@ -269,17 +269,22 @@ class WhatsAppService {
               if (existingChats.length > 0) {
                 logger.info(`Found ${existingChats.length} existing chats, no need to import`);
                 
-                // Load profile pictures for chats that don't have them
+                // Load profile pictures for chats that don't have them (limit to 50 at a time to avoid rate limiting)
                 logger.info('Checking for chats without profile pictures...');
-                const chatsWithoutProfilePics = existingChats.filter(chat => !chat.profilePicUrl);
+                const chatsWithoutProfilePics = existingChats.filter(chat => !chat.profilePicUrl).slice(0, 50);
                 
                 if (chatsWithoutProfilePics.length > 0) {
-                  logger.info(`Fetching profile pictures for ${chatsWithoutProfilePics.length} chats...`);
+                  logger.info(`Fetching profile pictures for ${chatsWithoutProfilePics.length} chats (out of ${existingChats.filter(c => !c.profilePicUrl).length} total without pics)...`);
                   
-                  for (const chat of chatsWithoutProfilePics) {
-                    this.updateChatProfilePicture(chat.remoteJid).catch(err => 
-                      logger.error(`Failed to fetch profile pic for ${chat.remoteJid}: ${err}`)
-                    );
+                  // Process in batches with delay to avoid rate limiting
+                  for (let i = 0; i < chatsWithoutProfilePics.length; i++) {
+                    const chat = chatsWithoutProfilePics[i];
+                    // Add small delay between each request
+                    setTimeout(() => {
+                      this.updateChatProfilePicture(chat.remoteJid).catch(err => 
+                        logger.error(`Failed to fetch profile pic for ${chat.remoteJid}: ${err}`)
+                      );
+                    }, i * 200); // 200ms delay between each request
                   }
                 }
                 
