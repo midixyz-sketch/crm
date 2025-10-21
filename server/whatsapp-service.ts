@@ -254,6 +254,21 @@ class WhatsAppService {
 
               if (existingChats.length > 0) {
                 logger.info(`Found ${existingChats.length} existing chats, no need to import`);
+                
+                // Load profile pictures for chats that don't have them
+                logger.info('Checking for chats without profile pictures...');
+                const chatsWithoutProfilePics = existingChats.filter(chat => !chat.profilePicUrl);
+                
+                if (chatsWithoutProfilePics.length > 0) {
+                  logger.info(`Fetching profile pictures for ${chatsWithoutProfilePics.length} chats...`);
+                  
+                  for (const chat of chatsWithoutProfilePics) {
+                    this.updateChatProfilePicture(chat.remoteJid).catch(err => 
+                      logger.error(`Failed to fetch profile pic for ${chat.remoteJid}: ${err}`)
+                    );
+                  }
+                }
+                
                 return;
               }
 
@@ -278,6 +293,11 @@ class WhatsAppService {
                       lastMessagePreview: '',
                       unreadCount: 0,
                     });
+                    
+                    // Fetch profile picture in background (don't await)
+                    this.updateChatProfilePicture(id).catch(err => 
+                      logger.error(`Failed to fetch profile pic for ${id}: ${err}`)
+                    );
                   } catch (err) {
                     logger.error(`Error importing group ${id}: ${err}`);
                   }
@@ -349,6 +369,13 @@ class WhatsAppService {
                     updatedAt: new Date()
                   })
                   .where(eq(whatsappChats.id, existingChat.id));
+                
+                // Update profile picture if not set
+                if (!existingChat.profilePicUrl) {
+                  this.updateChatProfilePicture(remoteJid).catch(err => 
+                    logger.error(`Failed to fetch profile pic for ${remoteJid}: ${err}`)
+                  );
+                }
               } else {
                 await db.insert(whatsappChats).values({
                   sessionId: session.id,
@@ -359,6 +386,11 @@ class WhatsAppService {
                   lastMessagePreview: '',
                   unreadCount: chat.unreadCount || 0,
                 });
+                
+                // Fetch profile picture in background
+                this.updateChatProfilePicture(remoteJid).catch(err => 
+                  logger.error(`Failed to fetch profile pic for ${remoteJid}: ${err}`)
+                );
               }
             } catch (err) {
               logger.error(`Error syncing chat ${chat.id}: ${err}`);
@@ -406,6 +438,13 @@ class WhatsAppService {
                   updatedAt: new Date()
                 })
                 .where(eq(whatsappChats.id, existingChat.id));
+              
+              // Update profile picture if not set
+              if (!existingChat.profilePicUrl) {
+                this.updateChatProfilePicture(remoteJid).catch(err => 
+                  logger.error(`Failed to fetch profile pic for ${remoteJid}: ${err}`)
+                );
+              }
             } else {
               await db.insert(whatsappChats).values({
                 sessionId: session.id,
@@ -416,6 +455,11 @@ class WhatsAppService {
                 lastMessagePreview: '',
                 unreadCount: chat.unreadCount || 0,
               });
+              
+              // Fetch profile picture in background
+              this.updateChatProfilePicture(remoteJid).catch(err => 
+                logger.error(`Failed to fetch profile pic for ${remoteJid}: ${err}`)
+              );
             }
           }
         } catch (error) {
@@ -532,6 +576,13 @@ class WhatsAppService {
             updatedAt: new Date()
           })
           .where(eq(whatsappChats.id, existingChat.id));
+        
+        // Update profile picture if not set
+        if (!existingChat.profilePicUrl) {
+          this.updateChatProfilePicture(remoteJid).catch(err => 
+            logger.error(`Failed to fetch profile pic for ${remoteJid}: ${err}`)
+          );
+        }
       } else {
         await db.insert(whatsappChats).values({
           sessionId: session?.id || null,
@@ -542,6 +593,11 @@ class WhatsAppService {
           lastMessagePreview: messageText || caption || `[${messageType}]`,
           unreadCount: fromMe ? 0 : 1,
         });
+        
+        // Fetch profile picture in background
+        this.updateChatProfilePicture(remoteJid).catch(err => 
+          logger.error(`Failed to fetch profile pic for ${remoteJid}: ${err}`)
+        );
       }
 
       // Emit event for new message
@@ -661,6 +717,28 @@ class WhatsAppService {
     } catch (error) {
       logger.error(`Error getting profile picture for ${jid}: ${error}`);
       return null;
+    }
+  }
+
+  /**
+   * Update chat with profile picture - async helper
+   */
+  private async updateChatProfilePicture(remoteJid: string): Promise<void> {
+    try {
+      // Fetch profile picture in background
+      const profilePicUrl = await this.getProfilePicture(remoteJid);
+      
+      if (profilePicUrl) {
+        // Update chat with profile picture
+        await db.update(whatsappChats)
+          .set({ profilePicUrl, updatedAt: new Date() })
+          .where(eq(whatsappChats.remoteJid, remoteJid));
+        
+        logger.info(`Updated profile picture for ${remoteJid}`);
+      }
+    } catch (error) {
+      // Don't throw - just log the error so chat operations continue
+      logger.error(`Failed to update profile picture for ${remoteJid}: ${error}`);
     }
   }
 
