@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Send, CheckCheck, Clock, XCircle, RefreshCw, AlertCircle, Pin, PinOff, Tag, X, QrCode, Loader2, Users, User, Archive } from "lucide-react";
@@ -32,14 +33,12 @@ interface Message {
 
 interface Candidate {
   id: string;
-  firstName: string;
-  lastName: string;
+  name: string;
   phone: string;
   email?: string;
   tags?: string[];
   isPinned?: boolean;
   chatType?: string;
-  previousChatType?: string;
 }
 
 interface ChatGroup {
@@ -49,12 +48,15 @@ interface ChatGroup {
 }
 
 interface WhatsAppStatus {
-  isConnected: boolean;
-  qrCode: string | null;
-  phoneNumber: string | null;
+  status: string;
+  connected: boolean;
 }
 
-export default function WhatsAppChats() {
+interface QRResponse {
+  qr: string;
+}
+
+export default function Chats() {
   const [selectedCandidateId, setSelectedCandidateId] = useState<string | null>(null);
   const [newMessage, setNewMessage] = useState("");
   const [profilePictures, setProfilePictures] = useState<Record<string, string | null>>({});
@@ -74,59 +76,59 @@ export default function WhatsAppChats() {
     refetchInterval: 3000,
   });
 
+  const { data: qrData } = useQuery<QRResponse>({
+    queryKey: ["/api/whatsapp/qr"],
+    refetchInterval: whatsappStatus?.connected ? false : 10000,
+    enabled: whatsappStatus !== undefined && !whatsappStatus.connected,
+    retry: 1,
+  });
+
   // Generate QR code image from data
   useEffect(() => {
-    if (whatsappStatus?.qrCode) {
-      setQrImageUrl(whatsappStatus.qrCode);
-    } else {
-      setQrImageUrl("");
+    if (qrData?.qr) {
+      QRCodeLib.toDataURL(qrData.qr, { width: 400, margin: 2 })
+        .then((url: string) => setQrImageUrl(url))
+        .catch((err: Error) => console.error("Error generating QR code:", err));
     }
-  }, [whatsappStatus?.qrCode]);
+  }, [qrData]);
 
   const { data: messages = [] } = useQuery<Message[]>({
-    queryKey: ["/api/whatsapp/messages"],
+    queryKey: ["/api/messages"],
     refetchInterval: 3000,
-    enabled: whatsappStatus?.isConnected === true,
+    enabled: whatsappStatus?.connected === true,
   });
 
-  const { data: candidatesData } = useQuery<{ candidates: Candidate[]; total: number }>({
+  const { data: candidates = [] } = useQuery<Candidate[]>({
     queryKey: ["/api/candidates"],
     refetchInterval: 3000,
+    enabled: whatsappStatus?.connected === true,
   });
-
-  const allCandidates = candidatesData?.candidates || [];
-
-  // Filter candidates to only those with WhatsApp messages
-  const candidates = useMemo(() => {
-    const candidateIds = new Set(messages.map(m => m.candidateId));
-    return allCandidates.filter(c => candidateIds.has(c.id) || (c.chatType === 'group'));
-  }, [allCandidates, messages]);
 
   // Fetch profile pictures for all candidates
   useEffect(() => {
     const fetchProfilePictures = async () => {
       for (const candidate of candidates) {
-        if (!candidate.phone || fetchedPhonesRef.current.has(candidate.phone)) continue;
-        
-        try {
-          const response = await fetch(`/api/whatsapp/profile-picture/${candidate.phone}`);
-          
-          if (response.ok) {
-            const data = await response.json();
-            fetchedPhonesRef.current.add(candidate.phone);
-            setProfilePictures(prev => ({
-              ...prev,
-              [candidate.phone]: data.profilePicUrl || null
-            }));
-          } else if (response.status === 404 || response.status === 401) {
-            fetchedPhonesRef.current.add(candidate.phone);
-            setProfilePictures(prev => ({
-              ...prev,
-              [candidate.phone]: null
-            }));
+        if (!fetchedPhonesRef.current.has(candidate.phone)) {
+          try {
+            const response = await fetch(`/api/whatsapp/profile-picture/${candidate.phone}`);
+            
+            if (response.ok) {
+              const data = await response.json();
+              fetchedPhonesRef.current.add(candidate.phone);
+              setProfilePictures(prev => ({
+                ...prev,
+                [candidate.phone]: data.profilePicUrl || null
+              }));
+            } else if (response.status === 404 || response.status === 401) {
+              fetchedPhonesRef.current.add(candidate.phone);
+              setProfilePictures(prev => ({
+                ...prev,
+                [candidate.phone]: null
+              }));
+            }
+          } catch (error) {
+            // Network errors, timeouts - don't cache, allow retry
           }
-        } catch (error) {
-          // Network errors, timeouts - don't cache, allow retry
         }
       }
     };
@@ -141,7 +143,7 @@ export default function WhatsAppChats() {
       return await apiRequest("POST", "/api/whatsapp/send", { candidateId, phone, message });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/whatsapp/messages"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/messages"] });
       setNewMessage("");
     },
     onError: (error: any) => {
@@ -223,9 +225,8 @@ export default function WhatsAppChats() {
     // Filter by search query (name, phone, or tags)
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
-      const fullName = `${group.candidate.firstName} ${group.candidate.lastName}`.toLowerCase();
-      const nameMatch = fullName.includes(query);
-      const phoneMatch = group.candidate.phone?.includes(searchQuery);
+      const nameMatch = group.candidate.name.toLowerCase().includes(query);
+      const phoneMatch = group.candidate.phone.includes(searchQuery);
       const tagsMatch = group.candidate.tags?.some(tag => tag.toLowerCase().includes(query));
       
       if (!nameMatch && !phoneMatch && !tagsMatch) {
@@ -300,7 +301,7 @@ export default function WhatsAppChats() {
         id: candidate.id,
         updates: { 
           chatType: restoredType,
-          previousChatType: undefined,
+          previousChatType: null, // Clear the previous type
         },
       });
     } else {
@@ -309,7 +310,7 @@ export default function WhatsAppChats() {
         id: candidate.id,
         updates: { 
           chatType: 'archived',
-          previousChatType: currentType,
+          previousChatType: currentType, // Save current type
         },
       });
     }
@@ -317,8 +318,8 @@ export default function WhatsAppChats() {
     toast({
       title: isArchived ? "שוחזר מהארכיון" : "הועבר לארכיון",
       description: isArchived 
-        ? `השיחה עם ${candidate.firstName} ${candidate.lastName} שוחזרה בהצלחה` 
-        : `השיחה עם ${candidate.firstName} ${candidate.lastName} הועברה לארכיון`,
+        ? `השיחה עם ${candidate.name} שוחזרה בהצלחה` 
+        : `השיחה עם ${candidate.name} הועברה לארכיון`,
     });
   };
 
@@ -393,7 +394,7 @@ export default function WhatsAppChats() {
   }
 
   // If WhatsApp is explicitly disconnected, show QR code
-  if (!whatsappStatus.isConnected) {
+  if (!whatsappStatus.connected) {
     return (
       <div className="h-screen flex items-center justify-center bg-muted/10">
         <Card className="p-8 max-w-md">
@@ -437,14 +438,13 @@ export default function WhatsAppChats() {
     );
   }
 
-  // Continue in next part...
   return (
     <div className="h-screen flex flex-row-reverse">
       {/* Sidebar - Chat List */}
       <div className="w-80 border-r flex flex-col bg-background dark:bg-muted/30">
         <div className="p-4 border-b bg-background space-y-3">
           <div>
-            <h2 className="text-lg font-semibold" data-testid="text-chats-title">שיחות WhatsApp</h2>
+            <h2 className="text-lg font-semibold" data-testid="text-chats-title">שיחות</h2>
             <p className="text-sm text-muted-foreground">{filteredChatGroups.length} מתוך {chatGroups.length} שיחות</p>
           </div>
           
@@ -525,55 +525,59 @@ export default function WhatsAppChats() {
                 <div
                   key={group.candidate.id}
                   className={cn(
-                    "relative p-3 rounded-lg transition-colors cursor-pointer",
+                    "relative p-3 rounded-lg transition-colors hover-elevate active-elevate-2",
                     selectedCandidateId === group.candidate.id
                       ? "bg-accent"
-                      : "hover:bg-accent/50"
+                      : ""
                   )}
-                  onClick={() => setSelectedCandidateId(group.candidate.id)}
                   data-testid={`chat-item-${group.candidate.id}`}
                 >
-                  <div className="flex items-start gap-3">
-                    <Avatar className="w-10 h-10">
-                      {profilePictures[group.candidate.phone] && (
-                        <AvatarImage src={profilePictures[group.candidate.phone]!} alt={`${group.candidate.firstName} ${group.candidate.lastName}`} />
-                      )}
-                      <AvatarFallback>{group.candidate.firstName[0]}{group.candidate.lastName[0]}</AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between gap-2 mb-1">
-                        <div className="flex items-center gap-1 flex-1 min-w-0">
-                          {group.candidate.isPinned && <Pin className="w-3 h-3 text-primary shrink-0" />}
-                          <span className="font-medium truncate">{group.candidate.firstName} {group.candidate.lastName}</span>
-                        </div>
-                        {group.lastMessage && (
-                          <span className="text-xs text-muted-foreground shrink-0">
-                            {format(new Date(group.lastMessage.sentAt), "HH:mm", { locale: he })}
-                          </span>
+                  <div 
+                    onClick={() => setSelectedCandidateId(group.candidate.id)}
+                    className="cursor-pointer"
+                  >
+                    <div className="flex items-start gap-3">
+                      <Avatar className="w-10 h-10">
+                        {profilePictures[group.candidate.phone] && (
+                          <AvatarImage src={profilePictures[group.candidate.phone]!} alt={group.candidate.name} />
                         )}
-                      </div>
-                      
-                      {group.candidate.tags && group.candidate.tags.length > 0 && (
-                        <div className="flex gap-1 mb-1 flex-wrap">
-                          {group.candidate.tags.map((tag) => (
-                            <Badge key={tag} variant="secondary" className="text-xs">{tag}</Badge>
-                          ))}
+                        <AvatarFallback></AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-2 mb-1">
+                          <div className="flex items-center gap-1 flex-1 min-w-0">
+                            {group.candidate.isPinned && <Pin className="w-3 h-3 text-primary shrink-0" />}
+                            <span className="font-medium truncate">{group.candidate.name}</span>
+                          </div>
+                          {group.lastMessage && (
+                            <span className="text-xs text-muted-foreground shrink-0">
+                              {format(new Date(group.lastMessage.sentAt), "HH:mm", { locale: he })}
+                            </span>
+                          )}
                         </div>
-                      )}
-                      
-                      <div className="flex items-center gap-1">
-                        {group.lastMessage ? (
-                          <>
-                            {group.lastMessage.direction === "outgoing" && getStatusIcon(group.lastMessage.status)}
-                            <p className="text-sm text-muted-foreground truncate">
-                              {group.lastMessage.message}
+                        
+                        {group.candidate.tags && group.candidate.tags.length > 0 && (
+                          <div className="flex gap-1 mb-1 flex-wrap">
+                            {group.candidate.tags.map((tag) => (
+                              <Badge key={tag} variant="secondary" className="text-xs">{tag}</Badge>
+                            ))}
+                          </div>
+                        )}
+                        
+                        <div className="flex items-center gap-1">
+                          {group.lastMessage ? (
+                            <>
+                              {group.lastMessage.direction === "outgoing" && getStatusIcon(group.lastMessage.status)}
+                              <p className="text-sm text-muted-foreground truncate">
+                                {group.lastMessage.message}
+                              </p>
+                            </>
+                          ) : (
+                            <p className="text-sm text-muted-foreground italic">
+                              אין הודעות
                             </p>
-                          </>
-                        ) : (
-                          <p className="text-sm text-muted-foreground italic">
-                            אין הודעות
-                          </p>
-                        )}
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -653,13 +657,13 @@ export default function WhatsAppChats() {
             <div className="p-4 border-b bg-background flex items-center gap-3">
               <Avatar className="w-10 h-10">
                 {profilePictures[selectedChat.candidate.phone] && (
-                  <AvatarImage src={profilePictures[selectedChat.candidate.phone]!} alt={`${selectedChat.candidate.firstName} ${selectedChat.candidate.lastName}`} />
+                  <AvatarImage src={profilePictures[selectedChat.candidate.phone]!} alt={selectedChat.candidate.name} />
                 )}
-                <AvatarFallback>{selectedChat.candidate.firstName[0]}{selectedChat.candidate.lastName[0]}</AvatarFallback>
+                <AvatarFallback></AvatarFallback>
               </Avatar>
               <div className="flex-1">
                 <h3 className="font-semibold" data-testid="text-selected-chat-name">
-                  {selectedChat.candidate.firstName} {selectedChat.candidate.lastName}
+                  {selectedChat.candidate.name}
                 </h3>
                 <p className="text-sm text-muted-foreground">{selectedChat.candidate.phone}</p>
               </div>
@@ -818,7 +822,7 @@ export default function WhatsAppChats() {
           <DialogHeader>
             <DialogTitle>ניהול תגיות</DialogTitle>
             <DialogDescription>
-              הוסף או הסר תגיות עבור {editingCandidate?.firstName} {editingCandidate?.lastName}
+              הוסף או הסר תגיות עבור {editingCandidate?.name}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
@@ -850,7 +854,7 @@ export default function WhatsAppChats() {
                       {tag}
                       <button
                         onClick={() => handleRemoveTag(tag)}
-                        className="rounded-full p-0.5 hover:bg-destructive/20"
+                        className="hover-elevate rounded-full p-0.5"
                         data-testid={`button-remove-tag-${tag}`}
                       >
                         <X className="w-3 h-3" />
