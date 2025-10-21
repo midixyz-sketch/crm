@@ -101,7 +101,6 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/whatsapp/messages'] });
       setNewMessage('');
-      toast({ title: 'ההודעה נשלחה בהצלחה' });
     },
     onError: (error: any) => {
       toast({ title: 'שגיאה בשליחת הודעה', description: error.message, variant: 'destructive' });
