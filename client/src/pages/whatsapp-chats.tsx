@@ -96,6 +96,19 @@ export default function WhatsAppChats() {
 
   const allCandidates = candidatesData?.candidates || [];
 
+  // Sync WhatsApp groups to candidates when connected
+  useEffect(() => {
+    if (whatsappStatus?.isConnected) {
+      apiRequest("POST", "/api/whatsapp/sync-groups", {})
+        .then(() => {
+          queryClient.invalidateQueries({ queryKey: ["/api/candidates"] });
+        })
+        .catch((error) => {
+          console.error('שגיאה בסנכרון קבוצות:', error);
+        });
+    }
+  }, [whatsappStatus?.isConnected]);
+
   // Filter candidates to only those with WhatsApp messages
   const candidates = useMemo(() => {
     const candidateIds = new Set(messages.map(m => m.candidateId));
@@ -186,8 +199,8 @@ export default function WhatsAppChats() {
     .map((candidate): ChatGroup | null => {
       const candidateMessages = messages.filter((m) => m.candidateId === candidate.id);
       
-      // For groups, show them even without messages
-      const isGroup = (candidate.chatType || 'individual') === 'group';
+      // Auto-detect groups based on WhatsApp phone format (@g.us)
+      const isGroup = candidate.phone?.includes('@g.us') || (candidate.chatType || 'individual') === 'group';
       if (candidateMessages.length === 0 && !isGroup) return null;
 
       const sortedMessages = candidateMessages.length > 0
@@ -214,8 +227,9 @@ export default function WhatsAppChats() {
 
   // Filter chat groups by chat type, search query and selected tag
   const filteredChatGroups = chatGroups.filter(group => {
-    // Filter by chat type
-    const groupChatType = group.candidate.chatType || 'individual';
+    // Filter by chat type - auto-detect groups based on WhatsApp phone format (@g.us)
+    const isGroupChat = group.candidate.phone?.includes('@g.us') || (group.candidate.chatType || 'individual') === 'group';
+    const groupChatType = isGroupChat ? 'group' : (group.candidate.chatType || 'individual');
     if (groupChatType !== chatTypeFilter) {
       return false;
     }
