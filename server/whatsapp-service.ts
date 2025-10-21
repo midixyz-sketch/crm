@@ -132,16 +132,29 @@ class WhatsAppService {
       // Get latest Baileys version
       const { version } = await fetchLatestBaileysVersion();
 
+      // Create Baileys-compatible logger (stub with all required methods)
+      const baileysLogger = {
+        trace: () => {},
+        debug: () => {},
+        info: () => {},
+        warn: () => {},
+        error: () => {},
+        fatal: () => {},
+        child: () => baileysLogger,
+        level: 'silent'
+      };
+
       // Create socket
       const socket = makeWASocket({
         version,
         auth: {
           creds: state.creds,
-          keys: makeCacheableSignalKeyStore(state.keys, logger as any),
+          keys: makeCacheableSignalKeyStore(state.keys, baileysLogger as any),
         },
         printQRInTerminal: true,
         browser: Browsers.macOS('Desktop'),
         syncFullHistory: true,
+        logger: baileysLogger as any,
         getMessage: async (key) => {
           return undefined;
         }
