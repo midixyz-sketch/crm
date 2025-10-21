@@ -5236,7 +5236,7 @@ ${recommendation}
       const { generateSecurePassword, generateUsername } = await import('./passwordGenerator.js');
       const bcrypt = await import('bcrypt');
       
-      const { email, firstName, lastName, roleId } = req.body;
+      const { email, firstName, lastName, roleId, requiresApproval } = req.body;
       
       if (!email) {
         return res.status(400).json({ message: "נדרש מייל" });
@@ -5260,7 +5260,8 @@ ${recommendation}
         password: passwordHash,
         firstName,
         lastName,
-        isActive: true
+        isActive: true,
+        requiresApproval: requiresApproval || false
       });
       
       // הקצאת תפקיד אם נבחר

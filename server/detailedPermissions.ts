@@ -256,6 +256,29 @@ export const ROLE_PERMISSIONS = {
     MENU_PERMISSIONS.VIEW_CLIENT_NAMES,
     MENU_PERMISSIONS.DOWNLOAD_CV,
     MENU_PERMISSIONS.VIEW_CANDIDATE_HISTORY
+  ],
+  
+  external_recruiter: [
+    // רכז חיצוני - גישה מאוד מוגבלת
+    // רואה רק משרות שהוקצו לו, יכול להעלות מועמדים חדשים בלבד
+    PAGE_PERMISSIONS.JOBS, // רק למשרות המוקצות
+    PAGE_PERMISSIONS.ADD_CANDIDATE, // יכול להוסיף מועמדים חדשים בלבד
+    
+    // רכיבי ממשק מינימליים
+    COMPONENT_PERMISSIONS.SIDEBAR,
+    COMPONENT_PERMISSIONS.NAVBAR,
+    COMPONENT_PERMISSIONS.USER_DROPDOWN,
+    COMPONENT_PERMISSIONS.LOGOUT_BUTTON,
+    
+    // פעולות מוגבלות - רק העלאת מועמדים
+    MENU_PERMISSIONS.MAIN_NAVIGATION,
+    MENU_PERMISSIONS.UPLOAD_CV, // יכול להעלות קורות חיים
+    MENU_PERMISSIONS.ADD_CANDIDATE_QUICK, // יכול להוסיף מועמד
+    
+    // חשוב: אין גישה לשמות לקוחות, היסטוריה, סטטיסטיקות, וכו'
+    // MENU_PERMISSIONS.VIEW_CLIENT_NAMES - לא כלול!
+    // MENU_PERMISSIONS.VIEW_CANDIDATE_HISTORY - לא כלול!
+    // PAGE_PERMISSIONS.DASHBOARD - לא כלול!
   ]
 } as const;
 

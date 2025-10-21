@@ -84,6 +84,18 @@ export async function getUserPermissions(userId: string): Promise<UserPermission
           }
           break;
           
+        case 'external_recruiter':
+          // רכז חיצוני - רק משרות שהוקצו לו, אין גישה לשמות לקוחות או היסטוריה
+          permissions.canViewClientNames = false;
+          permissions.canAccessSettings = false;
+          permissions.canManageUsers = false;
+          permissions.canViewAnalytics = false;
+          permissions.canViewAllJobs = false;
+          permissions.roleType = 'external_recruiter';
+          permissions.restrictedPages = ['dashboard', 'candidates', 'clients', 'calendar', 'interviews', 'emails', 'settings', 'users', 'analytics', 'reports'];
+          // רכז חיצוני רואה רק jobs ו-add_candidate
+          break;
+          
         case 'user':
         default:
           // משתמש רגיל - הרשאות בסיסיות

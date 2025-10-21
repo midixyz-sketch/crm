@@ -36,6 +36,7 @@ export default function UserManagement() {
   const [newUserFirstName, setNewUserFirstName] = useState("");
   const [newUserLastName, setNewUserLastName] = useState("");
   const [newUserRole, setNewUserRole] = useState<string>("");
+  const [newUserRequiresApproval, setNewUserRequiresApproval] = useState(false);
   const [permissionsDialogOpen, setPermissionsDialogOpen] = useState(false);
   const [selectedUserPermissions, setSelectedUserPermissions] = useState<UserWithRoles | null>(null);
   const [loginDetailsPopup, setLoginDetailsPopup] = useState<{
@@ -166,7 +167,7 @@ export default function UserManagement() {
 
   // Add user mutation with password
   const addUserMutation = useMutation({
-    mutationFn: async (userData: { email: string; firstName?: string; lastName?: string; roleId?: string }) => {
+    mutationFn: async (userData: { email: string; firstName?: string; lastName?: string; roleId?: string; requiresApproval?: boolean }) => {
       const response = await apiRequest('POST', '/api/users/create-with-password', userData);
       return await response.json();
     },
@@ -437,18 +438,20 @@ export default function UserManagement() {
     setNewUserFirstName("");
     setNewUserLastName("");
     setNewUserRole("");
+    setNewUserRequiresApproval(false);
   };
 
   const handleAddUser = () => {
     if (!newUserEmail.trim()) return;
     
-    const userData: { email: string; firstName?: string; lastName?: string; roleId?: string } = {
+    const userData: { email: string; firstName?: string; lastName?: string; roleId?: string; requiresApproval?: boolean } = {
       email: newUserEmail.trim(),
     };
     
     if (newUserFirstName.trim()) userData.firstName = newUserFirstName.trim();
     if (newUserLastName.trim()) userData.lastName = newUserLastName.trim();
     if (newUserRole) userData.roleId = newUserRole;
+    userData.requiresApproval = newUserRequiresApproval;
     
     addUserMutation.mutate(userData);
   };
@@ -537,6 +540,16 @@ export default function UserManagement() {
                       ))}
                     </SelectContent>
                   </Select>
+                </div>
+                <div className="flex items-center space-x-2 space-x-reverse" data-testid="checkbox-requires-approval">
+                  <Checkbox
+                    id="requiresApproval"
+                    checked={newUserRequiresApproval}
+                    onCheckedChange={(checked) => setNewUserRequiresApproval(checked as boolean)}
+                  />
+                  <Label htmlFor="requiresApproval" className="text-sm cursor-pointer">
+                    דורש אישור לפני שליחת מועמדים (רלוונטי לרכזים חיצוניים)
+                  </Label>
                 </div>
                 <div className="flex gap-2 justify-end">
                   <Button variant="outline" onClick={() => {
