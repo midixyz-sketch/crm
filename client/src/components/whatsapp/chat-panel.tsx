@@ -998,30 +998,43 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
             <div className="flex flex-col gap-3">
               <Button 
                 onClick={async () => {
-                  if (!linkPhoneDialog?.fileUrl) return;
+                  console.log('🟢 START: Creating candidate with phone number');
+                  console.log('📋 Data:', { fileUrl: linkPhoneDialog?.fileUrl, fileName: linkPhoneDialog?.fileName, phoneNumber: linkPhoneDialog?.phoneNumber });
+                  
+                  if (!linkPhoneDialog?.fileUrl) {
+                    console.error('❌ STOP: No file URL');
+                    return;
+                  }
                   
                   try {
+                    console.log('⬇️ STEP 1: Downloading file from server...');
                     // Download file from server
                     const response = await fetch(linkPhoneDialog.fileUrl);
                     if (!response.ok) {
+                      console.error('❌ STEP 1 FAILED: File download failed:', response.status);
                       toast({ title: 'שגיאה בהורדת הקובץ', variant: 'destructive' });
                       return;
                     }
+                    console.log('✅ STEP 1 SUCCESS: File downloaded');
                     
                     const blob = await response.blob();
                     const file = new File([blob], linkPhoneDialog.fileName, { type: blob.type });
+                    console.log('📁 File created:', { name: file.name, size: file.size, type: file.type });
                     
                     // Create form data with phone number
                     const formData = new FormData();
                     formData.append('cv', file);
                     formData.append('phoneNumber', linkPhoneDialog.phoneNumber);
+                    console.log('📦 FormData created with phone number:', linkPhoneDialog.phoneNumber);
                     
+                    console.log('⬆️ STEP 2: Uploading to /api/candidates...');
                     // Upload and create candidate
                     const uploadResponse = await fetch('/api/candidates', {
                       method: 'POST',
                       body: formData,
                       credentials: 'include',
                     });
+                    console.log('📡 Upload response status:', uploadResponse.status);
                     
                     if (uploadResponse.ok) {
                       const contentType = uploadResponse.headers.get('content-type');
@@ -1045,11 +1058,11 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
                       }
                     } else {
                       const errorText = await uploadResponse.text();
-                      console.error('Upload error:', errorText);
+                      console.error('❌ STEP 2 FAILED: Upload error:', errorText);
                       toast({ title: 'שגיאה ביצירת המועמד', variant: 'destructive' });
                     }
                   } catch (error) {
-                    console.error('Error creating candidate:', error);
+                    console.error('❌ EXCEPTION: Error creating candidate:', error);
                     toast({ title: 'שגיאה ביצירת המועמד', variant: 'destructive' });
                   }
                 }}
@@ -1062,23 +1075,35 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
               
               <Button 
                 onClick={async () => {
-                  if (!linkPhoneDialog?.fileUrl) return;
+                  console.log('🟢 START: Creating candidate WITHOUT phone number');
+                  console.log('📋 Data:', { fileUrl: linkPhoneDialog?.fileUrl, fileName: linkPhoneDialog?.fileName });
+                  
+                  if (!linkPhoneDialog?.fileUrl) {
+                    console.error('❌ STOP: No file URL');
+                    return;
+                  }
                   
                   try {
+                    console.log('⬇️ STEP 1: Downloading file from server...');
                     // Download file from server
                     const response = await fetch(linkPhoneDialog.fileUrl);
                     if (!response.ok) {
+                      console.error('❌ STEP 1 FAILED: File download failed:', response.status);
                       toast({ title: 'שגיאה בהורדת הקובץ', variant: 'destructive' });
                       return;
                     }
+                    console.log('✅ STEP 1 SUCCESS: File downloaded');
                     
                     const blob = await response.blob();
                     const file = new File([blob], linkPhoneDialog.fileName, { type: blob.type });
+                    console.log('📁 File created:', { name: file.name, size: file.size, type: file.type });
                     
                     // Create form data WITHOUT phone number
                     const formData = new FormData();
                     formData.append('cv', file);
+                    console.log('📦 FormData created WITHOUT phone number');
                     
+                    console.log('⬆️ STEP 2: Uploading to /api/candidates...');
                     // Upload and create candidate
                     const uploadResponse = await fetch('/api/candidates', {
                       method: 'POST',
