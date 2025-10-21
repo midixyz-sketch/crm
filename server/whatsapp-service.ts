@@ -141,6 +141,7 @@ class WhatsAppService {
         },
         printQRInTerminal: true,
         browser: Browsers.macOS('Desktop'),
+        syncFullHistory: true,
         getMessage: async (key) => {
           return undefined;
         }
@@ -412,6 +413,22 @@ class WhatsAppService {
         }
       });
 
+      // Handle messaging history sync - Critical for importing ALL chats including individual ones
+      socket.ev.on('messaging-history.set', async ({ chats, contacts, messages, isLatest }) => {
+        try {
+          logger.info(`📚 messaging-history.set: Received ${chats.length} chats, ${contacts.length} contacts, ${messages.length} messages (isLatest: ${isLatest})`);
+          
+          // Log chat types
+          const groupChats = chats.filter((c: any) => c.id.endsWith('@g.us'));
+          const individualChats = chats.filter((c: any) => c.id.endsWith('@s.whatsapp.net'));
+          logger.info(`📊 History breakdown: ${groupChats.length} groups, ${individualChats.length} individual chats`);
+          
+          await this.handleHistorySync({ chats, contacts, messages, isLatest });
+        } catch (error) {
+          logger.error(`Error in messaging-history.set handler: ${error}`);
+        }
+      });
+
       // Handle individual chat updates
       socket.ev.on('chats.upsert', async (chats) => {
         try {
@@ -627,6 +644,150 @@ class WhatsAppService {
       logger.info(`Message saved: ${messageType} from ${senderName}`);
     } catch (error) {
       logger.error(`Error handling incoming message: ${error}`);
+    }
+  }
+
+  /**
+   * Handle messaging history sync - imports ALL chats including individual ones
+   */
+  private async handleHistorySync({ chats, contacts, messages, isLatest }: any): Promise<void> {
+    try {
+      logger.info(`🔄 Processing history sync - ${messages.length} messages from ${chats.length} chats`);
+      
+      // Get current session
+      const session = await db.query.whatsappSessions.findFirst({
+        where: eq(whatsappSessions.sessionId, this.state.sessionId!)
+      });
+
+      if (!session) {
+        logger.error('No session found for history sync');
+        return;
+      }
+
+      let savedChats = 0;
+      let savedMessages = 0;
+
+      // Process all chats from history
+      for (const chat of chats) {
+        try {
+          const remoteJid = chat.id;
+          const isGroup = remoteJid.endsWith('@g.us');
+          const isIndividual = remoteJid.endsWith('@s.whatsapp.net');
+          
+          if (!isGroup && !isIndividual) continue;
+
+          // Get contact name from contacts list
+          const contact = contacts.find((c: any) => c.id === remoteJid);
+          const phoneNumber = remoteJid.split('@')[0];
+          const defaultName = isGroup ? `קבוצה ${phoneNumber}` : `WhatsApp ${phoneNumber}`;
+          const chatName = chat.name || contact?.name || contact?.notify || defaultName;
+
+          // Check if chat already exists
+          const existingChat = await db.query.whatsappChats.findFirst({
+            where: eq(whatsappChats.remoteJid, remoteJid)
+          });
+
+          // Check if we have a candidate with this phone number
+          const candidate = await db.query.candidates.findFirst({
+            where: eq(candidates.mobile, phoneNumber)
+          });
+
+          const lastMessageAt = chat.conversationTimestamp 
+            ? new Date(Number(chat.conversationTimestamp) * 1000)
+            : new Date();
+
+          if (existingChat) {
+            // Update existing chat
+            await db.update(whatsappChats)
+              .set({
+                name: chatName,
+                lastMessageAt,
+                unreadCount: chat.unreadCount || 0,
+                updatedAt: new Date()
+              })
+              .where(eq(whatsappChats.id, existingChat.id));
+          } else {
+            // Create new chat
+            await db.insert(whatsappChats).values({
+              sessionId: session.id,
+              candidateId: candidate?.id || null,
+              remoteJid,
+              name: chatName,
+              isGroup,
+              lastMessageAt,
+              lastMessagePreview: '',
+              unreadCount: chat.unreadCount || 0,
+            });
+            
+            savedChats++;
+          }
+
+          // Fetch profile picture in background (don't await)
+          this.updateChatProfilePicture(remoteJid).catch(err => 
+            logger.error(`Failed to fetch profile pic for ${remoteJid}: ${err}`)
+          );
+        } catch (error) {
+          logger.error(`Error syncing chat ${chat.id}: ${error}`);
+        }
+      }
+
+      // Process messages from history
+      for (const msg of messages) {
+        try {
+          // Skip if not a text message
+          if (!msg.message?.conversation && !msg.message?.extendedTextMessage?.text) continue;
+
+          const messageText = msg.message.conversation || msg.message.extendedTextMessage?.text || '';
+          const remoteJid = msg.key.remoteJid;
+          
+          if (!remoteJid) continue;
+          
+          const isGroup = remoteJid.includes('@g.us');
+          const isIndividual = remoteJid.includes('@s.whatsapp.net');
+          
+          if (!isGroup && !isIndividual) continue;
+
+          const phoneNumber = remoteJid.split('@')[0];
+          const direction = msg.key.fromMe ? true : false;
+          const timestamp = new Date((msg.messageTimestamp as number) * 1000);
+
+          // Find candidate
+          const candidate = await db.query.candidates.findFirst({
+            where: eq(candidates.mobile, phoneNumber)
+          });
+
+          // Check if message already exists (to avoid duplicates)
+          const existingMessage = await db.query.whatsappMessages.findFirst({
+            where: (whatsappMessages, { and, eq }) => and(
+              eq(whatsappMessages.remoteJid, remoteJid),
+              eq(whatsappMessages.timestamp, timestamp)
+            )
+          });
+
+          if (!existingMessage) {
+            await db.insert(whatsappMessages).values({
+              messageId: msg.key.id || `hist_${Date.now()}`,
+              sessionId: session.id,
+              candidateId: candidate?.id || null,
+              fromMe: direction,
+              remoteJid,
+              senderName: msg.pushName || phoneNumber,
+              messageType: 'text',
+              messageText,
+              timestamp,
+              isRead: direction,
+            });
+            
+            savedMessages++;
+          }
+        } catch (error) {
+          logger.warn(`Could not save message from history: ${error}`);
+        }
+      }
+
+      logger.info(`✅ History sync complete - saved ${savedChats} new chats, ${savedMessages} messages (isLatest: ${isLatest})`);
+    } catch (error) {
+      logger.error(`Error in handleHistorySync: ${error}`);
     }
   }
 
