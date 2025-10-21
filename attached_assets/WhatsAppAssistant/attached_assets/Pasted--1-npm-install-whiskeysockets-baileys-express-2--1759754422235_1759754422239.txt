@@ -1,0 +1,1166 @@
+ שלב 1 – התקנת הספריות
+
+npm install @whiskeysockets/baileys express
+שלב 2 – יצירת מודול וואטסאפ 
+צור תיקייה /services/whatsapp/וקובץ whatsapp.js:
+
+// /services/whatsapp/whatsapp.js
+import makeWASocket, { useMultiFileAuthState, fetchLatestBaileysVersion } from "@whiskeysockets/baileys";
+
+let sock;
+
+export async function connectWhatsApp() {
+  const { state, saveCreds } = await useMultiFileAuthState("./auth_info");
+  const { version } = await fetchLatestBaileysVersion();
+
+  sock = makeWASocket({
+    version,
+    printQRInTerminal: true, // QR יופיע רק פעם ראשונה
+    auth: state,
+  });
+
+  sock.ev.on("creds.update", saveCreds);
+
+  sock.ev.on("connection.update", (update) => {
+    const { connection } = update;
+    if (connection === "open") console.log("✅ וואטסאפ מחובר!");
+    else if (connection === "close") console.log("❌ החיבור לוואטסאפ נסגר");
+  });
+}
+
+export async function sendMessage(phone, message) {
+  if (!sock) throw new Error("וואטסאפ לא מחובר עדיין!");
+  // phone צריך להיות בפורמט מלא +972501234567
+  await sock.sendMessage(`${phone}@s.whatsapp.net`, { text: message });
+}
+✅ הערה חשובה: 
+* קוד QR יופי פעם אחת בלבד . * אחרי שהמערכת שומרת את ה־auth_info, אפשר לשלוח הודעות בלי לסרוק שוב.
+ שלב 3 – מערכות השילוב שלך עם כפתור 
+נניח שיש לך מערכת API Express CRM שלך. תיצור מסלול לשליחת הודעה:
+
+import express from "express";
+import { connectWhatsApp, sendMessage } from "./services/whatsapp/whatsapp.js";
+
+const app = express();
+app.use(express.json());
+
+// הפעלה של וואטסאפ כששרת עולה
+connectWhatsApp();
+
+// API לשליחת הודעה – ניתן לחבר לכפתור בממשק ה-CRM
+app.post("/api/send-whatsapp", async (req, res) => {
+  try {
+    const { phone, message } = req.body;
+    await sendMessage(phone, message);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.listen(3000, () => console.log("🚀 ה-CRM רץ על פורט 3000"));
+שלב 4 – חיבור כפתור בממשק ה-CRM 
+נניח שיש לך כפתור HTML או תגובה:
+
+<button onclick="sendWhatsApp()">שלח הודעה</button>
+
+<script>
+async function sendWhatsApp() {
+  const phone = "972501234567"; // מספר המועמד
+  const message = "שלום! זו הודעה מהממשק";
+  
+  const res = await fetch("/api/send-whatsapp", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ phone, message })
+  });
+
+  const data = await res.json();
+  if (data.success) alert("✅ הודעה נשלחה בהצלחה!");
+  else alert("❌ שגיאה: " + data.error);
+}
+</script>
+הקוד שלך נראה טוב בסיסי, אבל יש לי כמה המלצות חשובות לשיפור:
+
+🔴 בעיות קריטיות שצריך לתקן:
+1. ניהול מצב החיבור
+הבעיה היא שאין טיפול במצבי חיבור מורכבים:
+
+ג'אווהסקריפט
+// הוסף למודול whatsapp.js
+let connectionStatus = 'disconnected';
+let reconnectAttempts = 0;
+const MAX_RECONNECT_ATTEMPTS = 5;
+
+export async function connectWhatsApp() {
+  const { state, saveCreds } = await useMultiFileAuthState("./auth_info");
+  const { version } = await fetchLatestBaileysVersion();
+
+  sock = makeWASocket({
+    version,
+    printQRInTerminal: true,
+    auth: state,
+    // הוסף אפשרויות חשובות:
+    defaultQueryTimeoutMs: undefined,
+    keepAliveIntervalMs: 30000,
+  });
+
+  sock.ev.on("creds.update", saveCreds);
+
+  sock.ev.on("connection.update", async (update) => {
+    const { connection, lastDisconnect, qr } = update;
+    
+    if (qr) {
+      console.log("📱 סרוק את ה-QR code");
+    }
+    
+    if (connection === "open") {
+      console.log("✅ וואטסאפ מחובר!");
+      connectionStatus = 'connected';
+      reconnectAttempts = 0;
+    } else if (connection === "close") {
+      connectionStatus = 'disconnected';
+      const shouldReconnect = lastDisconnect?.error?.output?.statusCode !== 401;
+      
+      if (shouldReconnect && reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+        reconnectAttempts++;
+        console.log(`🔄 מנסה להתחבר מחדש (ניסיון ${reconnectAttempts})...`);
+        setTimeout(() => connectWhatsApp(), 5000);
+      } else if (lastDisconnect?.error?.output?.statusCode === 401) {
+        console.log("❌ נדרש לסרוק QR מחדש - מחק את תיקיית auth_info");
+      }
+    }
+  });
+}
+
+// פונקציה לבדיקת מצב
+export function isConnected() {
+  return connectionStatus === 'connected' && sock;
+}
+2. ולידציה של מספרי טלפון
+ג'אווהסקריפט
+function formatPhoneNumber(phone) {
+  // הסר רווחים ותווים מיוחדים
+  phone = phone.replace(/\D/g, '');
+  
+  // אם מתחיל ב-0, החלף ל-972
+  if (phone.startsWith('0')) {
+    phone = '972' + phone.substring(1);
+  }
+  
+  // אם לא מתחיל ב-972, הוסף
+  if (!phone.startsWith('972')) {
+    phone = '972' + phone;
+  }
+  
+  return phone;
+}
+
+export async function sendMessage(phone, message) {
+  if (!isConnected()) {
+    throw new Error("וואטסאפ לא מחובר - נסה שוב מאוחר יותר");
+  }
+  
+  phone = formatPhoneNumber(phone);
+  
+  try {
+    await sock.sendMessage(`${phone}@s.whatsapp.net`, { text: message });
+    console.log(`✅ הודעה נשלחה ל-${phone}`);
+    return { success: true, phone };
+  } catch (error) {
+    console.error(`❌ שגיאה בשליחת הודעה ל-${phone}:`, error);
+    throw error;
+  }
+}
+3. נקודת קצה של העברת ה-API
+ג'אווהסקריפט
+// הוסף middleware לבדיקת rate limiting
+const messageQueue = new Map();
+
+app.post("/api/send-whatsapp", async (req, res) => {
+  try {
+    const { phone, message } = req.body;
+    
+    // ולידציה
+    if (!phone || !message) {
+      return res.status(400).json({ 
+        error: "חסרים פרמטרים: phone ו-message נדרשים" 
+      });
+    }
+    
+    if (!isConnected()) {
+      return res.status(503).json({ 
+        error: "וואטסאפ לא מחובר כרגע",
+        status: "disconnected"
+      });
+    }
+    
+    // בדיקת rate limit (למנוע ספאם)
+    const lastSent = messageQueue.get(phone);
+    if (lastSent && Date.now() - lastSent < 3000) {
+      return res.status(429).json({ 
+        error: "המתן 3 שניות בין הודעות לאותו מספר" 
+      });
+    }
+    
+    await sendMessage(phone, message);
+    messageQueue.set(phone, Date.now());
+    
+    res.json({ success: true, phone });
+  } catch (err) {
+    console.error("שגיאה בשליחת הודעה:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// API לבדיקת סטטוס
+app.get("/api/whatsapp-status", (req, res) => {
+  res.json({ 
+    connected: isConnected(),
+    status: connectionStatus 
+  });
+});
+4. שיפור הפרונט-אנד
+ג'אווהסקריפט
+async function sendWhatsApp() {
+  const button = event.target;
+  button.disabled = true;
+  button.textContent = "שולח...";
+  
+  try {
+    // בדוק תחילה את הסטטוס
+    const statusRes = await fetch("/api/whatsapp-status");
+    const status = await statusRes.json();
+    
+    if (!status.connected) {
+      alert("⚠️ וואטסאפ לא מחובר כרגע");
+      return;
+    }
+    
+    const phone = "0501234567"; // קח מהממשק
+    const message = "שלום! זו הודעה מהממשק";
+    
+    const res = await fetch("/api/send-whatsapp", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ phone, message })
+    });
+
+    const data = await res.json();
+    
+    if (res.ok) {
+      alert("✅ הודעה נשלחה בהצלחה!");
+    } else {
+      alert("❌ שגיאה: " + data.error);
+    }
+  } catch (err) {
+    alert("❌ שגיאה בחיבור: " + err.message);
+  } finally {
+    button.disabled = false;
+    button.textContent = "שלח הודעה";
+  }
+}
+💡 שיפורים נוספים מומלצים:
+לוגים - הוסף ווינסטון או פינו ללוגים מסודרים
+טיפול בהודעות נכנסות - אם אתה רוצה לקבל תשובות
+שמירת היסטורית הודעות - שמור בDB מתי נשלחה כל הודעה
+תורים - השתמש ב-Bull או Bee-Queue להודעות רבות
+מוניטורינג - הוסף התראות כשהחיבור נופל
+האם תרצה שאעזור לך ליישם אחד מהשיפורים האלה?
+
+כן תרשום לי רשימה חדשה כולל קוד שאוכל לבצע. חשוב גם אם משתמש סוגר את הדפדפן החשבון יישאר מחובר לצורך המשך פעילות עד שלא תלחץ על הנתקות. שמירה של ההודעות בדאטא בייס בכרטיס המועמד עם תאריכים כן תוסיף התראה אם ​​החיבור נופל
+
+כן עכשיו תשלח לי תוכנית עבודה מסודרת כולל הסברים וקוד בצורה מסודרת
+
+📋 תוכנית עבודה מלאה - שילוב WhatsApp ב-CRM
+מה נבנה:
+מערכת WhatsApp עם חיבור מתמשך
+שמירת הודעות ב-MongoDB
+התארות על ניטוק
+ממשק ניהול מלא
+שלב 1: התקנת כל הספריות הגבוהות
+לַחֲבוֹט
+npm install @whiskeysockets/baileys express mongoose dotenv winston qrcode-terminal nodemailer
+הספר הספרות:
+
+baileys- חיבור לוואצאפ
+mongoose- עבודה עם MongoDB
+winston- לוגים מתקדמים
+qrcode-terminal- הצגת QR בטרמינל
+nodemailer- שליחת התראות במייל
+שלב 2: מבנה תיקיות
+/your-crm
+├── /config
+│   └── database.js
+├── /models
+│   ├── WhatsAppMessage.js
+│   └── Candidate.js
+├── /services
+│   └── /whatsapp
+│       ├── whatsapp.js
+│       └── notifications.js
+├── /routes
+│   └── whatsapp.routes.js
+├── /utils
+│   └── logger.js
+├── .env
+└── server.js
+שלב 3: קובץ הגדרות -.env
+סביבה
+# MongoDB
+MONGODB_URI=mongodb://localhost:27017/crm_whatsapp
+
+# Server
+PORT=3000
+NODE_ENV=production
+
+# Email Notifications (אופציונלי)
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_USER=your-email@gmail.com
+EMAIL_PASS=your-app-password
+ADMIN_EMAIL=admin@yourcompany.com
+
+# WhatsApp
+WHATSAPP_SESSION_PATH=./auth_info
+MAX_RECONNECT_ATTEMPTS=5
+שלב 4: מערכת לוגים -/utils/logger.js
+ג'אווהסקריפט
+import winston from 'winston';
+
+const logger = winston.createLogger({
+  level: 'info',
+  format: winston.format.combine(
+    winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
+    winston.format.errors({ stack: true }),
+    winston.format.splat(),
+    winston.format.json()
+  ),
+  defaultMeta: { service: 'whatsapp-service' },
+  transports: [
+    // שמירה בקובץ לשגיאות
+    new winston.transports.File({ 
+      filename: 'logs/error.log', 
+      level: 'error',
+      maxsize: 5242880, // 5MB
+      maxFiles: 5,
+    }),
+    // שמירה בקובץ לכל הלוגים
+    new winston.transports.File({ 
+      filename: 'logs/combined.log',
+      maxsize: 5242880,
+      maxFiles: 5,
+    }),
+    // הצגה בקונסול
+    new winston.transports.Console({
+      format: winston.format.combine(
+        winston.format.colorize(),
+        winston.format.simple()
+      )
+    })
+  ]
+});
+
+export default logger;
+שלב 5: חיבור למסד נתונים -/config/database.js
+ג'אווהסקריפט
+import mongoose from 'mongoose';
+import logger from '../utils/logger.js';
+
+export async function connectDatabase() {
+  try {
+    await mongoose.connect(process.env.MONGODB_URI, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    });
+    logger.info('✅ MongoDB מחובר בהצלחה');
+  } catch (error) {
+    logger.error('❌ שגיאה בחיבור ל-MongoDB:', error);
+    process.exit(1);
+  }
+}
+
+// טיפול בניתוק
+mongoose.connection.on('disconnected', () => {
+  logger.warn('⚠️ MongoDB התנתק');
+});
+
+mongoose.connection.on('reconnected', () => {
+  logger.info('🔄 MongoDB התחבר מחדש');
+});
+שלב 6: מודלים -/models/WhatsAppMessage.js
+ג'אווהסקריפט
+import mongoose from 'mongoose';
+
+const whatsappMessageSchema = new mongoose.Schema({
+  candidateId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Candidate',
+    required: true,
+    index: true
+  },
+  phone: {
+    type: String,
+    required: true,
+    index: true
+  },
+  message: {
+    type: String,
+    required: true
+  },
+  direction: {
+    type: String,
+    enum: ['outgoing', 'incoming'],
+    default: 'outgoing'
+  },
+  status: {
+    type: String,
+    enum: ['pending', 'sent', 'delivered', 'read', 'failed'],
+    default: 'pending'
+  },
+  messageId: String,
+  error: String,
+  metadata: {
+    sentBy: String, // שם המשתמש ששלח
+    sentByUserId: mongoose.Schema.Types.ObjectId,
+  }
+}, {
+  timestamps: true // יוסיף createdAt ו-updatedAt אוטומטית
+});
+
+// אינדקס משולב לחיפוש מהיר
+whatsappMessageSchema.index({ candidateId: 1, createdAt: -1 });
+
+export default mongoose.model('WhatsAppMessage', whatsappMessageSchema);
+שלב 7: מודל מועמד (אם אין לך) -/models/Candidate.js
+ג'אווהסקריפט
+import mongoose from 'mongoose';
+
+const candidateSchema = new mongoose.Schema({
+  name: {
+    type: String,
+    required: true
+  },
+  phone: {
+    type: String,
+    required: true,
+    unique: true
+  },
+  email: String,
+  position: String,
+  status: {
+    type: String,
+    enum: ['new', 'contacted', 'interview', 'rejected', 'hired'],
+    default: 'new'
+  },
+  lastWhatsAppContact: Date,
+  whatsAppMessageCount: {
+    type: Number,
+    default: 0
+  }
+}, {
+  timestamps: true
+});
+
+export default mongoose.model('Candidate', candidateSchema);
+שלב 8: מערכת התראות -/services/whatsapp/notifications.js
+ג'אווהסקריפט
+import nodemailer from 'nodemailer';
+import logger from '../../utils/logger.js';
+
+let transporter = null;
+
+// אתחול מערכת המייל
+if (process.env.EMAIL_HOST) {
+  transporter = nodemailer.createTransport({
+    host: process.env.EMAIL_HOST,
+    port: process.env.EMAIL_PORT,
+    secure: false,
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS
+    }
+  });
+}
+
+export async function sendDisconnectionAlert(reason) {
+  logger.error(`🚨 WhatsApp התנתק: ${reason}`);
+  
+  // שליחת מייל (אם מוגדר)
+  if (transporter && process.env.ADMIN_EMAIL) {
+    try {
+      await transporter.sendMail({
+        from: process.env.EMAIL_USER,
+        to: process.env.ADMIN_EMAIL,
+        subject: '🚨 התראה: WhatsApp התנתק ממערכת ה-CRM',
+        html: `
+          <div dir="rtl">
+            <h2>שים לב! WhatsApp התנתק</h2>
+            <p><strong>סיבה:</strong> ${reason}</p>
+            <p><strong>זמן:</strong> ${new Date().toLocaleString('he-IL')}</p>
+            <p>נא להתחבר מחדש דרך ממשק ה-CRM</p>
+          </div>
+        `
+      });
+      logger.info('📧 התראת מייל נשלחה');
+    } catch (error) {
+      logger.error('❌ שגיאה בשליחת מייל:', error);
+    }
+  }
+  
+  // כאן אפשר להוסיף התראות נוספות:
+  // - Slack webhook
+  // - Telegram bot
+  // - SMS
+}
+
+export async function sendReconnectionAlert() {
+  logger.info('✅ WhatsApp התחבר מחדש');
+  
+  if (transporter && process.env.ADMIN_EMAIL) {
+    try {
+      await transporter.sendMail({
+        from: process.env.EMAIL_USER,
+        to: process.env.ADMIN_EMAIL,
+        subject: '✅ WhatsApp התחבר מחדש',
+        html: `
+          <div dir="rtl">
+            <h2>WhatsApp פעיל שוב!</h2>
+            <p><strong>זמן:</strong> ${new Date().toLocaleString('he-IL')}</p>
+            <p>המערכת פועלת כרגיל</p>
+          </div>
+        `
+      });
+    } catch (error) {
+      logger.error('❌ שגיאה בשליחת מייל:', error);
+    }
+  }
+}
+שלב 9: מודול WhatsApp המלא -/services/whatsapp/whatsapp.js
+ג'אווהסקריפט
+import makeWASocket, { 
+  useMultiFileAuthState, 
+  fetchLatestBaileysVersion,
+  DisconnectReason,
+  makeCacheableSignalKeyStore
+} from '@whiskeysockets/baileys';
+import qrcode from 'qrcode-terminal';
+import logger from '../../utils/logger.js';
+import WhatsAppMessage from '../../models/WhatsAppMessage.js';
+import Candidate from '../../models/Candidate.js';
+import { sendDisconnectionAlert, sendReconnectionAlert } from './notifications.js';
+
+let sock = null;
+let connectionStatus = 'disconnected';
+let reconnectAttempts = 0;
+let qrCodeData = null;
+const MAX_RECONNECT_ATTEMPTS = parseInt(process.env.MAX_RECONNECT_ATTEMPTS) || 5;
+
+// פורמט מספר טלפון
+function formatPhoneNumber(phone) {
+  phone = phone.replace(/\D/g, '');
+  
+  if (phone.startsWith('0')) {
+    phone = '972' + phone.substring(1);
+  }
+  
+  if (!phone.startsWith('972')) {
+    phone = '972' + phone;
+  }
+  
+  return phone;
+}
+
+// פונקציית חיבור ראשית
+export async function connectWhatsApp() {
+  try {
+    const { state, saveCreds } = await useMultiFileAuthState(
+      process.env.WHATSAPP_SESSION_PATH || './auth_info'
+    );
+    
+    const { version } = await fetchLatestBaileysVersion();
+
+    sock = makeWASocket({
+      version,
+      printQRInTerminal: false, // נטפל בזה בעצמנו
+      auth: {
+        creds: state.creds,
+        keys: makeCacheableSignalKeyStore(state.keys, logger),
+      },
+      defaultQueryTimeoutMs: undefined,
+      keepAliveIntervalMs: 30000,
+      markOnlineOnConnect: true,
+      generateHighQualityLinkPreview: true,
+    });
+
+    // שמירת credentials
+    sock.ev.on('creds.update', saveCreds);
+
+    // טיפול ב-QR Code
+    sock.ev.on('connection.update', async (update) => {
+      const { connection, lastDisconnect, qr } = update;
+      
+      if (qr) {
+        qrCodeData = qr;
+        logger.info('📱 QR Code חדש זמין');
+        qrcode.generate(qr, { small: true });
+      }
+      
+      if (connection === 'open') {
+        logger.info('✅ WhatsApp מחובר בהצלחה!');
+        connectionStatus = 'connected';
+        qrCodeData = null;
+        reconnectAttempts = 0;
+        
+        if (reconnectAttempts > 0) {
+          await sendReconnectionAlert();
+        }
+      } 
+      else if (connection === 'close') {
+        const statusCode = lastDisconnect?.error?.output?.statusCode;
+        const reason = DisconnectReason[statusCode] || 'לא ידוע';
+        
+        logger.warn(`⚠️ WhatsApp התנתק. סיבה: ${reason} (${statusCode})`);
+        connectionStatus = 'disconnected';
+        
+        const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
+        
+        if (statusCode === DisconnectReason.loggedOut) {
+          logger.error('❌ נדרש להתחבר מחדש עם QR Code');
+          await sendDisconnectionAlert('המשתמש התנתק מהמערכת');
+          qrCodeData = null;
+        } 
+        else if (shouldReconnect && reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+          reconnectAttempts++;
+          const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 30000);
+          
+          logger.info(`🔄 מנסה להתחבר מחדש בעוד ${delay/1000} שניות (ניסיון ${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS})`);
+          
+          setTimeout(() => connectWhatsApp(), delay);
+        } 
+        else if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
+          logger.error('❌ נכשלו כל ניסיונות החיבור');
+          await sendDisconnectionAlert(`נכשלו ${MAX_RECONNECT_ATTEMPTS} ניסיונות חיבור`);
+        }
+      }
+    });
+
+    // קבלת הודעות נכנסות
+    sock.ev.on('messages.upsert', async ({ messages, type }) => {
+      if (type !== 'notify') return;
+      
+      for (const msg of messages) {
+        if (!msg.message || msg.key.fromMe) continue;
+        
+        try {
+          const phone = msg.key.remoteJid.replace('@s.whatsapp.net', '');
+          const messageText = msg.message.conversation || 
+                            msg.message.extendedTextMessage?.text || 
+                            '[מדיה]';
+          
+          logger.info(`📥 הודעה נכנסת מ-${phone}: ${messageText}`);
+          
+          // חיפוש מועמד לפי מספר טלפון
+          const candidate = await Candidate.findOne({ 
+            phone: { $regex: phone.slice(-9) } // חיפוש לפי 9 ספרות אחרונות
+          });
+          
+          if (candidate) {
+            // שמירת ההודעה
+            await WhatsAppMessage.create({
+              candidateId: candidate._id,
+              phone,
+              message: messageText,
+              direction: 'incoming',
+              status: 'delivered',
+              messageId: msg.key.id
+            });
+            
+            // עדכון מועמד
+            candidate.lastWhatsAppContact = new Date();
+            candidate.whatsAppMessageCount += 1;
+            await candidate.save();
+            
+            logger.info(`💾 הודעה נשמרה למועמד: ${candidate.name}`);
+          }
+        } catch (error) {
+          logger.error('❌ שגיאה בטיפול בהודעה נכנסת:', error);
+        }
+      }
+    });
+
+  } catch (error) {
+    logger.error('❌ שגיאה קריטית בחיבור WhatsApp:', error);
+    throw error;
+  }
+}
+
+// שליחת הודעה
+export async function sendMessage(candidateId, phone, message, metadata = {}) {
+  if (!isConnected()) {
+    throw new Error('WhatsApp לא מחובר');
+  }
+  
+  phone = formatPhoneNumber(phone);
+  const jid = `${phone}@s.whatsapp.net`;
+  
+  try {
+    // יצירת רשומה ב-DB עם סטטוס pending
+    const messageDoc = await WhatsAppMessage.create({
+      candidateId,
+      phone,
+      message,
+      direction: 'outgoing',
+      status: 'pending',
+      metadata
+    });
+    
+    // שליחת ההודעה
+    const sentMsg = await sock.sendMessage(jid, { text: message });
+    
+    // עדכון סטטוס להודעה שנשלחה
+    messageDoc.status = 'sent';
+    messageDoc.messageId = sentMsg.key.id;
+    await messageDoc.save();
+    
+    // עדכון המועמד
+    await Candidate.findByIdAndUpdate(candidateId, {
+      lastWhatsAppContact: new Date(),
+      $inc: { whatsAppMessageCount: 1 }
+    });
+    
+    logger.info(`✅ הודעה נשלחה ל-${phone}`);
+    
+    return {
+      success: true,
+      messageId: messageDoc._id,
+      phone
+    };
+    
+  } catch (error) {
+    logger.error(`❌ שגיאה בשליחת הודעה ל-${phone}:`, error);
+    
+    // עדכון שגיאה ב-DB
+    await WhatsAppMessage.findOneAndUpdate(
+      { candidateId, phone, status: 'pending' },
+      { 
+        status: 'failed',
+        error: error.message 
+      },
+      { sort: { createdAt: -1 } }
+    );
+    
+    throw error;
+  }
+}
+
+// בדיקת סטטוס חיבור
+export function isConnected() {
+  return connectionStatus === 'connected' && sock !== null;
+}
+
+// קבלת סטטוס מפורט
+export function getStatus() {
+  return {
+    connected: isConnected(),
+    status: connectionStatus,
+    reconnectAttempts,
+    hasQR: qrCodeData !== null,
+    qrCode: qrCodeData
+  };
+}
+
+// ניתוק ידני
+export async function disconnect() {
+  if (sock) {
+    await sock.logout();
+    sock = null;
+    connectionStatus = 'disconnected';
+    qrCodeData = null;
+    logger.info('👋 WhatsApp התנתק ידנית');
+  }
+}
+שלב 10: מסלולים -/routes/whatsapp.routes.js
+ג'אווהסקריפט
+import express from 'express';
+import { 
+  sendMessage, 
+  isConnected, 
+  getStatus, 
+  disconnect,
+  connectWhatsApp 
+} from '../services/whatsapp/whatsapp.js';
+import WhatsAppMessage from '../models/WhatsAppMessage.js';
+import Candidate from '../models/Candidate.js';
+import logger from '../utils/logger.js';
+
+const router = express.Router();
+
+// Rate limiting פשוט
+const messageQueue = new Map();
+const RATE_LIMIT_MS = 3000;
+
+// בדיקת סטטוס
+router.get('/status', (req, res) => {
+  const status = getStatus();
+  res.json(status);
+});
+
+// חיבור מחדש
+router.post('/reconnect', async (req, res) => {
+  try {
+    if (isConnected()) {
+      return res.json({ message: 'כבר מחובר' });
+    }
+    
+    await connectWhatsApp();
+    res.json({ message: 'מתחבר...' });
+  } catch (error) {
+    logger.error('שגיאה בחיבור מחדש:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// התנתקות
+router.post('/disconnect', async (req, res) => {
+  try {
+    await disconnect();
+    res.json({ message: 'התנתק בהצלחה' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// שליחת הודעה
+router.post('/send', async (req, res) => {
+  try {
+    const { candidateId, phone, message, sentBy, sentByUserId } = req.body;
+    
+    // ולידציה
+    if (!candidateId || !phone || !message) {
+      return res.status(400).json({ 
+        error: 'חסרים פרמטרים: candidateId, phone, message נדרשים' 
+      });
+    }
+    
+    // בדיקת חיבור
+    if (!isConnected()) {
+      return res.status(503).json({ 
+        error: 'WhatsApp לא מחובר כרגע',
+        status: 'disconnected'
+      });
+    }
+    
+    // Rate limiting
+    const lastSent = messageQueue.get(phone);
+    if (lastSent && Date.now() - lastSent < RATE_LIMIT_MS) {
+      return res.status(429).json({ 
+        error: `המתן ${RATE_LIMIT_MS/1000} שניות בין הודעות` 
+      });
+    }
+    
+    // שליחה
+    const result = await sendMessage(candidateId, phone, message, {
+      sentBy,
+      sentByUserId
+    });
+    
+    messageQueue.set(phone, Date.now());
+    
+    res.json(result);
+    
+  } catch (error) {
+    logger.error('שגיאה בשליחת הודעה:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// קבלת היסטוריית הודעות למועמד
+router.get('/messages/:candidateId', async (req, res) => {
+  try {
+    const { candidateId } = req.params;
+    const { limit = 50, skip = 0 } = req.query;
+    
+    const messages = await WhatsAppMessage.find({ candidateId })
+      .sort({ createdAt: -1 })
+      .limit(parseInt(limit))
+      .skip(parseInt(skip))
+      .lean();
+    
+    const total = await WhatsAppMessage.countDocuments({ candidateId });
+    
+    res.json({
+      messages,
+      total,
+      hasMore: total > (parseInt(skip) + messages.length)
+    });
+    
+  } catch (error) {
+    logger.error('שגיאה בטעינת הודעות:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// סטטיסטיקות
+router.get('/stats', async (req, res) => {
+  try {
+    const [totalMessages, sentToday, failedMessages] = await Promise.all([
+      WhatsAppMessage.countDocuments(),
+      WhatsAppMessage.countDocuments({
+        createdAt: { 
+          $gte: new Date(new Date().setHours(0, 0, 0, 0)) 
+        }
+      }),
+      WhatsAppMessage.countDocuments({ status: 'failed' })
+    ]);
+    
+    res.json({
+      totalMessages,
+      sentToday,
+      failedMessages,
+      successRate: totalMessages > 0 
+        ? ((totalMessages - failedMessages) / totalMessages * 100).toFixed(2)
+        : 100
+    });
+    
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+export default router;
+שלב 11: שרת ראשי -server.js
+ג'אווהסקריפט
+import express from 'express';
+import dotenv from 'dotenv';
+import { connectDatabase } from './config/database.js';
+import { connectWhatsApp } from './services/whatsapp/whatsapp.js';
+import whatsappRoutes from './routes/whatsapp.routes.js';
+import logger from './utils/logger.js';
+
+// טעינת משתני סביבה
+dotenv.config();
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+// Middleware
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// CORS (אם צריך)
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
+  res.header('Access-Control-Allow-Headers', 'Content-Type');
+  next();
+});
+
+// Routes
+app.use('/api/whatsapp', whatsappRoutes);
+
+// Route בריאות
+app.get('/health', (req, res) => {
+  res.json({ 
+    status: 'ok',
+    uptime: process.uptime(),
+    timestamp: new Date().toISOString()
+  });
+});
+
+// טיפול בשגיאות
+app.use((err, req, res, next) => {
+  logger.error('שגיאת שרת:', err);
+  res.status(500).json({ 
+    error: 'שגיאת שרת פנימית',
+    message: process.env.NODE_ENV === 'development' ? err.message : undefined
+  });
+});
+
+// אתחול
+async function startServer() {
+  try {
+    // חיבור ל-DB
+    await connectDatabase();
+    
+    // חיבור ל-WhatsApp
+    logger.info('🔌 מתחבר ל-WhatsApp...');
+    await connectWhatsApp();
+    
+    // הפעלת השרת
+    app.listen(PORT, () => {
+      logger.info(`🚀 Server running on port ${PORT}`);
+      logger.info(`📡 WhatsApp API: http://localhost:${PORT}/api/whatsapp`);
+    });
+    
+  } catch (error) {
+    logger.error('❌ שגיאה באתחול:', error);
+    process.exit(1);
+  }
+}
+
+// טיפול בסגירה נקייה
+process.on('SIGINT', async () => {
+  logger.info('🛑 סוגר את המערכת...');
+  process.exit(0);
+});
+
+process.on('SIGTERM', async () => {
+  logger.info('🛑 סוגר את המערכת...');
+  process.exit(0);
+});
+
+// הרצה
+startServer();
+שלב 12: דף HTML לניהול -/public/whatsapp-manager.html
+html
+<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ניהול WhatsApp - CRM</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+      background: #f5f5f5;
+      padding: 20px;
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    
+    .header {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+    }
+    
+    .status-card {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 15px 25px;
+      border-radius: 8px;
+      font-weight: 600;
+    }
+    
+    .status-connected {
+      background: #d4edda;
+      color: #155724;
+    }
+    
+    .status-disconnected {
+      background: #f8d7da;
+      color: #721c24;
+    }
+    
+    .status-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+    
+    .status-connected .status-dot {
+      background: #28a745;
+    }
+    
+    .status-disconnected .status-dot {
+      background: #dc3545;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      margin: 20px 0;
+    }
+    
+    .stat-card {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    
+    .stat-value {
+      font-size: 32px;
+      font-weight: bold;
+      color: #25D366;
+    }
+    
+    .stat-label {
+      color: #666;
+      margin-top: 5px;
+    }
+    
+    .actions {
+      display: flex;
+      gap: 10px;
+      margin: 20px 0;
+    }
+    
+    button {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 6px;
+      font-size: 16px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.3s;
+    }
+    
+    .btn-primary {
+      background: #25D366;
+      color: white;
+    }
+    
+    .btn-primary:hover {
+      background: #128C7E;
+    }
+    
+    .btn-danger {
+      background: #dc3545;
+      color: white;
+    }
+    
+    .btn-danger:hover {
+      background: #c82333;
+    }
+    
+    .btn-secondary {
+      background: #6c757d;
+      color: white;
+    }
+    
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    
+    .qr-section {
+      background: white;
+      padding: 30px;
+      border-radius: 10px;
+      text-align: center;
+      display: none;
+    }
+    
+    .qr-section.show {
+      display: block;
