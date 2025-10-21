@@ -14,6 +14,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { queryClient, apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
+import { useLocation } from 'wouter';
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
 
@@ -69,6 +70,7 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
   const [linkPhoneDialog, setLinkPhoneDialog] = useState<{ open: boolean; fileUrl: string; fileName: string; phoneNumber: string } | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
 
   // Check connection status
   const { data: status } = useQuery<{ isConnected: boolean }>({
@@ -923,7 +925,8 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
               {fileActionDialog?.candidateId ? (
                 <Button 
                   onClick={() => {
-                    window.open(`/candidates/${fileActionDialog.candidateId}`, '_blank');
+                    onClose();
+                    setLocation(`/candidates/${fileActionDialog.candidateId}`);
                     setFileActionDialog(null);
                   }}
                   variant="outline"
@@ -1029,8 +1032,9 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
                         toast({ title: 'מועמד נוצר בהצלחה עם מספר הטלפון!' });
                         setLinkPhoneDialog(null);
                         if (result.id) {
-                          console.log('🚀 Opening candidate page:', result.id);
-                          window.open(`/candidates/${result.id}`, '_blank');
+                          console.log('🚀 Navigating to candidate page:', result.id);
+                          onClose();
+                          setLocation(`/candidates/${result.id}`);
                         } else {
                           console.warn('⚠️ No candidate ID in response');
                         }
@@ -1091,8 +1095,9 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
                         toast({ title: 'מועמד נוצר בהצלחה!' });
                         setLinkPhoneDialog(null);
                         if (result.id) {
-                          console.log('🚀 Opening candidate page:', result.id);
-                          window.open(`/candidates/${result.id}`, '_blank');
+                          console.log('🚀 Navigating to candidate page:', result.id);
+                          onClose();
+                          setLocation(`/candidates/${result.id}`);
                         } else {
                           console.warn('⚠️ No candidate ID in response');
                         }
