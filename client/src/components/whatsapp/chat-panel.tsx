@@ -207,9 +207,9 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-white dark:bg-gray-900 z-40 flex h-screen" dir="rtl" data-testid="whatsapp-chat-panel">
+    <div className="fixed inset-0 bg-white dark:bg-gray-900 z-40 flex h-screen pt-16" dir="rtl" data-testid="whatsapp-chat-panel">
       {/* Minimize Button - Top Center */}
-      <div className="fixed top-2 left-1/2 transform -translate-x-1/2 z-50">
+      <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-50">
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
