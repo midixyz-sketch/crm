@@ -313,23 +313,33 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
 
   return (
     <div 
-      className="fixed left-0 top-0 h-full w-96 bg-white dark:bg-gray-900 shadow-2xl z-40 flex flex-col border-r border-gray-200 dark:border-gray-700"
+      className="fixed inset-0 top-0 bg-white dark:bg-gray-900 z-40 flex"
       dir="rtl"
       data-testid="whatsapp-chat-panel"
     >
-      {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 bg-green-600 text-white">
-        <h2 className="text-lg font-semibold">WhatsApp</h2>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onClose}
-          className="text-white hover:bg-green-700"
-          data-testid="button-close-panel"
-        >
-          <X className="h-5 w-5" />
-        </Button>
-      </div>
+      {/* Main Container - Full WhatsApp Web Layout */}
+      <div className="flex-1 flex h-screen">
+        {/* Right Side - Chats List */}
+        <div className="w-[30%] min-w-[340px] max-w-[500px] bg-white dark:bg-gray-900 border-l border-gray-200 dark:border-gray-700 flex flex-col">
+          {/* Header */}
+          <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 bg-[#008069] text-white">
+            <div className="flex items-center gap-3">
+              <Avatar className="h-10 w-10">
+                <AvatarFallback className="bg-white/20 text-white">WA</AvatarFallback>
+              </Avatar>
+              <h2 className="text-lg font-semibold">WhatsApp</h2>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onClose}
+              className="text-white hover:bg-white/10 rounded-full h-10 w-10 p-0"
+              data-testid="button-close-panel"
+              title="מזעור"
+            >
+              <X className="h-5 w-5" />
+            </Button>
+          </div>
 
       {selectedChat ? (
         // Chat View
