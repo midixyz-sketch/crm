@@ -320,8 +320,10 @@ class WhatsAppService {
 
       // Handle incoming messages
       socket.ev.on('messages.upsert', async ({ messages, type }) => {
+        logger.info(`📨 messages.upsert: Received ${messages.length} messages, type: ${type}`);
         if (type === 'notify') {
           for (const message of messages) {
+            logger.info(`Processing message from ${message.key.remoteJid}`);
             await this.handleIncomingMessage(message);
           }
         }
