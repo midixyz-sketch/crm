@@ -1014,9 +1014,10 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
                     formData.append('phoneNumber', linkPhoneDialog.phoneNumber);
                     
                     // Upload and create candidate
-                    const uploadResponse = await fetch('/api/candidates/upload', {
+                    const uploadResponse = await fetch('/api/candidates/upload-cv', {
                       method: 'POST',
                       body: formData,
+                      credentials: 'include',
                     });
                     
                     if (uploadResponse.ok) {
@@ -1069,9 +1070,10 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
                     formData.append('cv', file);
                     
                     // Upload and create candidate
-                    const uploadResponse = await fetch('/api/candidates/upload', {
+                    const uploadResponse = await fetch('/api/candidates/upload-cv', {
                       method: 'POST',
                       body: formData,
+                      credentials: 'include',
                     });
                     
                     if (uploadResponse.ok) {
