@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { X, Search, Send, Paperclip, Phone, Video, MoreVertical, Pin, Tag, Archive, User, Users, Archive as ArchiveIcon } from 'lucide-react';
+import { X, Search, Send, Paperclip, Phone, Video, MoreVertical, Pin, PinOff, Tag, Archive, User, Users, Archive as ArchiveIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -85,6 +86,27 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
       queryClient.invalidateQueries({ queryKey: ['/api/whatsapp/messages', selectedChat?.remoteJid] });
       queryClient.invalidateQueries({ queryKey: ['/api/whatsapp/chats'] });
       setNewMessage('');
+    },
+  });
+
+  // Update chat mutation (for pin/archive/tags)
+  const updateChatMutation = useMutation({
+    mutationFn: async ({ id, updates }: { id: string; updates: Partial<Chat> }) => {
+      return apiRequest('PATCH', `/api/whatsapp/chats/${id}`, updates);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/whatsapp/chats'] });
+      toast({
+        title: 'עודכן בהצלחה',
+        description: 'השיחה עודכנה',
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'שגיאה',
+        description: error.message || 'לא ניתן לעדכן את השיחה',
+        variant: 'destructive',
+      });
     },
   });
 
@@ -571,21 +593,28 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <Button
+                                  size="icon"
                                   variant="ghost"
-                                  size="sm"
-                                  className="h-5 w-5 p-0"
+                                  className={cn(
+                                    "h-[33px] w-[33px]",
+                                    chat.isPinned 
+                                      ? "bg-amber-400 dark:bg-amber-600 text-white hover:bg-amber-500 dark:hover:bg-amber-500" 
+                                      : "bg-amber-200 dark:bg-amber-800 text-amber-800 dark:text-amber-200 hover:bg-amber-300 dark:hover:bg-amber-700"
+                                  )}
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    if (chat.candidateId) {
-                                      togglePinMutation.mutate({
-                                        candidateId: chat.candidateId,
-                                        isPinned: !chat.isPinned,
-                                      });
-                                    }
+                                    updateChatMutation.mutate({
+                                      id: chat.id,
+                                      updates: { isPinned: !chat.isPinned }
+                                    });
                                   }}
                                   data-testid={`button-pin-${chat.id}`}
                                 >
-                                  <Pin className={`h-3 w-3 ${chat.isPinned ? 'text-amber-500' : 'text-gray-400'}`} />
+                                  {chat.isPinned ? (
+                                    <PinOff className="w-[11px] h-[11px]" />
+                                  ) : (
+                                    <Pin className="w-[11px] h-[11px]" />
+                                  )}
                                 </Button>
                               </TooltipTrigger>
                               <TooltipContent side="bottom">
@@ -598,9 +627,9 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <Button
+                                  size="icon"
                                   variant="ghost"
-                                  size="sm"
-                                  className="h-5 w-5 p-0"
+                                  className="h-[33px] w-[33px] bg-blue-500 dark:bg-blue-600 text-white hover:bg-blue-600 dark:hover:bg-blue-500"
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     setSelectedChat(chat);
@@ -608,7 +637,7 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
                                   }}
                                   data-testid={`button-tags-${chat.id}`}
                                 >
-                                  <Tag className="h-3 w-3 text-blue-500" />
+                                  <Tag className="w-[11px] h-[11px]" />
                                 </Button>
                               </TooltipTrigger>
                               <TooltipContent side="bottom">
