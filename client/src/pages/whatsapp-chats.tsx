@@ -34,7 +34,7 @@ interface Candidate {
   id: string;
   firstName: string;
   lastName: string;
-  phone: string;
+  mobilePhone: string;
   email?: string;
   tags?: string[];
   isPinned?: boolean;
@@ -119,23 +119,23 @@ export default function WhatsAppChats() {
   useEffect(() => {
     const fetchProfilePictures = async () => {
       for (const candidate of candidates) {
-        if (!candidate.phone || fetchedPhonesRef.current.has(candidate.phone)) continue;
+        if (!candidate.mobilePhone || fetchedPhonesRef.current.has(candidate.mobilePhone)) continue;
         
         try {
-          const response = await fetch(`/api/whatsapp/profile-picture/${candidate.phone}`);
+          const response = await fetch(`/api/whatsapp/profile-picture/${candidate.mobilePhone}`);
           
           if (response.ok) {
             const data = await response.json();
-            fetchedPhonesRef.current.add(candidate.phone);
+            fetchedPhonesRef.current.add(candidate.mobilePhone);
             setProfilePictures(prev => ({
               ...prev,
-              [candidate.phone]: data.profilePicUrl || null
+              [candidate.mobilePhone]: data.profilePicUrl || null
             }));
           } else if (response.status === 404 || response.status === 401) {
-            fetchedPhonesRef.current.add(candidate.phone);
+            fetchedPhonesRef.current.add(candidate.mobilePhone);
             setProfilePictures(prev => ({
               ...prev,
-              [candidate.phone]: null
+              [candidate.mobilePhone]: null
             }));
           }
         } catch (error) {
@@ -150,8 +150,8 @@ export default function WhatsAppChats() {
   }, [candidates]);
 
   const sendMessageMutation = useMutation({
-    mutationFn: async ({ candidateId, phone, message }: { candidateId: string; phone: string; message: string }) => {
-      return await apiRequest("POST", "/api/whatsapp/send", { candidateId, phone, message });
+    mutationFn: async ({ candidateId, mobilePhone, message }: { candidateId: string; mobilePhone: string; message: string }) => {
+      return await apiRequest("POST", "/api/whatsapp/send", { candidateId, phone: mobilePhone, message });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/whatsapp/messages"] });
@@ -200,7 +200,7 @@ export default function WhatsAppChats() {
       const candidateMessages = messages.filter((m) => m.candidateId === candidate.id);
       
       // Auto-detect groups based on WhatsApp phone format (@g.us)
-      const isGroup = candidate.phone?.includes('@g.us') || (candidate.chatType || 'individual') === 'group';
+      const isGroup = candidate.mobilePhone?.includes('@g.us') || (candidate.chatType || 'individual') === 'group';
       if (candidateMessages.length === 0 && !isGroup) return null;
 
       const sortedMessages = candidateMessages.length > 0
@@ -228,7 +228,7 @@ export default function WhatsAppChats() {
   // Filter chat groups by chat type, search query and selected tag
   const filteredChatGroups = chatGroups.filter(group => {
     // Filter by chat type - auto-detect groups based on WhatsApp phone format (@g.us)
-    const isGroupChat = group.candidate.phone?.includes('@g.us') || (group.candidate.chatType || 'individual') === 'group';
+    const isGroupChat = group.candidate.mobilePhone?.includes('@g.us') || (group.candidate.chatType || 'individual') === 'group';
     const groupChatType = isGroupChat ? 'group' : (group.candidate.chatType || 'individual');
     if (groupChatType !== chatTypeFilter) {
       return false;
@@ -239,7 +239,7 @@ export default function WhatsAppChats() {
       const query = searchQuery.toLowerCase();
       const fullName = `${group.candidate.firstName} ${group.candidate.lastName}`.toLowerCase();
       const nameMatch = fullName.includes(query);
-      const phoneMatch = group.candidate.phone?.includes(searchQuery);
+      const phoneMatch = group.candidate.mobilePhone?.includes(searchQuery);
       const tagsMatch = group.candidate.tags?.some(tag => tag.toLowerCase().includes(query));
       
       if (!nameMatch && !phoneMatch && !tagsMatch) {
@@ -291,7 +291,7 @@ export default function WhatsAppChats() {
     
     sendMessageMutation.mutate({
       candidateId: selectedChat.candidate.id,
-      phone: selectedChat.candidate.phone,
+      mobilePhone: selectedChat.candidate.mobilePhone,
       message: newMessage.trim(),
     });
   };
@@ -453,9 +453,9 @@ export default function WhatsAppChats() {
 
   // Continue in next part...
   return (
-    <div className="h-screen flex">
+    <div className="h-screen flex flex-row-reverse">
       {/* Sidebar - Chat List */}
-      <div className="w-80 border-l flex flex-col bg-background dark:bg-muted/30">
+      <div className="w-80 border-l border-r-0 flex flex-col bg-background dark:bg-muted/30">
         <div className="p-4 border-b bg-background space-y-3">
           <div>
             <h2 className="text-lg font-semibold" data-testid="text-chats-title">שיחות WhatsApp</h2>
@@ -549,8 +549,8 @@ export default function WhatsAppChats() {
                 >
                   <div className="flex items-start gap-3">
                     <Avatar className="w-10 h-10">
-                      {profilePictures[group.candidate.phone] && (
-                        <AvatarImage src={profilePictures[group.candidate.phone]!} alt={`${group.candidate.firstName} ${group.candidate.lastName}`} />
+                      {profilePictures[group.candidate.mobilePhone] && (
+                        <AvatarImage src={profilePictures[group.candidate.mobilePhone]!} alt={`${group.candidate.firstName} ${group.candidate.lastName}`} />
                       )}
                       <AvatarFallback>{group.candidate.firstName[0]}{group.candidate.lastName[0]}</AvatarFallback>
                     </Avatar>
@@ -666,8 +666,8 @@ export default function WhatsAppChats() {
             {/* Chat Header */}
             <div className="p-4 border-b bg-background flex items-center gap-3">
               <Avatar className="w-10 h-10">
-                {profilePictures[selectedChat.candidate.phone] && (
-                  <AvatarImage src={profilePictures[selectedChat.candidate.phone]!} alt={`${selectedChat.candidate.firstName} ${selectedChat.candidate.lastName}`} />
+                {profilePictures[selectedChat.candidate.mobilePhone] && (
+                  <AvatarImage src={profilePictures[selectedChat.candidate.mobilePhone]!} alt={`${selectedChat.candidate.firstName} ${selectedChat.candidate.lastName}`} />
                 )}
                 <AvatarFallback>{selectedChat.candidate.firstName[0]}{selectedChat.candidate.lastName[0]}</AvatarFallback>
               </Avatar>
@@ -675,7 +675,7 @@ export default function WhatsAppChats() {
                 <h3 className="font-semibold" data-testid="text-selected-chat-name">
                   {selectedChat.candidate.firstName} {selectedChat.candidate.lastName}
                 </h3>
-                <p className="text-sm text-muted-foreground">{selectedChat.candidate.phone}</p>
+                <p className="text-sm text-muted-foreground">{selectedChat.candidate.mobilePhone}</p>
               </div>
               <div className="flex gap-1">
                 <TooltipProvider>
