@@ -1000,6 +1000,11 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
                   try {
                     // Download file from server
                     const response = await fetch(linkPhoneDialog.fileUrl);
+                    if (!response.ok) {
+                      toast({ title: 'שגיאה בהורדת הקובץ', variant: 'destructive' });
+                      return;
+                    }
+                    
                     const blob = await response.blob();
                     const file = new File([blob], linkPhoneDialog.fileName, { type: blob.type });
                     
@@ -1015,13 +1020,21 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
                     });
                     
                     if (uploadResponse.ok) {
-                      const result = await uploadResponse.json();
-                      toast({ title: 'מועמד נוצר בהצלחה עם מספר הטלפון!' });
-                      setLinkPhoneDialog(null);
-                      if (result.id) {
-                        window.open(`/candidates/${result.id}`, '_blank');
+                      const contentType = uploadResponse.headers.get('content-type');
+                      if (contentType && contentType.includes('application/json')) {
+                        const result = await uploadResponse.json();
+                        toast({ title: 'מועמד נוצר בהצלחה עם מספר הטלפון!' });
+                        setLinkPhoneDialog(null);
+                        if (result.id) {
+                          window.open(`/candidates/${result.id}`, '_blank');
+                        }
+                      } else {
+                        toast({ title: 'מועמד נוצר בהצלחה עם מספר הטלפון!' });
+                        setLinkPhoneDialog(null);
                       }
                     } else {
+                      const errorText = await uploadResponse.text();
+                      console.error('Upload error:', errorText);
                       toast({ title: 'שגיאה ביצירת המועמד', variant: 'destructive' });
                     }
                   } catch (error) {
@@ -1043,6 +1056,11 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
                   try {
                     // Download file from server
                     const response = await fetch(linkPhoneDialog.fileUrl);
+                    if (!response.ok) {
+                      toast({ title: 'שגיאה בהורדת הקובץ', variant: 'destructive' });
+                      return;
+                    }
+                    
                     const blob = await response.blob();
                     const file = new File([blob], linkPhoneDialog.fileName, { type: blob.type });
                     
@@ -1057,13 +1075,21 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
                     });
                     
                     if (uploadResponse.ok) {
-                      const result = await uploadResponse.json();
-                      toast({ title: 'מועמד נוצר בהצלחה!' });
-                      setLinkPhoneDialog(null);
-                      if (result.id) {
-                        window.open(`/candidates/${result.id}`, '_blank');
+                      const contentType = uploadResponse.headers.get('content-type');
+                      if (contentType && contentType.includes('application/json')) {
+                        const result = await uploadResponse.json();
+                        toast({ title: 'מועמד נוצר בהצלחה!' });
+                        setLinkPhoneDialog(null);
+                        if (result.id) {
+                          window.open(`/candidates/${result.id}`, '_blank');
+                        }
+                      } else {
+                        toast({ title: 'מועמד נוצר בהצלחה!' });
+                        setLinkPhoneDialog(null);
                       }
                     } else {
+                      const errorText = await uploadResponse.text();
+                      console.error('Upload error:', errorText);
                       toast({ title: 'שגיאה ביצירת המועמד', variant: 'destructive' });
                     }
                   } catch (error) {
