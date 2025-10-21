@@ -79,8 +79,7 @@ export const userRoles = pgTable("user_roles", {
   roleId: varchar("role_id").notNull(),
   assignedBy: varchar("assigned_by"), // מי הקצה את התפקיד
   assignedAt: timestamp("assigned_at").defaultNow(),
-  // הגבלות גישה נוספות
-  allowedJobIds: text("allowed_job_ids"), // רשימת משרות מותרות (JSON array)
+  // הגבלות גישה נוספות (allowedJobIds דינמי מטבלת job_assignments)
   restrictions: jsonb("restrictions"), // הגבלות נוספות
 });
 

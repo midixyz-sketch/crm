@@ -15,8 +15,8 @@ export interface UserPermissions {
 // קבל הרשאות משתמש
 export async function getUserPermissions(userId: string): Promise<UserPermissions> {
   try {
-    // קבל תפקידי המשתמש
-    const userRoles = await storage.getUserRoles(userId);
+    // קבל תפקידי המשתמש עם פרטי התפקיד
+    const userWithRoles = await storage.getUserWithRoles(userId);
     
     const permissions: UserPermissions = {
       canViewClientNames: false,
@@ -29,7 +29,11 @@ export async function getUserPermissions(userId: string): Promise<UserPermission
       roleType: 'user'
     };
 
-    for (const userRole of userRoles) {
+    if (!userWithRoles || !userWithRoles.userRoles) {
+      return permissions;
+    }
+
+    for (const userRole of userWithRoles.userRoles) {
       const roleType = userRole.role?.type || 'user';
       
       // הגדר הרשאות לפי סוג התפקיד
