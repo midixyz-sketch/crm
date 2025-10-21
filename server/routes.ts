@@ -5749,8 +5749,27 @@ ${recommendation}
   // GET /api/whatsapp/chats - Get all chats
   app.get('/api/whatsapp/chats', isAuthenticated, async (req, res) => {
     try {
+      const limit = parseInt(req.query.limit as string) || 100;
+      const tab = req.query.tab as string || 'individual';
+
+      // Build where conditions based on tab
+      let whereConditions;
+      if (tab === 'groups') {
+        whereConditions = eq(whatsappChats.isGroup, true);
+      } else if (tab === 'archived') {
+        whereConditions = eq(whatsappChats.isArchived, true);
+      } else {
+        // Individual chats (not groups, not archived)
+        whereConditions = and(
+          eq(whatsappChats.isGroup, false),
+          eq(whatsappChats.isArchived, false)
+        );
+      }
+
       const chats = await db.query.whatsappChats.findMany({
+        where: whereConditions,
         orderBy: [desc(whatsappChats.lastMessageAt)],
+        limit,
       });
 
       res.json(chats);

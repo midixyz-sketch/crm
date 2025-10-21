@@ -31,10 +31,15 @@ export function WhatsAppWidget() {
     refetchInterval: 5000, // Check status every 5 seconds
   });
 
-  // Get unread count
+  // Get unread count (only fetch 100 chats for performance)
   const { data: chats = [] } = useQuery<Array<{ unreadCount: number }>>({
-    queryKey: ['/api/whatsapp/chats'],
+    queryKey: ['/api/whatsapp/chats', 'widget'],
     refetchInterval: 5000,
+    queryFn: async () => {
+      const response = await fetch('/api/whatsapp/chats?tab=individual&limit=100');
+      if (!response.ok) throw new Error('Failed to fetch chats');
+      return response.json();
+    },
   });
 
   const totalUnread = chats.reduce((sum, chat) => sum + (chat.unreadCount || 0), 0);
