@@ -68,6 +68,7 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
   const [editedName, setEditedName] = useState('');
   const [fileActionDialog, setFileActionDialog] = useState<{ open: boolean; fileUrl: string; fileName: string; candidateId?: string; phoneNumber?: string } | null>(null);
   const [linkPhoneDialog, setLinkPhoneDialog] = useState<{ open: boolean; fileUrl: string; fileName: string; phoneNumber: string } | null>(null);
+  const [duplicateCandidate, setDuplicateCandidate] = useState<{ id: string; firstName: string; lastName: string; email: string; mobile: string } | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const [, setLocation] = useLocation();
@@ -938,8 +939,29 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
                 </Button>
               ) : (
                 <Button 
-                  onClick={() => {
+                  onClick={async () => {
                     if (fileActionDialog?.phoneNumber && fileActionDialog?.fileUrl) {
+                      // Check for duplicate candidate
+                      try {
+                        const response = await fetch('/api/candidates/check-duplicate', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ mobile: fileActionDialog.phoneNumber }),
+                        });
+                        
+                        if (response.ok) {
+                          const result = await response.json();
+                          if (result.exists) {
+                            // Found duplicate - store it and show in second dialog
+                            setDuplicateCandidate(result.candidate);
+                          } else {
+                            setDuplicateCandidate(null);
+                          }
+                        }
+                      } catch (error) {
+                        console.error('Error checking duplicate:', error);
+                      }
+                      
                       setLinkPhoneDialog({
                         open: true,
                         fileUrl: fileActionDialog.fileUrl,
@@ -978,23 +1000,66 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
       </Dialog>
 
       {/* Link Phone Number Dialog */}
-      <Dialog open={linkPhoneDialog?.open || false} onOpenChange={(open) => !open && setLinkPhoneDialog(null)}>
+      <Dialog open={linkPhoneDialog?.open || false} onOpenChange={(open) => {
+        if (!open) {
+          setLinkPhoneDialog(null);
+          setDuplicateCandidate(null);
+        }
+      }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>הוספת מועמד חדש</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
-            <p className="text-sm text-muted-foreground text-center">
-              האם להשתמש במספר המועמד שמופיע בשיחה לכרטיס המועמד?
-            </p>
-            <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg">
-              <p className="text-sm font-medium text-center">
-                מספר טלפון: {linkPhoneDialog?.phoneNumber}
-              </p>
-              <p className="text-xs text-muted-foreground text-center mt-1">
-                קובץ: {linkPhoneDialog?.fileName}
-              </p>
-            </div>
+            {duplicateCandidate ? (
+              <>
+                <div className="text-red-600 text-sm font-bold bg-red-100 p-4 rounded-lg border-2 border-red-400 shadow-lg">
+                  <div className="text-center mb-3">
+                    ⚠️⚠️⚠️ מספר טלפון זה כבר קיים במערכת! ⚠️⚠️⚠️
+                  </div>
+                  <div className="space-y-2 text-right">
+                    <div><strong>מועמד:</strong> {duplicateCandidate.firstName} {duplicateCandidate.lastName}</div>
+                    <div><strong>נייד:</strong> {duplicateCandidate.mobile}</div>
+                    {duplicateCandidate.email && <div><strong>אימייל:</strong> {duplicateCandidate.email}</div>}
+                  </div>
+                  <div className="text-red-800 font-bold text-center mt-3">
+                    זהו כנראה מועמד משוכפל!
+                  </div>
+                  <div className="mt-4 flex gap-2">
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        onClose();
+                        setLocation(`/candidates/${duplicateCandidate.id}`);
+                        setLinkPhoneDialog(null);
+                        setDuplicateCandidate(null);
+                      }}
+                      className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+                      data-testid="button-go-to-existing-candidate"
+                    >
+                      מעבר לכרטיס המועמד הקיים
+                    </Button>
+                  </div>
+                </div>
+                <div className="text-center text-sm text-muted-foreground">
+                  או המשך בכל זאת ליצור מועמד חדש:
+                </div>
+              </>
+            ) : (
+              <>
+                <p className="text-sm text-muted-foreground text-center">
+                  האם להשתמש במספר המועמד שמופיע בשיחה לכרטיס המועמד?
+                </p>
+                <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg">
+                  <p className="text-sm font-medium text-center">
+                    מספר טלפון: {linkPhoneDialog?.phoneNumber}
+                  </p>
+                  <p className="text-xs text-muted-foreground text-center mt-1">
+                    קובץ: {linkPhoneDialog?.fileName}
+                  </p>
+                </div>
+              </>
+            )}
             <div className="flex flex-col gap-3">
               <Button 
                 onClick={async () => {
@@ -1153,7 +1218,10 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
           <DialogFooter>
             <Button 
               variant="ghost" 
-              onClick={() => setLinkPhoneDialog(null)}
+              onClick={() => {
+                setLinkPhoneDialog(null);
+                setDuplicateCandidate(null);
+              }}
               data-testid="button-cancel-link-phone"
             >
               ביטול
