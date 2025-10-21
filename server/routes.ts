@@ -5740,6 +5740,68 @@ ${recommendation}
     }
   });
 
+  // POST /api/whatsapp/sync-groups - Sync WhatsApp groups to candidates
+  app.post('/api/whatsapp/sync-groups', isAuthenticated, async (req, res) => {
+    try {
+      const allChats = await db.query.whatsappChats.findMany();
+      const groupChats = allChats.filter(chat => chat.remoteJid.includes('@g.us'));
+
+      let syncedCount = 0;
+      let createdCount = 0;
+
+      for (const chat of groupChats) {
+        // Check if candidate already exists with this phone (remoteJid)
+        const existingCandidate = await db.query.candidates.findFirst({
+          where: eq(candidates.mobilePhone, chat.remoteJid),
+        });
+
+        if (existingCandidate) {
+          // Update existing candidate
+          await db.update(candidates)
+            .set({
+              chatType: 'group',
+              firstName: chat.name || chat.remoteJid.split('@')[0],
+            })
+            .where(eq(candidates.id, existingCandidate.id));
+
+          // Link chat to candidate
+          await db.update(whatsappChats)
+            .set({ candidateId: existingCandidate.id })
+            .where(eq(whatsappChats.id, chat.id));
+
+          syncedCount++;
+        } else {
+          // Create new candidate for this group
+          const [newCandidate] = await db.insert(candidates)
+            .values({
+              firstName: chat.name || chat.remoteJid.split('@')[0],
+              lastName: '',
+              mobilePhone: chat.remoteJid,
+              chatType: 'group',
+            })
+            .returning();
+
+          // Link chat to new candidate
+          await db.update(whatsappChats)
+            .set({ candidateId: newCandidate.id })
+            .where(eq(whatsappChats.id, chat.id));
+
+          createdCount++;
+        }
+      }
+
+      res.json({
+        message: `סונכרנו ${groupChats.length} קבוצות`,
+        synced: syncedCount,
+        created: createdCount,
+        total: groupChats.length,
+      });
+    } catch (error) {
+      console.error('שגיאה בסנכרון קבוצות:', error);
+      res.status(500).json({ message: 'שגיאה בסנכרון קבוצות' });
+    }
+  });
+
   // POST /api/whatsapp/mark-read - Mark messages as read
   app.post('/api/whatsapp/mark-read/:remoteJid', isAuthenticated, async (req, res) => {
     try {
