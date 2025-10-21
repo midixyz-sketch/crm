@@ -1588,12 +1588,12 @@ export default function CandidateDetail() {
                       <div className="flex-1 bg-white rounded border overflow-hidden">
                         {candidate.cvPath?.toLowerCase().includes('.pdf') ? (
                           <iframe
-                            src={`/uploads/${candidate.cvPath?.replace('uploads/', '')}`}
+                            src={candidate.cvPath?.startsWith('/') ? candidate.cvPath : `/${candidate.cvPath}`}
                             className="w-full h-full border-0"
                             title="קורות חיים"
                             data-testid="cv-iframe"
-                            onLoad={() => console.log('✅ PDF loaded successfully')}
-                            onError={(e) => console.error('❌ PDF failed to load:', e)}
+                            onLoad={() => console.log('✅ PDF loaded successfully. Path:', candidate.cvPath)}
+                            onError={(e) => console.error('❌ PDF failed to load. Path:', candidate.cvPath, 'Error:', e)}
                           />
                         ) : candidate.cvPath?.toLowerCase().includes('.doc') ? (
                           <div className="flex items-center justify-center h-full bg-gray-50">
@@ -1604,7 +1604,7 @@ export default function CandidateDetail() {
                               <Button 
                                 variant="outline" 
                                 size="sm"
-                                onClick={() => window.open(`/uploads/${candidate.cvPath?.replace('uploads/', '')}`, '_blank')}
+                                onClick={() => window.open(candidate.cvPath?.startsWith('/') ? candidate.cvPath : `/${candidate.cvPath}`, '_blank')}
                               >
                                 <Download className="w-4 h-4 mr-2" />
                                 הורד קובץ
@@ -1618,7 +1618,7 @@ export default function CandidateDetail() {
                              candidate.cvPath?.toLowerCase().includes('.bmp') || 
                              candidate.cvPath?.toLowerCase().includes('.tiff')) ? (
                           <img
-                            src={`/uploads/${candidate.cvPath?.replace('uploads/', '')}`}
+                            src={candidate.cvPath?.startsWith('/') ? candidate.cvPath : `/${candidate.cvPath}`}
                             alt="קורות חיים"
                             className="w-full h-full object-contain"
                           />

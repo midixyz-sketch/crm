@@ -1204,6 +1204,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const fileText = await extractTextFromCVFile(req.file.path);
           candidateData.cvContent = fileText;
           console.log(`✅ חילוץ הושלם, ${fileText.length} תווים`);
+          
+          // Extract candidate details from CV text if we have placeholder values
+          if (fileText && fileText.length > 100 && 
+              (candidateData.firstName === 'ממתין' || candidateData.lastName === 'לעדכון')) {
+            console.log(`📝 מחלץ פרטים מתוכן ה-CV...`);
+            const { extractCandidateDataFromText } = await import('./cpanel-email');
+            const parsedData = await extractCandidateDataFromText(fileText);
+            
+            // Update candidate data with extracted info if better than what we have
+            if (parsedData.name && parsedData.name.includes(' ')) {
+              const [firstName, ...lastNameParts] = parsedData.name.split(' ');
+              if (candidateData.firstName === 'ממתין' || !candidateData.firstName) {
+                candidateData.firstName = firstName;
+              }
+              if (candidateData.lastName === 'לעדכון' || !candidateData.lastName) {
+                candidateData.lastName = lastNameParts.join(' ');
+              }
+            }
+            
+            if (parsedData.email && !candidateData.email) {
+              candidateData.email = parsedData.email;
+            }
+            
+            if (parsedData.mobile && !candidateData.mobile) {
+              candidateData.mobile = parsedData.mobile;
+            }
+            
+            if (parsedData.profession && !candidateData.profession) {
+              candidateData.profession = parsedData.profession;
+            }
+            
+            console.log(`✅ פרטים חולצו:`, {
+              name: `${candidateData.firstName} ${candidateData.lastName}`,
+              email: candidateData.email,
+              mobile: candidateData.mobile,
+              profession: candidateData.profession
+            });
+          }
         } catch (error) {
           console.log('Error processing CV file for search:', error);
         }
