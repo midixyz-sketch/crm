@@ -236,18 +236,18 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
   return (
     <div className="fixed inset-0 bg-white dark:bg-gray-900 z-40 flex h-screen pt-16" dir="rtl" data-testid="whatsapp-chat-panel">
       {/* Minimize Button - Top Left Corner */}
-      <div className="fixed top-20 left-4 z-50">
+      <div className="fixed top-14 left-4 z-50">
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
                 variant="default"
-                size="lg"
+                size="sm"
                 onClick={onClose}
-                className="bg-green-500 hover:bg-green-600 text-white rounded-full h-14 w-14 p-0 shadow-xl hover:scale-110 transition-all"
+                className="bg-green-500 hover:bg-green-600 text-white rounded-full h-3.5 w-3.5 p-0 shadow-md hover:scale-125 transition-all"
                 data-testid="button-close-panel"
               >
-                <Minimize2 className="h-7 w-7" />
+                <Minimize2 className="h-2.5 w-2.5" />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="right">
