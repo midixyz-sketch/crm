@@ -959,8 +959,8 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
                   className="w-full"
                   data-testid="button-create-candidate"
                 >
-                  <User className="ml-2 h-4 w-4" />
-                  צור כרטיס מועמד חדש
+                  <UserPlus className="ml-2 h-4 w-4" />
+                  הוסף כמועמד חדש
                 </Button>
               )}
             </div>
