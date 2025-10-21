@@ -87,8 +87,8 @@ export function useDetailedPermissions() {
 
   // קבל הרשאות מפורטות מהשרת
   const { data: permissions, isLoading } = useQuery<UserPermissions>({
-    queryKey: ['/api/permissions/detailed', user?.id],
-    enabled: isAuthenticated && !!user?.id,
+    queryKey: ['/api/permissions/detailed', (user as any)?.id],
+    enabled: isAuthenticated && !!(user as any)?.id,
     staleTime: 5 * 60 * 1000, // 5 דקות
   });
 
@@ -175,6 +175,12 @@ export function useDetailedPermissions() {
         name: "דוחות ואנליטיקה", 
         href: "/reports", 
         icon: "BarChart3" 
+      },
+      { 
+        permission: 'manage_users' as PagePermission, 
+        name: "ניהול משתמשים", 
+        href: "/user-management", 
+        icon: "Shield" 
       },
       { 
         permission: 'manage_external_recruiters' as PagePermission, 
