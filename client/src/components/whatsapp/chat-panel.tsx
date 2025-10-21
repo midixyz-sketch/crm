@@ -423,173 +423,92 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
         ) : (
           <>
             {/* Chat Header */}
-            <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 flex items-center gap-3">
-              <Avatar className="h-10 w-10">
+            <div className="p-4 border-b bg-background flex items-center gap-3">
+              <Avatar className="w-10 h-10">
                 <AvatarImage src={selectedChat.profilePicUrl} />
-                <AvatarFallback className="bg-green-500 text-white"></AvatarFallback>
+                <AvatarFallback></AvatarFallback>
               </Avatar>
               <div className="flex-1">
-                <h3 className="font-semibold">{selectedChat.name}</h3>
-                <p className="text-sm text-gray-500">{selectedChat.remoteJid}</p>
+                <h3 className="font-semibold" data-testid="text-selected-chat-name">
+                  {selectedChat.name}
+                </h3>
+                <p className="text-sm text-muted-foreground">{selectedChat.remoteJid}</p>
               </div>
-              <div className="flex gap-1 items-center">
-                {/* Quick Actions - Tags */}
+              <div className="flex gap-1">
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button
                         size="icon"
                         variant="ghost"
-                        onClick={() => setTagsDialogOpen(true)}
-                        className="h-8 w-8 bg-yellow-100 hover:bg-yellow-200 dark:bg-yellow-900 dark:hover:bg-yellow-800 text-yellow-700 dark:text-yellow-300"
-                        data-testid="button-tags"
-                      >
-                        <Tag className="h-4 w-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent side="bottom">
-                      <p>תגיות</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-
-                {/* Quick Actions - Pin */}
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        size="icon"
-                        variant="ghost"
+                        className={cn(
+                          "h-[33px] w-[33px]",
+                          selectedChat.isPinned 
+                            ? "bg-amber-400 dark:bg-amber-600 text-white hover:bg-amber-500 dark:hover:bg-amber-500" 
+                            : "bg-amber-200 dark:bg-amber-800 text-amber-800 dark:text-amber-200 hover:bg-amber-300 dark:hover:bg-amber-700"
+                        )}
                         onClick={() => updateChatMutation.mutate({
                           id: selectedChat.id,
                           updates: { isPinned: !selectedChat.isPinned }
                         })}
-                        className="h-8 w-8 bg-blue-100 hover:bg-blue-200 dark:bg-blue-900 dark:hover:bg-blue-800 text-blue-700 dark:text-blue-300"
-                        data-testid="button-pin"
+                        data-testid="button-pin-header"
                       >
                         {selectedChat.isPinned ? (
-                          <PinOff className="h-4 w-4" />
+                          <PinOff className="w-[19px] h-[19px]" />
                         ) : (
-                          <Pin className="h-4 w-4" />
+                          <Pin className="w-[19px] h-[19px]" />
                         )}
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent side="bottom">
-                      <p>{selectedChat.isPinned ? 'בטל נעיצה' : 'נעץ למעלה'}</p>
+                      <p>{selectedChat.isPinned ? "בטל נעיצת שיחה" : "נעץ שיחה למעלה"}</p>
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
-
-                {/* Quick Actions - Archive */}
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button
                         size="icon"
                         variant="ghost"
+                        className="h-[33px] w-[33px] bg-blue-500 dark:bg-blue-600 text-white hover:bg-blue-600 dark:hover:bg-blue-500"
+                        onClick={() => setTagsDialogOpen(true)}
+                        data-testid="button-tags-header"
+                      >
+                        <Tag className="w-[19px] h-[19px]" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom">
+                      <p>נהל תגיות למיון ושיוך</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className={cn(
+                          "h-[33px] w-[33px]",
+                          selectedChat.isArchived
+                            ? "bg-green-500 dark:bg-green-600 text-white hover:bg-green-600 dark:hover:bg-green-500"
+                            : "bg-slate-500 dark:bg-slate-600 text-white hover:bg-slate-600 dark:hover:bg-slate-500"
+                        )}
                         onClick={() => updateChatMutation.mutate({
                           id: selectedChat.id,
                           updates: { isArchived: !selectedChat.isArchived }
                         })}
-                        className="h-8 w-8 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300"
-                        data-testid="button-archive"
+                        data-testid="button-archive-header"
                       >
-                        {selectedChat.isArchived ? (
-                          <ArchiveRestore className="h-4 w-4" />
-                        ) : (
-                          <ArchiveIcon className="h-4 w-4" />
-                        )}
+                        <ArchiveIcon className="w-[19px] h-[19px]" />
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent side="bottom">
-                      <p>{selectedChat.isArchived ? 'בטל ארכיון' : 'ארכב'}</p>
+                      <p>{selectedChat.isArchived ? "שחזר מארכיון" : "העבר לארכיון"}</p>
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
-
-                {/* Search in Chat */}
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="h-9 w-9 text-gray-600 dark:text-gray-400"
-                        data-testid="button-search-chat"
-                      >
-                        <Search className="h-5 w-5" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent side="bottom">
-                      <p>חפש בשיחה</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-
-                {/* More Options Menu */}
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      className="h-9 w-9 text-gray-600 dark:text-gray-400"
-                      data-testid="button-more-options"
-                    >
-                      <MoreVertical className="h-5 w-5" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-56">
-                    <DropdownMenuItem
-                      onClick={() => updateChatMutation.mutate({
-                        id: selectedChat.id,
-                        updates: { isPinned: !selectedChat.isPinned }
-                      })}
-                    >
-                      {selectedChat.isPinned ? (
-                        <>
-                          <PinOff className="ml-2 h-4 w-4" />
-                          <span>בטל נעיצת שיחה</span>
-                        </>
-                      ) : (
-                        <>
-                          <Pin className="ml-2 h-4 w-4" />
-                          <span>נעץ שיחה למעלה</span>
-                        </>
-                      )}
-                    </DropdownMenuItem>
-                    
-                    <DropdownMenuItem
-                      onClick={() => updateChatMutation.mutate({
-                        id: selectedChat.id,
-                        updates: { isArchived: !selectedChat.isArchived }
-                      })}
-                    >
-                      {selectedChat.isArchived ? (
-                        <>
-                          <ArchiveRestore className="ml-2 h-4 w-4" />
-                          <span>בטל ארכיון</span>
-                        </>
-                      ) : (
-                        <>
-                          <ArchiveIcon className="ml-2 h-4 w-4" />
-                          <span>העבר לארכיון</span>
-                        </>
-                      )}
-                    </DropdownMenuItem>
-
-                    <DropdownMenuItem onClick={() => setTagsDialogOpen(true)}>
-                      <Tag className="ml-2 h-4 w-4" />
-                      <span>נהל תגיות</span>
-                    </DropdownMenuItem>
-
-                    <DropdownMenuSeparator />
-
-                    <DropdownMenuItem className="text-red-600 dark:text-red-400">
-                      <Trash2 className="ml-2 h-4 w-4" />
-                      <span>מחק שיחה</span>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
               </div>
             </div>
 
