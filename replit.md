@@ -46,7 +46,8 @@ Preferred communication style: Simple, everyday language.
 -   **Optimized Candidate Table**: Streamlined table view focusing on essential information to avoid horizontal scrolling.
 -   **Candidate Detail Page**: Comprehensive profile with inline editing, CV display, and an expandable event history panel.
 -   **WhatsApp Web Integration**: Embedded WhatsApp functionality within the CRM via `@whiskeysockets/baileys`.
-    -   Features include QR code connection, full chat page with individual/group/archived tabs, profile pictures, pin/unpin chats, tagging, search/filters, message bubbles, real-time updates, and RTL support.
+    -   Features include QR code connection, full chat page with individual/group/archived tabs, profile pictures, pin/unpin chats, tagging, search/filters, message bubbles, real-time updates, and full RTL support.
+    -   **RTL Layout**: Chat list positioned on the right side, active chat on the left side (proper Hebrew RTL layout using flexbox without flex-row-reverse).
     -   Includes a singleton pattern for stable connections, a floating button with unread counts, and intelligent chat synchronization.
     -   Message sending from candidate pages, automatic status updates, event logging, and chat linking based on phone numbers.
     -   Supports auto-detection of CV attachments and phone number normalization.
