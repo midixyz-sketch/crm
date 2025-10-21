@@ -96,7 +96,7 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
   // Send message mutation
   const sendMessageMutation = useMutation({
     mutationFn: async ({ to, text }: { to: string; text: string }) => {
-      return await apiRequest('POST', '/api/whatsapp/send-message', { to, message: text });
+      return await apiRequest('POST', '/api/whatsapp/send', { to, text });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/whatsapp/messages'] });
