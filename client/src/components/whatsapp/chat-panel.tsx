@@ -458,6 +458,80 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
                 <p className="text-sm text-gray-500">{selectedChat.remoteJid}</p>
               </div>
               <div className="flex gap-1 items-center">
+                {/* Quick Actions - Tags */}
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => setTagsDialogOpen(true)}
+                        className="h-8 w-8 bg-yellow-100 hover:bg-yellow-200 dark:bg-yellow-900 dark:hover:bg-yellow-800 text-yellow-700 dark:text-yellow-300"
+                        data-testid="button-tags"
+                      >
+                        <Tag className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom">
+                      <p>תגיות</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+
+                {/* Quick Actions - Pin */}
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => updateChatMutation.mutate({
+                          id: selectedChat.id,
+                          updates: { isPinned: !selectedChat.isPinned }
+                        })}
+                        className="h-8 w-8 bg-blue-100 hover:bg-blue-200 dark:bg-blue-900 dark:hover:bg-blue-800 text-blue-700 dark:text-blue-300"
+                        data-testid="button-pin"
+                      >
+                        {selectedChat.isPinned ? (
+                          <PinOff className="h-4 w-4" />
+                        ) : (
+                          <Pin className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom">
+                      <p>{selectedChat.isPinned ? 'בטל נעיצה' : 'נעץ למעלה'}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+
+                {/* Quick Actions - Archive */}
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => updateChatMutation.mutate({
+                          id: selectedChat.id,
+                          updates: { isArchived: !selectedChat.isArchived }
+                        })}
+                        className="h-8 w-8 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300"
+                        data-testid="button-archive"
+                      >
+                        {selectedChat.isArchived ? (
+                          <ArchiveRestore className="h-4 w-4" />
+                        ) : (
+                          <ArchiveIcon className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom">
+                      <p>{selectedChat.isArchived ? 'בטל ארכיון' : 'ארכב'}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+
                 {/* Search in Chat */}
                 <TooltipProvider>
                   <Tooltip>
