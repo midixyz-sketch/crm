@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { X, Search, Send, Pin, PinOff, Tag, Archive as ArchiveIcon, User, Users, Minimize2, MoreVertical, Trash2, ArchiveRestore, Bell, BellOff, Edit2, Check, CheckCheck, FileText, Image as ImageIcon, Video, Music, Download } from 'lucide-react';
+import { X, Search, Send, Pin, PinOff, Tag, Archive as ArchiveIcon, User, Users, Minimize2, MoreVertical, Trash2, ArchiveRestore, Bell, BellOff, Edit2, Check, CheckCheck, FileText, Image as ImageIcon, Video, Music, Download, Smile } from 'lucide-react';
+import EmojiPicker, { EmojiClickData } from 'emoji-picker-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
@@ -57,6 +58,7 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedChat, setSelectedChat] = useState<Chat | null>(null);
   const [newMessage, setNewMessage] = useState('');
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [activeTab, setActiveTab] = useState<'individual' | 'group' | 'archived'>('group');
   const [selectedTagFilter, setSelectedTagFilter] = useState<string | null>(null);
   const [tagsDialogOpen, setTagsDialogOpen] = useState(false);
@@ -104,6 +106,12 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
       return response.json();
     },
   });
+
+  // Handle emoji selection
+  const handleEmojiClick = (emojiData: EmojiClickData) => {
+    setNewMessage(prev => prev + emojiData.emoji);
+    setShowEmojiPicker(false);
+  };
 
   // Send message mutation
   const sendMessageMutation = useMutation({
@@ -730,25 +738,53 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
             </div>
 
             {/* Message Input */}
-            <form onSubmit={handleSendMessage} className="p-3 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
-              <div className="flex gap-2">
-                <Input
-                  value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
-                  placeholder="הקלד הודעה..."
-                  className="flex-1"
-                  data-testid="input-message"
-                />
-                <Button
-                  type="submit"
-                  disabled={!newMessage.trim() || sendMessageMutation.isPending}
-                  className="bg-green-500 hover:bg-green-600"
-                  data-testid="button-send-message"
-                >
-                  <Send className="h-5 w-5" />
-                </Button>
-              </div>
-            </form>
+            <div className="relative">
+              {/* Emoji Picker */}
+              {showEmojiPicker && (
+                <div className="absolute bottom-full left-0 mb-2 z-50">
+                  <EmojiPicker
+                    onEmojiClick={handleEmojiClick}
+                    searchPlaceHolder="חפש אימוג'י..."
+                    width={350}
+                    height={400}
+                  />
+                </div>
+              )}
+              
+              <form onSubmit={handleSendMessage} className="p-3 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
+                <div className="flex gap-2 items-center">
+                  {/* Emoji Button */}
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                    className="flex-shrink-0"
+                    data-testid="button-emoji"
+                  >
+                    <Smile className="h-5 w-5 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300" />
+                  </Button>
+                  
+                  <Input
+                    value={newMessage}
+                    onChange={(e) => setNewMessage(e.target.value)}
+                    placeholder="הקלד הודעה..."
+                    className="flex-1"
+                    data-testid="input-message"
+                    onFocus={() => setShowEmojiPicker(false)}
+                  />
+                  
+                  <Button
+                    type="submit"
+                    disabled={!newMessage.trim() || sendMessageMutation.isPending}
+                    className="bg-green-500 hover:bg-green-600 flex-shrink-0"
+                    data-testid="button-send-message"
+                  >
+                    <Send className="h-5 w-5" />
+                  </Button>
+                </div>
+              </form>
+            </div>
           </>
         )}
       </div>
