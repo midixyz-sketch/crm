@@ -1022,14 +1022,20 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
                     
                     if (uploadResponse.ok) {
                       const contentType = uploadResponse.headers.get('content-type');
+                      console.log('✅ Upload successful, content-type:', contentType);
                       if (contentType && contentType.includes('application/json')) {
                         const result = await uploadResponse.json();
+                        console.log('📄 Received candidate data:', result);
                         toast({ title: 'מועמד נוצר בהצלחה עם מספר הטלפון!' });
                         setLinkPhoneDialog(null);
                         if (result.id) {
+                          console.log('🚀 Opening candidate page:', result.id);
                           window.open(`/candidates/${result.id}`, '_blank');
+                        } else {
+                          console.warn('⚠️ No candidate ID in response');
                         }
                       } else {
+                        console.warn('⚠️ Response is not JSON, content-type:', contentType);
                         toast({ title: 'מועמד נוצר בהצלחה עם מספר הטלפון!' });
                         setLinkPhoneDialog(null);
                       }
@@ -1078,20 +1084,26 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
                     
                     if (uploadResponse.ok) {
                       const contentType = uploadResponse.headers.get('content-type');
+                      console.log('✅ Upload successful (no phone), content-type:', contentType);
                       if (contentType && contentType.includes('application/json')) {
                         const result = await uploadResponse.json();
+                        console.log('📄 Received candidate data (no phone):', result);
                         toast({ title: 'מועמד נוצר בהצלחה!' });
                         setLinkPhoneDialog(null);
                         if (result.id) {
+                          console.log('🚀 Opening candidate page:', result.id);
                           window.open(`/candidates/${result.id}`, '_blank');
+                        } else {
+                          console.warn('⚠️ No candidate ID in response');
                         }
                       } else {
+                        console.warn('⚠️ Response is not JSON (no phone), content-type:', contentType);
                         toast({ title: 'מועמד נוצר בהצלחה!' });
                         setLinkPhoneDialog(null);
                       }
                     } else {
                       const errorText = await uploadResponse.text();
-                      console.error('Upload error:', errorText);
+                      console.error('Upload error (no phone):', errorText);
                       toast({ title: 'שגיאה ביצירת המועמד', variant: 'destructive' });
                     }
                   } catch (error) {
