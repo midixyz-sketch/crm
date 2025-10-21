@@ -574,11 +574,11 @@ class WhatsAppService {
         mimeType = msg.stickerMessage.mimetype || null;
       }
 
-      // Get sender name
-      const senderName = message.pushName || remoteJid.split('@')[0];
-
-      // Check if we have a candidate with this phone number
+      // Get best available name for this contact
       const phoneNumber = remoteJid.split('@')[0];
+      const senderName = await this.getBestContactName(remoteJid, message.pushName);
+      
+      // Check if we have a candidate with this phone number
       const candidate = await db.query.candidates.findFirst({
         where: eq(candidates.mobile, phoneNumber)
       });
@@ -629,11 +629,14 @@ class WhatsAppService {
           );
         }
       } else {
+        // Get best name for new chat
+        const chatName = await this.getBestContactName(remoteJid, message.pushName);
+        
         await db.insert(whatsappChats).values({
           sessionId: session?.id || null,
           candidateId: candidate?.id || null,
           remoteJid,
-          name: senderName,
+          name: chatName,
           isGroup: remoteJid.endsWith('@g.us'),
           lastMessageAt: timestamp,
           lastMessagePreview: messageText || caption || `[${messageType}]`,
@@ -662,6 +665,60 @@ class WhatsAppService {
       logger.info(`Message saved: ${messageType} from ${senderName}`);
     } catch (error) {
       logger.error(`Error handling incoming message: ${error}`);
+    }
+  }
+
+  /**
+   * Get best available name for a contact
+   * Priority: 1. Candidate name from DB, 2. Contact name/notify from WhatsApp, 3. pushName, 4. Phone number
+   */
+  private async getBestContactName(remoteJid: string, pushName?: string, contact?: any): Promise<string> {
+    try {
+      const phoneNumber = remoteJid.split('@')[0];
+      
+      // Try to get name from candidate database
+      const candidate = await db.query.candidates.findFirst({
+        where: eq(candidates.mobile, phoneNumber)
+      });
+      
+      if (candidate && (candidate.firstName || candidate.lastName)) {
+        const fullName = [candidate.firstName, candidate.lastName].filter(Boolean).join(' ');
+        if (fullName.trim()) {
+          logger.info(`📛 Using candidate name for ${phoneNumber}: ${fullName}`);
+          return fullName;
+        }
+      }
+      
+      // Try contact name from WhatsApp
+      if (contact?.name) {
+        logger.info(`📛 Using contact name for ${phoneNumber}: ${contact.name}`);
+        return contact.name;
+      }
+      
+      // Try notify field from WhatsApp
+      if (contact?.notify) {
+        logger.info(`📛 Using notify name for ${phoneNumber}: ${contact.notify}`);
+        return contact.notify;
+      }
+      
+      // Try verifiedName from WhatsApp Business
+      if (contact?.verifiedName) {
+        logger.info(`📛 Using verified name for ${phoneNumber}: ${contact.verifiedName}`);
+        return contact.verifiedName;
+      }
+      
+      // Try pushName from message
+      if (pushName) {
+        logger.info(`📛 Using pushName for ${phoneNumber}: ${pushName}`);
+        return pushName;
+      }
+      
+      // Fallback to phone number
+      logger.info(`📛 No name found for ${phoneNumber}, using phone number`);
+      return phoneNumber;
+    } catch (error) {
+      logger.error(`Error getting contact name: ${error}`);
+      return remoteJid.split('@')[0];
     }
   }
 
@@ -697,8 +754,15 @@ class WhatsAppService {
           // Get contact name from contacts list
           const contact = contacts.find((c: any) => c.id === remoteJid);
           const phoneNumber = remoteJid.split('@')[0];
-          const defaultName = isGroup ? `קבוצה ${phoneNumber}` : phoneNumber;
-          const chatName = chat.name || contact?.name || contact?.notify || defaultName;
+          
+          // For groups, use chat name if available
+          let chatName: string;
+          if (isGroup) {
+            chatName = chat.name || `קבוצה ${phoneNumber}`;
+          } else {
+            // For individual chats, use best available name
+            chatName = await this.getBestContactName(remoteJid, undefined, contact);
+          }
 
           // Check if chat already exists
           const existingChat = await db.query.whatsappChats.findFirst({

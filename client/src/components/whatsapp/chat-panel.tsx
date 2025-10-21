@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { X, Search, Send, Pin, PinOff, Tag, Archive as ArchiveIcon, User, Users, Minimize2, MoreVertical, Trash2, ArchiveRestore, Bell, BellOff } from 'lucide-react';
+import { X, Search, Send, Pin, PinOff, Tag, Archive as ArchiveIcon, User, Users, Minimize2, MoreVertical, Trash2, ArchiveRestore, Bell, BellOff, Edit2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
@@ -55,6 +55,8 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
   const [selectedTagFilter, setSelectedTagFilter] = useState<string | null>(null);
   const [tagsDialogOpen, setTagsDialogOpen] = useState(false);
   const [newTag, setNewTag] = useState('');
+  const [editNameDialogOpen, setEditNameDialogOpen] = useState(false);
+  const [editedName, setEditedName] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
@@ -202,6 +204,31 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
         tags: currentTags.filter(t => t !== tag),
       },
     });
+  };
+
+  // Handle edit name
+  const handleEditName = async () => {
+    if (!selectedChat || !editedName.trim()) return;
+    
+    try {
+      await updateChatMutation.mutateAsync({
+        id: selectedChat.id,
+        updates: {
+          name: editedName.trim(),
+        },
+      });
+      setEditNameDialogOpen(false);
+      toast({
+        title: "שם עודכן בהצלחה",
+        description: `השם שונה ל-"${editedName.trim()}"`,
+      });
+    } catch (error) {
+      toast({
+        title: "שגיאה בעדכון שם",
+        description: "לא הצלחנו לעדכן את השם. נסה שוב.",
+        variant: "destructive",
+      });
+    }
   };
 
   if (!isOpen) return null;
@@ -432,9 +459,32 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
                 <AvatarFallback></AvatarFallback>
               </Avatar>
               <div className="flex-1">
-                <h3 className="font-semibold" data-testid="text-selected-chat-name">
-                  {selectedChat.name}
-                </h3>
+                <div className="flex items-center gap-2">
+                  <h3 className="font-semibold" data-testid="text-selected-chat-name">
+                    {selectedChat.name}
+                  </h3>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-6 w-6 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                          onClick={() => {
+                            setEditedName(selectedChat.name);
+                            setEditNameDialogOpen(true);
+                          }}
+                          data-testid="button-edit-name-header"
+                        >
+                          <Edit2 className="h-3 w-3" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom">
+                        <p>ערוך שם</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
                 <p className="text-sm text-muted-foreground">{selectedChat.remoteJid}</p>
               </div>
               <div className="flex gap-1">
@@ -620,6 +670,44 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
           <DialogFooter>
             <Button variant="outline" onClick={() => setTagsDialogOpen(false)}>
               סגור
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Name Dialog */}
+      <Dialog open={editNameDialogOpen} onOpenChange={setEditNameDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>ערוך שם איש קשר</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium">שם</label>
+              <Input
+                value={editedName}
+                onChange={(e) => setEditedName(e.target.value)}
+                placeholder="הזן שם לאיש הקשר..."
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleEditName();
+                  }
+                }}
+                className="mt-1"
+                data-testid="input-edit-name"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                מספר טלפון: {selectedChat?.remoteJid}
+              </p>
+            </div>
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setEditNameDialogOpen(false)}>
+              ביטול
+            </Button>
+            <Button onClick={handleEditName} disabled={!editedName.trim()}>
+              שמור
             </Button>
           </DialogFooter>
         </DialogContent>
