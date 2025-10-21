@@ -360,7 +360,7 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
                           <div className="flex-1 min-w-0 pr-3">
                             <div className="flex items-center justify-between gap-2">
                               <div className="flex items-center gap-2 flex-1 min-w-0">
-                                <p className="font-medium truncate">{chat.name || chat.remoteJid}</p>
+                                <p className="font-medium truncate">{chat.name || chat.remoteJid.split('@')[0]}</p>
                                 {chat.isPinned && <Pin className="h-4 w-4 text-amber-500 flex-shrink-0" />}
                               </div>
                               {chat.unreadCount > 0 && (
@@ -484,7 +484,7 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
                     </Tooltip>
                   </TooltipProvider>
                 </div>
-                <p className="text-sm text-muted-foreground">{selectedChat.remoteJid}</p>
+                <p className="text-sm text-muted-foreground">{selectedChat.remoteJid.split('@')[0]}</p>
               </div>
               <div className="flex gap-1">
                 <TooltipProvider>
