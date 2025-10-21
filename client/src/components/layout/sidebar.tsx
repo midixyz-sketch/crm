@@ -20,7 +20,7 @@ export default function Sidebar() {
     queryKey: ["/api/auth/user"],
   });
 
-  const isExternalRecruiter = currentUser?.userRoles?.some((ur: any) => ur.role?.type === "external_recruiter");
+  const isExternalRecruiter = (currentUser as any)?.userRoles?.some((ur: any) => ur.role?.type === "external_recruiter");
 
   // Build navigation based on permissions
   const navigation = [
@@ -47,7 +47,7 @@ export default function Sidebar() {
   ];
 
   // WhatsApp status query - always enabled when dialog is open
-  const { data: whatsappStatus, refetch: refetchStatus, isLoading } = useQuery({
+  const { data: whatsappStatus, refetch: refetchStatus, isLoading } = useQuery<any>({
     queryKey: ['/api/whatsapp/status'],
     refetchInterval: whatsappDialogOpen ? 3000 : false,
     enabled: whatsappDialogOpen,
@@ -56,7 +56,7 @@ export default function Sidebar() {
 
   const handleInitializeWhatsApp = async () => {
     try {
-      await apiRequest('/api/whatsapp/initialize', {
+      await fetch('/api/whatsapp/initialize', {
         method: 'POST',
       });
       refetchStatus();
@@ -75,7 +75,7 @@ export default function Sidebar() {
 
   const handleDisconnect = async () => {
     try {
-      await apiRequest('/api/whatsapp/logout', {
+      await fetch('/api/whatsapp/logout', {
         method: 'POST',
       });
       refetchStatus();
