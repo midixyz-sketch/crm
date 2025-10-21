@@ -516,7 +516,7 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
             </div>
 
             {/* Messages Area */}
-            <ScrollArea className="flex-1 p-4 bg-gray-50 dark:bg-gray-800">
+            <div className="relative overflow-hidden flex-1 p-4 bg-gray-50 dark:bg-gray-800">
               {messagesLoading ? (
                 <div className="text-center py-8">טוען הודעות...</div>
               ) : (
@@ -554,7 +554,7 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
                   <div ref={messagesEndRef} />
                 </div>
               )}
-            </ScrollArea>
+            </div>
 
             {/* Message Input */}
             <form onSubmit={handleSendMessage} className="p-3 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
