@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { X, Search, Send, Pin, PinOff, Tag, Archive as ArchiveIcon, User, Users, Minimize2, MoreVertical, Trash2, ArchiveRestore, Bell, BellOff, Edit2, Check, CheckCheck } from 'lucide-react';
+import { X, Search, Send, Pin, PinOff, Tag, Archive as ArchiveIcon, User, Users, Minimize2, MoreVertical, Trash2, ArchiveRestore, Bell, BellOff, Edit2, Check, CheckCheck, FileText, Image as ImageIcon, Video, Music, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
@@ -44,6 +44,10 @@ interface Message {
   messageText: string;
   messageType: string;
   fileName?: string;
+  mediaUrl?: string;
+  caption?: string;
+  mimeType?: string;
+  fileSize?: number;
   timestamp: string;
   deliveryStatus?: 'sent' | 'delivered' | 'read';
   isRead?: boolean;
@@ -599,7 +603,106 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
                             {message.senderName}
                           </p>
                         )}
-                        <p className="text-sm">{message.messageText}</p>
+                        
+                        {/* Message Content based on type */}
+                        {message.messageType === 'text' && (
+                          <p className="text-sm whitespace-pre-wrap break-words">{message.messageText}</p>
+                        )}
+                        
+                        {message.messageType === 'image' && (
+                          <div className="space-y-2">
+                            {message.mediaUrl ? (
+                              <img 
+                                src={message.mediaUrl} 
+                                alt={message.caption || 'תמונה'} 
+                                className="max-w-xs rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
+                                onClick={() => window.open(message.mediaUrl, '_blank')}
+                              />
+                            ) : (
+                              <div className="flex items-center gap-2 p-2 bg-gray-100 dark:bg-gray-600 rounded">
+                                <ImageIcon className="w-5 h-5" />
+                                <span className="text-sm">תמונה</span>
+                              </div>
+                            )}
+                            {message.caption && (
+                              <p className="text-sm whitespace-pre-wrap break-words">{message.caption}</p>
+                            )}
+                          </div>
+                        )}
+                        
+                        {message.messageType === 'document' && (
+                          <div className="flex items-center gap-3 p-3 bg-gray-100 dark:bg-gray-600 rounded-lg">
+                            <FileText className="w-6 h-6 flex-shrink-0" />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium truncate">{message.fileName || 'מסמך'}</p>
+                              {message.fileSize && (
+                                <p className="text-xs opacity-70">
+                                  {(message.fileSize / 1024).toFixed(1)} KB
+                                </p>
+                              )}
+                            </div>
+                            {message.mediaUrl && (
+                              <a 
+                                href={message.mediaUrl} 
+                                download={message.fileName}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex-shrink-0"
+                              >
+                                <Download className="w-5 h-5" />
+                              </a>
+                            )}
+                          </div>
+                        )}
+                        
+                        {message.messageType === 'video' && (
+                          <div className="space-y-2">
+                            {message.mediaUrl ? (
+                              <video 
+                                src={message.mediaUrl} 
+                                controls 
+                                className="max-w-xs rounded-lg"
+                              />
+                            ) : (
+                              <div className="flex items-center gap-2 p-2 bg-gray-100 dark:bg-gray-600 rounded">
+                                <Video className="w-5 h-5" />
+                                <span className="text-sm">וידאו</span>
+                              </div>
+                            )}
+                            {message.caption && (
+                              <p className="text-sm whitespace-pre-wrap break-words">{message.caption}</p>
+                            )}
+                          </div>
+                        )}
+                        
+                        {message.messageType === 'audio' && (
+                          <div className="flex items-center gap-3 p-2 bg-gray-100 dark:bg-gray-600 rounded-lg">
+                            <Music className="w-5 h-5" />
+                            {message.mediaUrl ? (
+                              <audio src={message.mediaUrl} controls className="flex-1" />
+                            ) : (
+                              <span className="text-sm">הודעת קול</span>
+                            )}
+                          </div>
+                        )}
+                        
+                        {message.messageType === 'sticker' && (
+                          <div className="flex items-center gap-2">
+                            {message.mediaUrl ? (
+                              <img 
+                                src={message.mediaUrl} 
+                                alt="מדבקה" 
+                                className="w-24 h-24"
+                              />
+                            ) : (
+                              <span className="text-sm">מדבקה</span>
+                            )}
+                          </div>
+                        )}
+                        
+                        {!['text', 'image', 'document', 'video', 'audio', 'sticker'].includes(message.messageType) && (
+                          <p className="text-sm opacity-70">[{message.messageType}]</p>
+                        )}
                         <div className="flex items-center gap-1 justify-end mt-1">
                           <span className="text-xs opacity-70">
                             {message.timestamp && !isNaN(new Date(message.timestamp).getTime()) 

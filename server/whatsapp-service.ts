@@ -7,7 +7,8 @@ import makeWASocket, {
   WAMessage,
   proto,
   Browsers,
-  BaileysEventMap
+  BaileysEventMap,
+  downloadMediaMessage
 } from '@whiskeysockets/baileys';
 import { Boom } from '@hapi/boom';
 import QRCode from 'qrcode';
@@ -520,6 +521,66 @@ class WhatsAppService {
   }
 
   /**
+   * Download and save media from WhatsApp message
+   */
+  private async downloadAndSaveMedia(message: WAMessage): Promise<string | null> {
+    try {
+      const buffer = await downloadMediaMessage(
+        message,
+        'buffer',
+        {},
+        {
+          logger: logger as any,
+          reuploadRequest: this.state.socket!.updateMediaMessage
+        }
+      );
+
+      if (!buffer) return null;
+
+      // Create unique filename
+      const timestamp = Date.now();
+      const msg = message.message!;
+      let extension = 'bin';
+      
+      if (msg.imageMessage) {
+        extension = msg.imageMessage.mimetype?.split('/')[1] || 'jpg';
+      } else if (msg.documentMessage) {
+        const originalName = msg.documentMessage.fileName || '';
+        const parts = originalName.split('.');
+        if (parts.length > 1) {
+          extension = parts[parts.length - 1];
+        } else {
+          extension = msg.documentMessage.mimetype?.split('/')[1] || 'pdf';
+        }
+      } else if (msg.videoMessage) {
+        extension = msg.videoMessage.mimetype?.split('/')[1] || 'mp4';
+      } else if (msg.audioMessage) {
+        extension = msg.audioMessage.mimetype?.split('/')[1] || 'mp3';
+      } else if (msg.stickerMessage) {
+        extension = 'webp';
+      }
+
+      const filename = `whatsapp_${timestamp}.${extension}`;
+      const filepath = path.join('uploads', 'whatsapp-media', filename);
+      
+      // Ensure directory exists
+      const dir = path.dirname(filepath);
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+      }
+
+      // Save file
+      fs.writeFileSync(filepath, buffer);
+      
+      // Return relative URL
+      return `/uploads/whatsapp-media/${filename}`;
+    } catch (error) {
+      logger.error(`Failed to download media: ${error}`);
+      return null;
+    }
+  }
+
+  /**
    * Handle incoming WhatsApp message
    */
   private async handleIncomingMessage(message: WAMessage): Promise<void> {
@@ -554,24 +615,34 @@ class WhatsAppService {
         caption = msg.imageMessage.caption || null;
         mimeType = msg.imageMessage.mimetype || null;
         fileSize = Number(msg.imageMessage.fileLength) || null;
+        // Download image
+        mediaUrl = await this.downloadAndSaveMedia(message);
       } else if (msg.documentMessage) {
         messageType = 'document';
         fileName = msg.documentMessage.fileName || null;
         caption = msg.documentMessage.caption || null;
         mimeType = msg.documentMessage.mimetype || null;
         fileSize = Number(msg.documentMessage.fileLength) || null;
+        // Download document
+        mediaUrl = await this.downloadAndSaveMedia(message);
       } else if (msg.audioMessage) {
         messageType = 'audio';
         mimeType = msg.audioMessage.mimetype || null;
         fileSize = Number(msg.audioMessage.fileLength) || null;
+        // Download audio
+        mediaUrl = await this.downloadAndSaveMedia(message);
       } else if (msg.videoMessage) {
         messageType = 'video';
         caption = msg.videoMessage.caption || null;
         mimeType = msg.videoMessage.mimetype || null;
         fileSize = Number(msg.videoMessage.fileLength) || null;
+        // Download video
+        mediaUrl = await this.downloadAndSaveMedia(message);
       } else if (msg.stickerMessage) {
         messageType = 'sticker';
         mimeType = msg.stickerMessage.mimetype || null;
+        // Download sticker
+        mediaUrl = await this.downloadAndSaveMedia(message);
       }
 
       // Get best available name for this contact
