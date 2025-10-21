@@ -193,8 +193,8 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
   return (
     <div className="fixed inset-0 bg-white dark:bg-gray-900 z-40 flex flex-row-reverse" dir="rtl" data-testid="whatsapp-chat-panel">
       {/* Right Side - Chats List */}
-      <div className="w-80 border-l border-gray-200 dark:border-gray-700 flex flex-col bg-background">
-        <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-[#008069] text-white">
+      <div className="w-80 border-l border-gray-200 dark:border-gray-700 flex flex-col bg-background h-screen">
+        <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-[#008069] text-white flex-shrink-0">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Avatar className="h-10 w-10">
@@ -224,8 +224,8 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
         </div>
 
         {/* Tabs */}
-        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="flex-1 flex flex-col">
-          <TabsList className="grid w-full grid-cols-3 bg-gray-100 dark:bg-gray-800 rounded-none">
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="flex-1 flex flex-col min-h-0">
+          <TabsList className="grid w-full grid-cols-3 bg-gray-100 dark:bg-gray-800 rounded-none flex-shrink-0">
             <TabsTrigger value="individual" className="gap-2">
               <User className="h-4 w-4" />
               <span>צ'אטים</span>
@@ -240,9 +240,9 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value={activeTab} className="flex-1 flex flex-col mt-0">
+          <TabsContent value={activeTab} className="flex-1 flex flex-col mt-0 min-h-0">
             {/* Search */}
-            <div className="p-3 border-b border-gray-200 dark:border-gray-700">
+            <div className="p-3 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
               <div className="relative">
                 <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                 <Input
@@ -257,7 +257,7 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
 
             {/* Tag Filters */}
             {allTags.length > 0 && (
-              <div className="p-3 border-b border-gray-200 dark:border-gray-700">
+              <div className="p-3 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
                 <div className="flex flex-wrap gap-2">
                   <Badge
                     variant={selectedTagFilter === null ? "default" : "outline"}
@@ -289,7 +289,7 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
             )}
 
             {/* Chats List */}
-            <ScrollArea className="flex-1">
+            <ScrollArea className="flex-1 overflow-y-auto">
               {chatsLoading ? (
                 <div className="text-center py-8">טוען שיחות...</div>
               ) : filteredChats.length === 0 ? (
