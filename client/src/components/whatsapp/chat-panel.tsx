@@ -91,12 +91,13 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
     mutationFn: async ({ id, updates }: { id: string; updates: Partial<Chat> }) => {
       return await apiRequest('PATCH', `/api/whatsapp/chats/${id}`, updates);
     },
-    onSuccess: (data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['/api/whatsapp/chats'] });
-      // Update selectedChat if it was the one that was updated
+    onSuccess: async (data, variables) => {
+      // Update selectedChat immediately if it was the one that was updated
       if (selectedChat && selectedChat.id === variables.id) {
         setSelectedChat({ ...selectedChat, ...variables.updates });
       }
+      // Wait for the query to refresh so the list updates
+      await queryClient.invalidateQueries({ queryKey: ['/api/whatsapp/chats'] });
     },
   });
 
@@ -293,126 +294,128 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
             )}
 
             {/* Chats List */}
-            <ScrollArea className="flex-1 overflow-y-auto">
-              {chatsLoading ? (
-                <div className="text-center py-8">טוען שיחות...</div>
-              ) : filteredChats.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  {searchQuery || selectedTagFilter ? 'לא נמצאו שיחות' : 'אין שיחות פעילות'}
-                </div>
-              ) : (
-                <div>
-                  {filteredChats.map((chat) => (
-                    <div key={chat.id} className="relative">
-                      <button
-                        onClick={() => setSelectedChat(chat)}
-                        className={cn(
-                          "w-full flex items-center gap-3 p-3 hover:bg-gray-50 dark:hover:bg-gray-800 border-b border-gray-200 dark:border-gray-700 text-right transition-colors",
-                          selectedChat?.id === chat.id && "bg-gray-100 dark:bg-gray-800"
-                        )}
-                        data-testid={`chat-${chat.id}`}
-                      >
-                        <Avatar className="h-12 w-12">
-                          <AvatarImage src={chat.profilePicUrl} />
-                          <AvatarFallback className="bg-green-500 text-white"></AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between mb-1">
-                            <div className="flex items-center gap-2">
-                              <p className="font-medium text-sm truncate">{chat.name}</p>
-                              {chat.isPinned && <Pin className="h-3 w-3 text-amber-500" />}
-                            </div>
-                            <span className="text-xs text-gray-500">
-                              {chat.lastMessageAt
-                                ? format(new Date(chat.lastMessageAt), 'HH:mm', { locale: he })
-                                : ''}
-                            </span>
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <p className="text-sm text-gray-500 truncate">
-                              {chat.lastMessagePreview}
-                            </p>
-                            {chat.unreadCount > 0 && (
-                              <span className="bg-green-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center flex-shrink-0">
-                                {chat.unreadCount}
+            <ScrollArea className="flex-1">
+              <div className="h-full">
+                {chatsLoading ? (
+                  <div className="text-center py-8">טוען שיחות...</div>
+                ) : filteredChats.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    {searchQuery || selectedTagFilter ? 'לא נמצאו שיחות' : 'אין שיחות פעילות'}
+                  </div>
+                ) : (
+                  <div>
+                    {filteredChats.map((chat) => (
+                      <div key={chat.id} className="relative">
+                        <button
+                          onClick={() => setSelectedChat(chat)}
+                          className={cn(
+                            "w-full flex items-center gap-3 p-3 hover:bg-gray-50 dark:hover:bg-gray-800 border-b border-gray-200 dark:border-gray-700 text-right transition-colors",
+                            selectedChat?.id === chat.id && "bg-gray-100 dark:bg-gray-800"
+                          )}
+                          data-testid={`chat-${chat.id}`}
+                        >
+                          <Avatar className="h-12 w-12">
+                            <AvatarImage src={chat.profilePicUrl} />
+                            <AvatarFallback className="bg-green-500 text-white"></AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between mb-1">
+                              <div className="flex items-center gap-2">
+                                <p className="font-medium text-sm truncate">{chat.name}</p>
+                                {chat.isPinned && <Pin className="h-3 w-3 text-amber-500" />}
+                              </div>
+                              <span className="text-xs text-gray-500">
+                                {chat.lastMessageAt
+                                  ? format(new Date(chat.lastMessageAt), 'HH:mm', { locale: he })
+                                  : ''}
                               </span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <p className="text-sm text-gray-500 truncate">
+                                {chat.lastMessagePreview}
+                              </p>
+                              {chat.unreadCount > 0 && (
+                                <span className="bg-green-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center flex-shrink-0">
+                                  {chat.unreadCount}
+                                </span>
+                              )}
+                            </div>
+                            {(chat.tags || []).length > 0 && (
+                              <div className="flex flex-wrap gap-1 mt-1">
+                                {chat.tags!.map(tag => (
+                                  <Badge key={tag} variant="secondary" className="text-xs">
+                                    {tag}
+                                  </Badge>
+                                ))}
+                              </div>
                             )}
                           </div>
-                          {(chat.tags || []).length > 0 && (
-                            <div className="flex flex-wrap gap-1 mt-1">
-                              {chat.tags!.map(tag => (
-                                <Badge key={tag} variant="secondary" className="text-xs">
-                                  {tag}
-                                </Badge>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      </button>
-                      
-                      {/* Pin and Tags buttons */}
-                      <div className="absolute bottom-2 left-2 flex gap-1">
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                className={cn(
-                                  "h-[30px] w-[30px]",
-                                  chat.isPinned 
-                                    ? "bg-amber-400 dark:bg-amber-600 text-white hover:bg-amber-500 dark:hover:bg-amber-500" 
-                                    : "bg-amber-200 dark:bg-amber-800 text-amber-800 dark:text-amber-200 hover:bg-amber-300 dark:hover:bg-amber-700"
-                                )}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  updateChatMutation.mutate({
-                                    id: chat.id,
-                                    updates: { isPinned: !chat.isPinned }
-                                  });
-                                }}
-                                data-testid={`button-pin-${chat.id}`}
-                              >
-                                {chat.isPinned ? (
-                                  <PinOff className="w-[10px] h-[10px]" />
-                                ) : (
-                                  <Pin className="w-[10px] h-[10px]" />
-                                )}
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent side="bottom">
-                              <p>{chat.isPinned ? 'בטל נעיצת שיחה' : 'נעץ שיחה למעלה'}</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
+                        </button>
+                        
+                        {/* Pin and Tags buttons */}
+                        <div className="absolute bottom-2 left-2 flex gap-1">
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className={cn(
+                                    "h-[30px] w-[30px]",
+                                    chat.isPinned 
+                                      ? "bg-amber-400 dark:bg-amber-600 text-white hover:bg-amber-500 dark:hover:bg-amber-500" 
+                                      : "bg-amber-200 dark:bg-amber-800 text-amber-800 dark:text-amber-200 hover:bg-amber-300 dark:hover:bg-amber-700"
+                                  )}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    updateChatMutation.mutate({
+                                      id: chat.id,
+                                      updates: { isPinned: !chat.isPinned }
+                                    });
+                                  }}
+                                  data-testid={`button-pin-${chat.id}`}
+                                >
+                                  {chat.isPinned ? (
+                                    <PinOff className="w-[10px] h-[10px]" />
+                                  ) : (
+                                    <Pin className="w-[10px] h-[10px]" />
+                                  )}
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent side="bottom">
+                                <p>{chat.isPinned ? 'בטל נעיצת שיחה' : 'נעץ שיחה למעלה'}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
 
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                className="h-[30px] w-[30px] bg-blue-500 dark:bg-blue-600 text-white hover:bg-blue-600 dark:hover:bg-blue-500"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setSelectedChat(chat);
-                                  setTagsDialogOpen(true);
-                                }}
-                                data-testid={`button-tags-${chat.id}`}
-                              >
-                                <Tag className="w-[10px] h-[10px]" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent side="bottom">
-                              <p>נהל תגיות למיון ושיוך</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className="h-[30px] w-[30px] bg-blue-500 dark:bg-blue-600 text-white hover:bg-blue-600 dark:hover:bg-blue-500"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedChat(chat);
+                                    setTagsDialogOpen(true);
+                                  }}
+                                  data-testid={`button-tags-${chat.id}`}
+                                >
+                                  <Tag className="w-[10px] h-[10px]" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent side="bottom">
+                                <p>נהל תגיות למיון ושיוך</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </div>
                       </div>
-                    </div>
                   ))}
-                </div>
-              )}
+                  </div>
+                )}
+              </div>
             </ScrollArea>
           </TabsContent>
         </Tabs>
