@@ -419,7 +419,6 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
           <div className="flex-1 flex items-center justify-center bg-gray-50 dark:bg-gray-800">
             <div className="text-center text-gray-500">
               <p className="text-lg">בחר שיחה כדי להתחיל</p>
-              <p className="text-sm mt-2">כל השיחות שלך מופיעות בצד ימין</p>
             </div>
           </div>
         ) : (
