@@ -5752,6 +5752,8 @@ ${recommendation}
       const limit = parseInt(req.query.limit as string) || 100;
       const tab = req.query.tab as string || 'individual';
 
+      console.log(`📋 Fetching chats - tab: "${tab}", limit: ${limit}`);
+
       // Build where conditions based on tab
       let whereConditions;
       if (tab === 'group') {
@@ -5760,15 +5762,18 @@ ${recommendation}
           eq(whatsappChats.isGroup, true),
           eq(whatsappChats.isArchived, false)
         );
+        console.log('🔍 Filtering: isGroup=true, isArchived=false');
       } else if (tab === 'archived') {
         // Archived chats (both groups and individuals)
         whereConditions = eq(whatsappChats.isArchived, true);
+        console.log('🔍 Filtering: isArchived=true');
       } else {
         // Individual chats (not groups, not archived)
         whereConditions = and(
           eq(whatsappChats.isGroup, false),
           eq(whatsappChats.isArchived, false)
         );
+        console.log('🔍 Filtering: isGroup=false, isArchived=false');
       }
 
       const chats = await db.query.whatsappChats.findMany({
@@ -5776,6 +5781,11 @@ ${recommendation}
         orderBy: [desc(whatsappChats.lastMessageAt)],
         limit,
       });
+
+      console.log(`✅ Returned ${chats.length} chats for tab "${tab}"`);
+      if (chats.length > 0) {
+        console.log(`📊 First chat: ${chats[0].name}, isGroup: ${chats[0].isGroup}`);
+      }
 
       res.json(chats);
     } catch (error) {
