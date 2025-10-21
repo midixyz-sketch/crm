@@ -39,19 +39,17 @@ export function WhatsAppWidget() {
 
   const totalUnread = chats.reduce((sum, chat) => sum + (chat.unreadCount || 0), 0);
 
-  // Show toast when WhatsApp connects/disconnects and auto-open chat panel
+  // Auto-open chat panel when connected, close when disconnected
   useEffect(() => {
-    if (status?.isConnected && status.phoneNumber) {
-      toast({
-        title: 'WhatsApp מחובר',
-        description: `מחובר למספר: ${status.phoneNumber}`,
-        duration: 3000,
-      });
-      // Close connection dialog and open chat panel
+    if (status?.isConnected) {
+      // Connected - close connection dialog and open chat panel
       setConnectionDialogOpen(false);
       setIsPanelOpen(true);
+    } else if (status !== undefined && !status?.isConnected) {
+      // Disconnected - close chat panel immediately
+      setIsPanelOpen(false);
     }
-  }, [status?.isConnected, status?.phoneNumber, toast]);
+  }, [status?.isConnected]);
 
   // Listen for CV file detection
   useEffect(() => {

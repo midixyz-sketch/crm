@@ -58,6 +58,20 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
+  // Check connection status
+  const { data: status } = useQuery<{ isConnected: boolean }>({
+    queryKey: ['/api/whatsapp/status'],
+    enabled: isOpen,
+    refetchInterval: 3000,
+  });
+
+  // Close panel immediately when disconnected
+  useEffect(() => {
+    if (isOpen && status !== undefined && !status?.isConnected) {
+      onClose();
+    }
+  }, [status?.isConnected, isOpen, onClose]);
+
   // Fetch chats
   const { data: chats = [], isLoading: chatsLoading } = useQuery<Chat[]>({
     queryKey: ['/api/whatsapp/chats'],
