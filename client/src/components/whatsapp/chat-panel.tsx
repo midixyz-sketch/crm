@@ -314,17 +314,17 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
                           )}
                           data-testid={`chat-${chat.id}`}
                         >
-                          <Avatar className="h-12 w-12">
+                          <Avatar className="h-12 w-12 flex-shrink-0">
                             <AvatarImage src={chat.profilePicUrl} />
                             <AvatarFallback className="bg-green-500 text-white"></AvatarFallback>
                           </Avatar>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center justify-between mb-1">
-                              <div className="flex items-center gap-2">
+                          <div className="flex-1 min-w-0 pr-3">
+                            <div className="flex items-center justify-between mb-1 gap-2">
+                              <div className="flex items-center gap-2 flex-1 min-w-0">
                                 <p className="font-medium text-sm truncate">{chat.name}</p>
-                                {chat.isPinned && <Pin className="h-3 w-3 text-amber-500" />}
+                                {chat.isPinned && <Pin className="h-3 w-3 text-amber-500 flex-shrink-0" />}
                               </div>
-                              <span className="text-xs text-gray-500">
+                              <span className="text-xs text-gray-500 flex-shrink-0 whitespace-nowrap">
                                 {chat.lastMessageAt
                                   ? format(new Date(chat.lastMessageAt), 'HH:mm', { locale: he })
                                   : ''}
