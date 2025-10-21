@@ -1116,7 +1116,9 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
                     // Create form data with phone number
                     const formData = new FormData();
                     formData.append('cv', file);
-                    formData.append('phoneNumber', linkPhoneDialog.phoneNumber);
+                    formData.append('mobile', linkPhoneDialog.phoneNumber);
+                    formData.append('firstName', 'ממתין');
+                    formData.append('lastName', 'לעדכון');
                     console.log('📦 FormData created with phone number:', linkPhoneDialog.phoneNumber);
                     
                     console.log('⬆️ STEP 2: Uploading to /api/candidates...');
@@ -1193,6 +1195,8 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
                     // Create form data WITHOUT phone number
                     const formData = new FormData();
                     formData.append('cv', file);
+                    formData.append('firstName', 'ממתין');
+                    formData.append('lastName', 'לעדכון');
                     console.log('📦 FormData created WITHOUT phone number');
                     
                     console.log('⬆️ STEP 2: Uploading to /api/candidates...');
