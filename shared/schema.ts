@@ -707,7 +707,8 @@ export const whatsappMessages = pgTable("whatsapp_messages", {
   fileSize: integer("file_size"), // file size in bytes
   caption: text("caption"), // caption for media
   timestamp: timestamp("timestamp").notNull(), // when message was sent/received
-  isRead: boolean("is_read").default(false), // read status
+  deliveryStatus: varchar("delivery_status").default('sent'), // sent, delivered, read
+  isRead: boolean("is_read").default(false), // read status (deprecated - use deliveryStatus)
   metadata: jsonb("metadata"), // additional message data
   createdAt: timestamp("created_at").defaultNow(),
 }, (table) => [
