@@ -50,7 +50,7 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedChat, setSelectedChat] = useState<Chat | null>(null);
   const [newMessage, setNewMessage] = useState('');
-  const [activeTab, setActiveTab] = useState<'individual' | 'group' | 'archived'>('individual');
+  const [activeTab, setActiveTab] = useState<'individual' | 'group' | 'archived'>('group');
   const [selectedTagFilter, setSelectedTagFilter] = useState<string | null>(null);
   const [tagsDialogOpen, setTagsDialogOpen] = useState(false);
   const [newTag, setNewTag] = useState('');
