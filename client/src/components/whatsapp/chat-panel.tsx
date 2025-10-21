@@ -45,6 +45,7 @@ interface Message {
   messageType: string;
   fileName?: string;
   timestamp: string;
+  deliveryStatus?: 'sent' | 'delivered' | 'read';
   isRead?: boolean;
 }
 
@@ -607,10 +608,12 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
                           </span>
                           {message.fromMe && (
                             <span className="flex-shrink-0">
-                              {message.isRead ? (
+                              {message.deliveryStatus === 'read' ? (
                                 <CheckCheck className="w-4 h-4 text-blue-400" />
-                              ) : (
+                              ) : message.deliveryStatus === 'delivered' ? (
                                 <CheckCheck className="w-4 h-4 opacity-70" />
+                              ) : (
+                                <Check className="w-4 h-4 opacity-70" />
                               )}
                             </span>
                           )}

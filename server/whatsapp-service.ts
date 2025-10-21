@@ -604,7 +604,8 @@ class WhatsAppService {
         fileSize,
         caption,
         timestamp,
-        isRead: fromMe,
+        deliveryStatus: fromMe ? 'sent' : 'delivered', // Outgoing starts as 'sent', incoming is 'delivered'
+        isRead: fromMe ? false : false,
       });
 
       // Update or create chat
@@ -920,7 +921,8 @@ class WhatsAppService {
         messageType: 'text',
         messageText: text,
         timestamp: new Date(),
-        isRead: true,
+        deliveryStatus: 'sent', // Start with 'sent', will update to 'delivered' when we get receipt
+        isRead: false,
       });
 
       return true;
