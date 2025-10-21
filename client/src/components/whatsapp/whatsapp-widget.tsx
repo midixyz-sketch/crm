@@ -65,13 +65,21 @@ export function WhatsAppWidget() {
     };
   }, []);
 
-  const handleFloatingButtonClick = () => {
+  const handleFloatingButtonClick = async () => {
     // If WhatsApp is connected, open chat panel
-    // If not connected, open connection dialog
+    // If not connected, initialize and open connection dialog with QR
     if (status?.isConnected) {
       setIsPanelOpen(!isPanelOpen);
     } else {
+      // Auto-initialize WhatsApp to show QR code directly
       setConnectionDialogOpen(true);
+      if (!status?.qrCode) {
+        try {
+          await apiRequest('POST', '/api/whatsapp/initialize', {});
+        } catch (error) {
+          // Silent - dialog will show the state
+        }
+      }
     }
   };
 
@@ -166,17 +174,10 @@ export function WhatsAppWidget() {
                 </div>
               </div>
             ) : (
-              <div className="text-center space-y-4">
-                <p className="text-sm text-gray-600">
-                  חבר את WhatsApp שלך למערכת
-                </p>
-                <Button
-                  onClick={handleInitializeWhatsApp}
-                  className="w-full bg-green-600 hover:bg-green-700"
-                  data-testid="button-initialize-whatsapp"
-                >
-                  התחל חיבור WhatsApp
-                </Button>
+              <div className="text-center space-y-4 py-8">
+                <div className="w-16 h-16 border-4 border-green-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
+                <p className="text-sm text-gray-600">מאתחל את WhatsApp...</p>
+                <p className="text-xs text-gray-500">מייצר קוד QR</p>
               </div>
             )}
           </div>
