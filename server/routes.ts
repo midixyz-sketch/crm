@@ -5546,6 +5546,26 @@ ${recommendation}
     }
   });
 
+  // POST /api/whatsapp/reconnect - Reconnect WhatsApp to resync chats
+  app.post('/api/whatsapp/reconnect', isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      console.log('🔄 Reconnecting WhatsApp to resync chats...');
+      
+      // Logout first
+      await whatsappService.logout();
+      await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds
+      
+      // Initialize again
+      await safeWhatsAppInit(user.id);
+      
+      res.json({ message: 'WhatsApp מתחבר מחדש' });
+    } catch (error) {
+      console.error('שגיאה בחיבור מחדש:', error);
+      res.status(500).json({ message: 'שגיאה בחיבור מחדש' });
+    }
+  });
+
   // POST /api/whatsapp/send - Send a WhatsApp message
   app.post('/api/whatsapp/send', isAuthenticated, async (req, res) => {
     try {
