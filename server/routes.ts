@@ -5754,9 +5754,14 @@ ${recommendation}
 
       // Build where conditions based on tab
       let whereConditions;
-      if (tab === 'groups') {
-        whereConditions = eq(whatsappChats.isGroup, true);
+      if (tab === 'group') {
+        // Groups only (not archived)
+        whereConditions = and(
+          eq(whatsappChats.isGroup, true),
+          eq(whatsappChats.isArchived, false)
+        );
       } else if (tab === 'archived') {
+        // Archived chats (both groups and individuals)
         whereConditions = eq(whatsappChats.isArchived, true);
       } else {
         // Individual chats (not groups, not archived)
