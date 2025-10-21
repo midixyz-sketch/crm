@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { X, Search, Send, Pin, PinOff, Tag, Archive as ArchiveIcon, User, Users, Minimize2, MoreVertical, Trash2, ArchiveRestore, Bell, BellOff, Edit2, Check, CheckCheck, FileText, Image as ImageIcon, Video, Music, Download, Smile } from 'lucide-react';
+import { X, Search, Send, Pin, PinOff, Tag, Archive as ArchiveIcon, User, Users, Minimize2, MoreVertical, Trash2, ArchiveRestore, Bell, BellOff, Edit2, Check, CheckCheck, FileText, Image as ImageIcon, Video, Music, Download, Smile, Phone, UserPlus } from 'lucide-react';
 import EmojiPicker, { EmojiClickData } from 'emoji-picker-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -65,7 +65,8 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
   const [newTag, setNewTag] = useState('');
   const [editNameDialogOpen, setEditNameDialogOpen] = useState(false);
   const [editedName, setEditedName] = useState('');
-  const [fileActionDialog, setFileActionDialog] = useState<{ open: boolean; fileUrl: string; fileName: string; candidateId?: string } | null>(null);
+  const [fileActionDialog, setFileActionDialog] = useState<{ open: boolean; fileUrl: string; fileName: string; candidateId?: string; phoneNumber?: string } | null>(null);
+  const [linkPhoneDialog, setLinkPhoneDialog] = useState<{ open: boolean; fileUrl: string; fileName: string; phoneNumber: string } | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
@@ -629,7 +630,8 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
                                   open: true, 
                                   fileUrl: message.mediaUrl!, 
                                   fileName: 'תמונה.jpg',
-                                  candidateId: selectedChat?.candidateId
+                                  candidateId: selectedChat?.candidateId,
+                                  phoneNumber: selectedChat?.remoteJid
                                 })}
                                 data-testid="image-media"
                               />
@@ -658,7 +660,8 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
                               open: true, 
                               fileUrl: message.mediaUrl, 
                               fileName: message.fileName || 'מסמך',
-                              candidateId: selectedChat?.candidateId
+                              candidateId: selectedChat?.candidateId,
+                              phoneNumber: selectedChat?.remoteJid
                             })}
                             data-testid="document-media"
                           >
@@ -936,20 +939,28 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
               ) : (
                 <Button 
                   onClick={() => {
-                    toast({ 
-                      title: 'לא נמצא מועמד', 
-                      description: 'אין מועמד מקושר לצ\'אט זה',
-                      variant: 'destructive' 
-                    });
-                    setFileActionDialog(null);
+                    if (fileActionDialog?.phoneNumber && fileActionDialog?.fileUrl) {
+                      setLinkPhoneDialog({
+                        open: true,
+                        fileUrl: fileActionDialog.fileUrl,
+                        fileName: fileActionDialog.fileName,
+                        phoneNumber: fileActionDialog.phoneNumber
+                      });
+                      setFileActionDialog(null);
+                    } else {
+                      toast({ 
+                        title: 'לא ניתן ליצור מועמד', 
+                        description: 'חסר מספר טלפון או קובץ',
+                        variant: 'destructive' 
+                      });
+                    }
                   }}
                   variant="outline"
                   className="w-full"
-                  disabled
-                  data-testid="button-no-candidate"
+                  data-testid="button-create-candidate"
                 >
                   <User className="ml-2 h-4 w-4" />
-                  אין מועמד מקושר
+                  צור כרטיס מועמד חדש
                 </Button>
               )}
             </div>
@@ -959,6 +970,124 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
               variant="ghost" 
               onClick={() => setFileActionDialog(null)}
               data-testid="button-cancel-file-action"
+            >
+              ביטול
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Link Phone Number Dialog */}
+      <Dialog open={linkPhoneDialog?.open || false} onOpenChange={(open) => !open && setLinkPhoneDialog(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>קישור מספר טלפון למועמד</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <p className="text-sm text-muted-foreground text-center">
+              האם לקשר את מספר הטלפון מהשיחה למועמד החדש?
+            </p>
+            <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg">
+              <p className="text-sm font-medium text-center">
+                מספר טלפון: {linkPhoneDialog?.phoneNumber}
+              </p>
+              <p className="text-xs text-muted-foreground text-center mt-1">
+                קובץ: {linkPhoneDialog?.fileName}
+              </p>
+            </div>
+            <div className="flex flex-col gap-3">
+              <Button 
+                onClick={async () => {
+                  if (!linkPhoneDialog?.fileUrl) return;
+                  
+                  try {
+                    // Download file from server
+                    const response = await fetch(linkPhoneDialog.fileUrl);
+                    const blob = await response.blob();
+                    const file = new File([blob], linkPhoneDialog.fileName, { type: blob.type });
+                    
+                    // Create form data with phone number
+                    const formData = new FormData();
+                    formData.append('cv', file);
+                    formData.append('phoneNumber', linkPhoneDialog.phoneNumber);
+                    
+                    // Upload and create candidate
+                    const uploadResponse = await fetch('/api/candidates/upload', {
+                      method: 'POST',
+                      body: formData,
+                    });
+                    
+                    if (uploadResponse.ok) {
+                      const result = await uploadResponse.json();
+                      toast({ title: 'מועמד נוצר בהצלחה עם מספר הטלפון!' });
+                      setLinkPhoneDialog(null);
+                      if (result.id) {
+                        window.open(`/candidates/${result.id}`, '_blank');
+                      }
+                    } else {
+                      toast({ title: 'שגיאה ביצירת המועמד', variant: 'destructive' });
+                    }
+                  } catch (error) {
+                    console.error('Error creating candidate:', error);
+                    toast({ title: 'שגיאה ביצירת המועמד', variant: 'destructive' });
+                  }
+                }}
+                className="w-full"
+                data-testid="button-link-phone-yes"
+              >
+                <Phone className="ml-2 h-4 w-4" />
+                כן, קשר את מספר הטלפון
+              </Button>
+              
+              <Button 
+                onClick={async () => {
+                  if (!linkPhoneDialog?.fileUrl) return;
+                  
+                  try {
+                    // Download file from server
+                    const response = await fetch(linkPhoneDialog.fileUrl);
+                    const blob = await response.blob();
+                    const file = new File([blob], linkPhoneDialog.fileName, { type: blob.type });
+                    
+                    // Create form data WITHOUT phone number
+                    const formData = new FormData();
+                    formData.append('cv', file);
+                    
+                    // Upload and create candidate
+                    const uploadResponse = await fetch('/api/candidates/upload', {
+                      method: 'POST',
+                      body: formData,
+                    });
+                    
+                    if (uploadResponse.ok) {
+                      const result = await uploadResponse.json();
+                      toast({ title: 'מועמד נוצר בהצלחה!' });
+                      setLinkPhoneDialog(null);
+                      if (result.id) {
+                        window.open(`/candidates/${result.id}`, '_blank');
+                      }
+                    } else {
+                      toast({ title: 'שגיאה ביצירת המועמד', variant: 'destructive' });
+                    }
+                  } catch (error) {
+                    console.error('Error creating candidate:', error);
+                    toast({ title: 'שגיאה ביצירת המועמד', variant: 'destructive' });
+                  }
+                }}
+                variant="outline"
+                className="w-full"
+                data-testid="button-link-phone-no"
+              >
+                <UserPlus className="ml-2 h-4 w-4" />
+                לא, צור מועמד ללא מספר
+              </Button>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button 
+              variant="ghost" 
+              onClick={() => setLinkPhoneDialog(null)}
+              data-testid="button-cancel-link-phone"
             >
               ביטול
             </Button>
