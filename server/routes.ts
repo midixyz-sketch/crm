@@ -5740,6 +5740,31 @@ ${recommendation}
     }
   });
 
+  // PATCH /api/whatsapp/chats/:id - Update a chat
+  app.patch('/api/whatsapp/chats/:id', isAuthenticated, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const updates = req.body;
+
+      const [updatedChat] = await db.update(whatsappChats)
+        .set({
+          ...updates,
+          updatedAt: new Date(),
+        })
+        .where(eq(whatsappChats.id, id))
+        .returning();
+
+      if (!updatedChat) {
+        return res.status(404).json({ message: 'צ\'אט לא נמצא' });
+      }
+
+      res.json(updatedChat);
+    } catch (error) {
+      console.error('שגיאה בעדכון צ\'אט:', error);
+      res.status(500).json({ message: 'שגיאה בעדכון צ\'אט' });
+    }
+  });
+
   // POST /api/whatsapp/sync-groups - Sync WhatsApp groups to candidates
   app.post('/api/whatsapp/sync-groups', isAuthenticated, async (req, res) => {
     try {
@@ -5850,6 +5875,43 @@ ${recommendation}
     } catch (error) {
       console.error('שגיאה בקבלת תמונת פרופיל:', error);
       res.status(404).json({ profilePicUrl: null });
+    }
+  });
+
+  // POST /api/whatsapp/sync-profile-pictures - Sync profile pictures for all chats
+  app.post('/api/whatsapp/sync-profile-pictures', isAuthenticated, async (req, res) => {
+    try {
+      const allChats = await db.query.whatsappChats.findMany();
+      
+      let updatedCount = 0;
+      let failedCount = 0;
+
+      for (const chat of allChats) {
+        try {
+          // Get profile picture URL from WhatsApp
+          const profilePicUrl = await whatsappService.getProfilePicture(chat.remoteJid);
+          
+          if (profilePicUrl) {
+            await db.update(whatsappChats)
+              .set({ profilePicUrl, updatedAt: new Date() })
+              .where(eq(whatsappChats.id, chat.id));
+            updatedCount++;
+          }
+        } catch (error) {
+          console.error(`Failed to get profile picture for ${chat.remoteJid}:`, error);
+          failedCount++;
+        }
+      }
+
+      res.json({
+        message: `סונכרנו תמונות פרופיל`,
+        total: allChats.length,
+        updated: updatedCount,
+        failed: failedCount,
+      });
+    } catch (error) {
+      console.error('שגיאה בסנכרון תמונות פרופיל:', error);
+      res.status(500).json({ message: 'שגיאה בסנכרון תמונות פרופיל' });
     }
   });
 
