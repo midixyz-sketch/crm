@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { X, Search, Send, Pin, PinOff, Tag, Archive as ArchiveIcon, User, Users, Minimize2, MoreVertical, Trash2, ArchiveRestore, Bell, BellOff, Edit2 } from 'lucide-react';
+import { X, Search, Send, Pin, PinOff, Tag, Archive as ArchiveIcon, User, Users, Minimize2, MoreVertical, Trash2, ArchiveRestore, Bell, BellOff, Edit2, Check, CheckCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
@@ -45,6 +45,7 @@ interface Message {
   messageType: string;
   fileName?: string;
   timestamp: string;
+  isRead?: boolean;
 }
 
 export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
@@ -598,11 +599,22 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
                           </p>
                         )}
                         <p className="text-sm">{message.messageText}</p>
-                        <span className="text-xs opacity-70 mt-1 block text-left">
-                          {message.timestamp && !isNaN(new Date(message.timestamp).getTime()) 
-                            ? format(new Date(message.timestamp), 'HH:mm', { locale: he })
-                            : ''}
-                        </span>
+                        <div className="flex items-center gap-1 justify-end mt-1">
+                          <span className="text-xs opacity-70">
+                            {message.timestamp && !isNaN(new Date(message.timestamp).getTime()) 
+                              ? format(new Date(message.timestamp), 'HH:mm', { locale: he })
+                              : ''}
+                          </span>
+                          {message.fromMe && (
+                            <span className="flex-shrink-0">
+                              {message.isRead ? (
+                                <CheckCheck className="w-4 h-4 text-blue-400" />
+                              ) : (
+                                <CheckCheck className="w-4 h-4 opacity-70" />
+                              )}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
                   ))}
