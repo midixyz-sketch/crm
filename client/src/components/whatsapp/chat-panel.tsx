@@ -394,6 +394,20 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
                                 </span>
                               )}
                             </div>
+                            {/* Tags Display */}
+                            {chat.tags && chat.tags.length > 0 && (
+                              <div className="flex flex-wrap gap-1 mt-1">
+                                {chat.tags.map((tag, idx) => (
+                                  <Badge 
+                                    key={idx} 
+                                    variant="secondary" 
+                                    className="text-[10px] px-1.5 py-0 h-4 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300"
+                                  >
+                                    {tag}
+                                  </Badge>
+                                ))}
+                              </div>
+                            )}
                           </div>
                         </button>
                         
