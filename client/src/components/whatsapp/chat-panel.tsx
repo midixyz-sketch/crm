@@ -596,7 +596,7 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
                                   size="icon"
                                   variant="ghost"
                                   className={cn(
-                                    "h-[33px] w-[33px]",
+                                    "h-[30px] w-[30px]",
                                     chat.isPinned 
                                       ? "bg-amber-400 dark:bg-amber-600 text-white hover:bg-amber-500 dark:hover:bg-amber-500" 
                                       : "bg-amber-200 dark:bg-amber-800 text-amber-800 dark:text-amber-200 hover:bg-amber-300 dark:hover:bg-amber-700"
@@ -611,9 +611,9 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
                                   data-testid={`button-pin-${chat.id}`}
                                 >
                                   {chat.isPinned ? (
-                                    <PinOff className="w-[11px] h-[11px]" />
+                                    <PinOff className="w-[10px] h-[10px]" />
                                   ) : (
-                                    <Pin className="w-[11px] h-[11px]" />
+                                    <Pin className="w-[10px] h-[10px]" />
                                   )}
                                 </Button>
                               </TooltipTrigger>
@@ -629,7 +629,7 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
                                 <Button
                                   size="icon"
                                   variant="ghost"
-                                  className="h-[33px] w-[33px] bg-blue-500 dark:bg-blue-600 text-white hover:bg-blue-600 dark:hover:bg-blue-500"
+                                  className="h-[30px] w-[30px] bg-blue-500 dark:bg-blue-600 text-white hover:bg-blue-600 dark:hover:bg-blue-500"
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     setSelectedChat(chat);
@@ -637,7 +637,7 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
                                   }}
                                   data-testid={`button-tags-${chat.id}`}
                                 >
-                                  <Tag className="w-[11px] h-[11px]" />
+                                  <Tag className="w-[10px] h-[10px]" />
                                 </Button>
                               </TooltipTrigger>
                               <TooltipContent side="bottom">
