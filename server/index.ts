@@ -3,6 +3,10 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { setupAuth } from "./localAuth";
+import { whatsappService } from "./whatsapp-service";
+import { db } from "./db";
+import { whatsappSessions } from "@shared/schema";
+import { desc } from "drizzle-orm";
 
 const app = express();
 app.use(express.json());
@@ -70,8 +74,23 @@ app.use((req, res, next) => {
     port,
     host: "0.0.0.0",
     reusePort: true,
-  }, () => {
+  }, async () => {
     log(`serving on port ${port}`);
     console.log('✅ שרת מקומי פועל ללא תלות בשירותים חיצוניים');
+    
+    // Auto-initialize WhatsApp if there's an existing session
+    try {
+      const existingSession = await db.query.whatsappSessions.findFirst({
+        orderBy: [desc(whatsappSessions.createdAt)]
+      });
+      
+      if (existingSession && existingSession.userId) {
+        console.log('🔄 מאתחל חיבור WhatsApp אוטומטי...');
+        await whatsappService.initialize(existingSession.userId);
+        console.log('✅ WhatsApp מחובר אוטומטית');
+      }
+    } catch (error) {
+      console.log('ℹ️ WhatsApp לא אותחל אוטומטית:', error);
+    }
   });
 })();
