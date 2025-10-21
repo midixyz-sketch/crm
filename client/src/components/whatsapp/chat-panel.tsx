@@ -91,8 +91,12 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
     mutationFn: async ({ id, updates }: { id: string; updates: Partial<Chat> }) => {
       return await apiRequest('PATCH', `/api/whatsapp/chats/${id}`, updates);
     },
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['/api/whatsapp/chats'] });
+      // Update selectedChat if it was the one that was updated
+      if (selectedChat && selectedChat.id === variables.id) {
+        setSelectedChat({ ...selectedChat, ...variables.updates });
+      }
     },
   });
 
