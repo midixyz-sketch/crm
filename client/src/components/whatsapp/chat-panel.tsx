@@ -206,34 +206,36 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
 
   return (
     <div className="fixed inset-0 bg-white dark:bg-gray-900 z-40 flex h-screen" dir="rtl" data-testid="whatsapp-chat-panel">
+      {/* Minimize Button - Top Left Corner */}
+      <div className="fixed top-4 left-4 z-50">
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="default"
+                size="lg"
+                onClick={onClose}
+                className="bg-green-500 hover:bg-green-600 text-white rounded-full h-14 w-14 p-0 shadow-lg hover:scale-110 transition-all"
+                data-testid="button-close-panel"
+              >
+                <Minimize2 className="h-7 w-7" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">
+              <p>מזעור</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      </div>
+
       {/* Right Side - Chats List */}
       <div className="w-80 border-l border-gray-200 dark:border-gray-700 flex flex-col bg-background h-full">
         <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-[#008069] text-white flex-shrink-0">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Avatar className="h-10 w-10">
-                <AvatarFallback className="bg-white/20 text-white">WA</AvatarFallback>
-              </Avatar>
-              <h2 className="text-lg font-semibold">WhatsApp</h2>
-            </div>
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={onClose}
-                    className="text-white hover:bg-white/10 rounded-full h-10 w-10 p-0"
-                    data-testid="button-close-panel"
-                  >
-                    <Minimize2 className="h-5 w-5" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom">
-                  <p>מזעור</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+          <div className="flex items-center gap-3">
+            <Avatar className="h-10 w-10">
+              <AvatarFallback className="bg-white/20 text-white">WA</AvatarFallback>
+            </Avatar>
+            <h2 className="text-lg font-semibold">WhatsApp</h2>
           </div>
         </div>
 

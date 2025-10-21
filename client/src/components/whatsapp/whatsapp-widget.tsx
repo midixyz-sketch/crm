@@ -123,11 +123,14 @@ export function WhatsAppWidget() {
 
   return (
     <>
-      <WhatsAppFloatingButton
-        onClick={handleFloatingButtonClick}
-        hasNewMessages={totalUnread > 0}
-        messageCount={totalUnread}
-      />
+      {/* Only show floating button when panel is closed */}
+      {!isPanelOpen && (
+        <WhatsAppFloatingButton
+          onClick={handleFloatingButtonClick}
+          hasNewMessages={totalUnread > 0}
+          messageCount={totalUnread}
+        />
+      )}
       
       {/* Connection Dialog */}
       <Dialog open={connectionDialogOpen} onOpenChange={setConnectionDialogOpen}>
