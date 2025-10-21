@@ -48,10 +48,13 @@ Preferred communication style: Simple, everyday language.
 -   **WhatsApp Web Integration**: Embedded WhatsApp functionality within the CRM via `@whiskeysockets/baileys`.
     -   Features include QR code connection, full chat page with individual/group/archived tabs, profile pictures, pin/unpin chats, tagging, search/filters, message bubbles, real-time updates, and full RTL support.
     -   **RTL Layout**: Chat list positioned on the right side, active chat on the left side (proper Hebrew RTL layout using flexbox without flex-row-reverse).
+    -   **Full-Screen Chat Interface**: Full-screen overlay (z-40) with prominent minimize button (64x64px, green, top-center) positioned below main navbar.
+    -   **Chat Header**: Displays avatar, contact name, WhatsApp number, and three action buttons (Pin-amber, Tags-blue, Archive-slate) when chat is selected.
     -   Includes a singleton pattern for stable connections, a floating button with unread counts, and intelligent chat synchronization.
     -   Message sending from candidate pages, automatic status updates, event logging, and chat linking based on phone numbers.
     -   Supports auto-detection of CV attachments and phone number normalization.
     -   Robust reconnection logic and comprehensive error handling prioritize stability.
+    -   Interface positioned with padding-top to avoid navbar overlap, ensuring all UI elements are visible.
 
 # External Dependencies
 
