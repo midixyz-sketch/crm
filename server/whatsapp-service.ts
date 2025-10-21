@@ -330,7 +330,12 @@ class WhatsAppService {
       // Handle chats sync - Import existing chats when connected
       socket.ev.on('chats.set', async ({ chats }) => {
         try {
-          logger.info(`Syncing ${chats.length} chats from WhatsApp`);
+          logger.info(`📥 chats.set: Received ${chats.length} chats from WhatsApp`);
+          
+          // Log details about chat types
+          const groupChats = chats.filter(c => c.id.endsWith('@g.us'));
+          const individualChats = chats.filter(c => c.id.endsWith('@s.whatsapp.net'));
+          logger.info(`📊 Chat breakdown: ${groupChats.length} groups, ${individualChats.length} individual chats`);
           
           const session = await db.query.whatsappSessions.findFirst({
             where: eq(whatsappSessions.sessionId, this.state.sessionId!)
@@ -729,6 +734,15 @@ class WhatsAppService {
    */
   private async updateChatProfilePicture(remoteJid: string): Promise<void> {
     try {
+      // Add delay to ensure socket is fully ready
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Double-check connection before fetching
+      if (!this.state.socket || !this.state.isConnected) {
+        logger.warn(`Skipping profile picture for ${remoteJid} - not connected`);
+        return;
+      }
+      
       // Fetch profile picture in background
       const profilePicUrl = await this.getProfilePicture(remoteJid);
       
@@ -738,11 +752,13 @@ class WhatsAppService {
           .set({ profilePicUrl, updatedAt: new Date() })
           .where(eq(whatsappChats.remoteJid, remoteJid));
         
-        logger.info(`Updated profile picture for ${remoteJid}`);
+        logger.info(`✅ Updated profile picture for ${remoteJid}`);
+      } else {
+        logger.info(`ℹ️ No profile picture available for ${remoteJid}`);
       }
     } catch (error) {
       // Don't throw - just log the error so chat operations continue
-      logger.error(`Failed to update profile picture for ${remoteJid}: ${error}`);
+      logger.error(`❌ Failed to update profile picture for ${remoteJid}: ${error}`);
     }
   }
 

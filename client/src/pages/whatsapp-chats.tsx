@@ -188,6 +188,27 @@ export default function WhatsAppChats() {
     },
   });
 
+  const reconnectMutation = useMutation({
+    mutationFn: async () => {
+      return await apiRequest("POST", "/api/whatsapp/reconnect", {});
+    },
+    onSuccess: () => {
+      toast({
+        title: "מתחבר מחדש",
+        description: "WhatsApp מתחבר מחדש לסנכרון צ'אטים",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/whatsapp/status"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/whatsapp/chats"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "שגיאה בחיבור מחדש",
+        description: error.message || "לא ניתן להתחבר מחדש",
+        variant: "destructive",
+      });
+    },
+  });
+
   const updateChatMutation = useMutation({
     mutationFn: async ({ id, updates }: { id: string; updates: Partial<WhatsAppChat> }) => {
       return await apiRequest("PATCH", `/api/whatsapp/chats/${id}`, updates);
@@ -382,6 +403,28 @@ export default function WhatsAppChats() {
             {whatsappStatus?.phoneNumber && (
               <span className="text-sm text-muted-foreground">{whatsappStatus.phoneNumber}</span>
             )}
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => reconnectMutation.mutate()}
+                    disabled={reconnectMutation.isPending}
+                    data-testid="button-reconnect"
+                  >
+                    {reconnectMutation.isPending ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <RefreshCw className="h-4 w-4" />
+                    )}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>חיבור מחדש לסנכרון צ'אטים</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
         </div>
       </div>
