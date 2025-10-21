@@ -93,7 +93,10 @@ export async function getUserPermissions(userId: string): Promise<UserPermission
           permissions.canViewAllJobs = false;
           permissions.roleType = 'external_recruiter';
           permissions.restrictedPages = ['dashboard', 'candidates', 'clients', 'calendar', 'interviews', 'emails', 'settings', 'users', 'analytics', 'reports'];
-          // רכז חיצוני רואה רק jobs ו-add_candidate
+          
+          // טען משרות מוקצות לרכז חיצוני
+          const assignments = await storage.getJobAssignments(userId);
+          permissions.allowedJobIds = assignments.map(a => a.jobId);
           break;
           
         case 'user':

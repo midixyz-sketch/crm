@@ -1280,6 +1280,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         candidateData.recruitmentSource = username;
       }
       
+      // בדיקת requiresApproval לרכזים חיצוניים
+      let requiresApproval = false;
+      const userPermissions = await getUserPermissions(req.user!.id);
+      const isExternalRecruiter = userPermissions.roleType === 'external_recruiter';
+      
+      if (isExternalRecruiter) {
+        // בדוק אם המשתמש דורש אישור
+        const recruiterUser = await storage.getUserById(req.user!.id);
+        requiresApproval = recruiterUser?.requiresApproval || false;
+        
+        // אם דורש אישור, סמן את המועמד בהתאם
+        if (requiresApproval) {
+          candidateData.status = 'pending_approval';
+        }
+      }
+      
       const candidate = await storage.createCandidate(candidateData);
       
       // Determine if this was a WhatsApp upload (check if we extracted data from CV with placeholder values)
@@ -1290,18 +1306,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.addCandidateEvent({
         candidateId: candidate.id,
         eventType: 'created',
-        description: isWhatsAppUpload 
-          ? `מועמד הועלה דרך ממשק ווצאפ על ידי ${userName}`
-          : `מועמד נוצר ידנית על ידי ${userName}`,
+        description: requiresApproval 
+          ? `מועמד הועלה על ידי רכז חיצוני ומחכה לאישור מנהל - ${userName}`
+          : isWhatsAppUpload 
+            ? `מועמד הועלה דרך ממשק ווצאפ על ידי ${userName}`
+            : `מועמד נוצר ידנית על ידי ${userName}`,
         metadata: {
           source: isWhatsAppUpload ? 'whatsapp_upload' : 'manual_entry',
           createdByUsername: candidateData.recruitmentSource,
           userName: userName,
           cvUploaded: !!candidateData.cvPath,
+          requiresApproval: requiresApproval,
+          isExternalRecruiter: isExternalRecruiter,
           timestamp: new Date().toISOString()
         },
         createdBy: req.user?.id || null
       });
+      
+      // Log external recruiter activity
+      if (isExternalRecruiter) {
+        await storage.logExternalActivity({
+          userId: req.user!.id,
+          activityType: 'candidate_uploaded',
+          description: requiresApproval 
+            ? 'העלאת מועמד - ממתין לאישור'
+            : 'העלאת מועמד',
+          metadata: {
+            candidateId: candidate.id,
+            candidateName: `${candidate.firstName} ${candidate.lastName}`,
+            requiresApproval: requiresApproval,
+            jobId: jobId || null
+          }
+        });
+      }
       
       // Create job application automatically if jobId is provided
       if (jobId) {
@@ -2750,6 +2787,103 @@ ${extractedData.achievements ? `הישגים ופעילות נוספת: ${cleanS
     } catch (error) {
       console.error("Error deleting job application:", error);
       res.status(500).json({ message: "Failed to delete job application" });
+    }
+  });
+
+  // Job Assignment routes (External Recruiters)
+  app.get('/api/job-assignments', isAuthenticated, async (req, res) => {
+    try {
+      // בדיקת הרשאות: רק super admin יכול לראות את כל ההקצאות
+      const userPermissions = await getUserPermissions(req.user!.id);
+      const isSuperAdmin = userPermissions.roleType === 'super_admin';
+      
+      let userId = req.query.userId as string | undefined;
+      const jobId = req.query.jobId as string | undefined;
+      
+      // רכזים חיצוניים רואים רק את ההקצאות שלהם
+      if (!isSuperAdmin) {
+        userId = req.user!.id;
+      }
+      
+      const assignments = await storage.getJobAssignments(userId, jobId);
+      res.json(assignments);
+    } catch (error) {
+      console.error("Error fetching job assignments:", error);
+      res.status(500).json({ message: "Failed to fetch job assignments" });
+    }
+  });
+
+  app.get('/api/users/:userId/job-assignments', isAuthenticated, async (req, res) => {
+    try {
+      // בדיקת הרשאות: רק super admin או המשתמש עצמו יכולים לראות את ההקצאות
+      const userPermissions = await getUserPermissions(req.user!.id);
+      const isSuperAdmin = userPermissions.roleType === 'super_admin';
+      const requestedUserId = req.params.userId;
+      
+      if (!isSuperAdmin && req.user!.id !== requestedUserId) {
+        return res.status(403).json({ message: "Forbidden: Cannot view other users' assignments" });
+      }
+      
+      const assignments = await storage.getJobAssignmentsForUser(requestedUserId);
+      res.json(assignments);
+    } catch (error) {
+      console.error("Error fetching user job assignments:", error);
+      res.status(500).json({ message: "Failed to fetch user job assignments" });
+    }
+  });
+
+  app.post('/api/job-assignments', isAuthenticated, requireRole('super_admin'), async (req, res) => {
+    try {
+      const assignmentData = {
+        userId: req.body.userId,
+        jobId: req.body.jobId,
+        assignedBy: req.user!.id,
+        commission: req.body.commission || null,
+        isActive: true
+      };
+      
+      const assignment = await storage.createJobAssignment(assignmentData);
+      
+      // Log activity
+      await storage.logExternalActivity({
+        userId: assignmentData.userId,
+        activityType: 'job_assigned',
+        description: `משרה הוקצתה לרכז`,
+        metadata: {
+          jobId: assignmentData.jobId,
+          assignedBy: req.user!.id,
+          commission: assignmentData.commission
+        }
+      });
+      
+      res.status(201).json(assignment);
+    } catch (error) {
+      console.error("Error creating job assignment:", error);
+      res.status(500).json({ message: "Failed to create job assignment" });
+    }
+  });
+
+  app.delete('/api/job-assignments/:id', isAuthenticated, requireRole('super_admin'), async (req, res) => {
+    try {
+      await storage.deleteJobAssignment(req.params.id);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting job assignment:", error);
+      res.status(500).json({ message: "Failed to delete job assignment" });
+    }
+  });
+
+  // External Activity Log routes
+  app.get('/api/external-activity-logs', isAuthenticated, requireRole('super_admin'), async (req, res) => {
+    try {
+      const userId = req.query.userId as string | undefined;
+      const limit = parseInt(req.query.limit as string) || 100;
+      
+      const logs = await storage.getExternalActivityLogs(userId, limit);
+      res.json(logs);
+    } catch (error) {
+      console.error("Error fetching external activity logs:", error);
+      res.status(500).json({ message: "Failed to fetch activity logs" });
     }
   });
 
