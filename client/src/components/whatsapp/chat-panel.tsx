@@ -13,6 +13,8 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { queryClient, apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
+import { format } from 'date-fns';
+import { he } from 'date-fns/locale';
 
 interface WhatsAppChatPanelProps {
   isOpen: boolean;
