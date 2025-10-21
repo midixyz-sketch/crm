@@ -629,13 +629,20 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
                                 src={message.mediaUrl} 
                                 alt={message.caption || 'תמונה'} 
                                 className="max-w-xs rounded-lg cursor-pointer hover:opacity-90 transition-opacity hover:ring-2 hover:ring-green-500"
-                                onClick={() => setFileActionDialog({ 
-                                  open: true, 
-                                  fileUrl: message.mediaUrl!, 
-                                  fileName: 'תמונה.jpg',
-                                  candidateId: selectedChat?.candidateId,
-                                  phoneNumber: selectedChat?.remoteJid
-                                })}
+                                onClick={() => {
+                                  // Extract phone number only for individual chats
+                                  const phoneNumber = selectedChat?.remoteJid?.includes('@s.whatsapp.net') 
+                                    ? selectedChat.remoteJid.split('@')[0] 
+                                    : undefined;
+                                  
+                                  setFileActionDialog({ 
+                                    open: true, 
+                                    fileUrl: message.mediaUrl!, 
+                                    fileName: 'תמונה.jpg',
+                                    candidateId: selectedChat?.candidateId,
+                                    phoneNumber
+                                  });
+                                }}
                                 data-testid="image-media"
                               />
                             ) : (
@@ -659,13 +666,22 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
                               "flex items-center gap-3 p-3 bg-gray-100 dark:bg-gray-600 rounded-lg",
                               message.mediaUrl && "cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-500 transition-colors"
                             )}
-                            onClick={() => message.mediaUrl && setFileActionDialog({ 
-                              open: true, 
-                              fileUrl: message.mediaUrl, 
-                              fileName: message.fileName || 'מסמך',
-                              candidateId: selectedChat?.candidateId,
-                              phoneNumber: selectedChat?.remoteJid
-                            })}
+                            onClick={() => {
+                              if (!message.mediaUrl) return;
+                              
+                              // Extract phone number only for individual chats
+                              const phoneNumber = selectedChat?.remoteJid?.includes('@s.whatsapp.net') 
+                                ? selectedChat.remoteJid.split('@')[0] 
+                                : undefined;
+                              
+                              setFileActionDialog({ 
+                                open: true, 
+                                fileUrl: message.mediaUrl, 
+                                fileName: message.fileName || 'מסמך',
+                                candidateId: selectedChat?.candidateId,
+                                phoneNumber
+                              });
+                            }}
                             data-testid="document-media"
                           >
                             <FileText className="w-6 h-6 flex-shrink-0" />
@@ -940,42 +956,53 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
               ) : (
                 <Button 
                   onClick={async () => {
-                    if (fileActionDialog?.phoneNumber && fileActionDialog?.fileUrl) {
-                      // Check for duplicate candidate
-                      try {
-                        const response = await fetch('/api/candidates/check-duplicate', {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ mobile: fileActionDialog.phoneNumber }),
-                        });
-                        
-                        if (response.ok) {
-                          const result = await response.json();
-                          if (result.exists) {
-                            // Found duplicate - store it and show in second dialog
-                            setDuplicateCandidate(result.candidate);
-                          } else {
-                            setDuplicateCandidate(null);
-                          }
-                        }
-                      } catch (error) {
-                        console.error('Error checking duplicate:', error);
-                      }
-                      
-                      setLinkPhoneDialog({
-                        open: true,
-                        fileUrl: fileActionDialog.fileUrl,
-                        fileName: fileActionDialog.fileName,
-                        phoneNumber: fileActionDialog.phoneNumber
-                      });
-                      setFileActionDialog(null);
-                    } else {
+                    // Only allow creating candidate if we have a valid phone number (individual chat)
+                    if (!fileActionDialog?.phoneNumber) {
                       toast({ 
                         title: 'לא ניתן ליצור מועמד', 
-                        description: 'חסר מספר טלפון או קובץ',
+                        description: 'אין מספר טלפון - זו שיחת קבוצה או סטטוס',
                         variant: 'destructive' 
                       });
+                      return;
                     }
+                    
+                    if (!fileActionDialog?.fileUrl) {
+                      toast({ 
+                        title: 'לא ניתן ליצור מועמד', 
+                        description: 'חסר קובץ',
+                        variant: 'destructive' 
+                      });
+                      return;
+                    }
+                    
+                    // Check for duplicate candidate
+                    try {
+                      const response = await fetch('/api/candidates/check-duplicate', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ mobile: fileActionDialog.phoneNumber }),
+                      });
+                      
+                      if (response.ok) {
+                        const result = await response.json();
+                        if (result.exists) {
+                          // Found duplicate - store it and show in second dialog
+                          setDuplicateCandidate(result.candidate);
+                        } else {
+                          setDuplicateCandidate(null);
+                        }
+                      }
+                    } catch (error) {
+                      console.error('Error checking duplicate:', error);
+                    }
+                    
+                    setLinkPhoneDialog({
+                      open: true,
+                      fileUrl: fileActionDialog.fileUrl,
+                      fileName: fileActionDialog.fileName,
+                      phoneNumber: fileActionDialog.phoneNumber
+                    });
+                    setFileActionDialog(null);
                   }}
                   variant="outline"
                   className="w-full"
