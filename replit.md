@@ -50,6 +50,9 @@ Preferred communication style: Simple, everyday language.
     -   **RTL Layout**: Chat list positioned on the right side, active chat on the left side (proper Hebrew RTL layout using flexbox without flex-row-reverse).
     -   **Full-Screen Chat Interface**: Full-screen overlay (z-40) with prominent minimize button (64x64px, green, top-center) positioned below main navbar.
     -   **Chat Header**: Displays avatar, contact name, WhatsApp number, and three action buttons (Pin-amber, Tags-blue, Archive-slate) when chat is selected.
+    -   **Message Delivery Status**: WhatsApp-style delivery indicators - single check (sent), double gray check (delivered), double blue check (read).
+    -   **Rich Media Support**: Automatic download and display of images, documents, videos, audio messages, and stickers with preview, playback, and download capabilities.
+    -   **Emoji Picker**: Full emoji selector with search functionality for easy emoji insertion in messages.
     -   Includes a singleton pattern for stable connections, a floating button with unread counts, and intelligent chat synchronization.
     -   Message sending from candidate pages, automatic status updates, event logging, and chat linking based on phone numbers.
     -   Supports auto-detection of CV attachments and phone number normalization.
