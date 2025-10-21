@@ -65,6 +65,7 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
   const [newTag, setNewTag] = useState('');
   const [editNameDialogOpen, setEditNameDialogOpen] = useState(false);
   const [editedName, setEditedName] = useState('');
+  const [fileActionDialog, setFileActionDialog] = useState<{ open: boolean; fileUrl: string; fileName: string; candidateId?: string } | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
@@ -623,8 +624,14 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
                               <img 
                                 src={message.mediaUrl} 
                                 alt={message.caption || 'תמונה'} 
-                                className="max-w-xs rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
-                                onClick={() => window.open(message.mediaUrl, '_blank')}
+                                className="max-w-xs rounded-lg cursor-pointer hover:opacity-90 transition-opacity hover:ring-2 hover:ring-green-500"
+                                onClick={() => setFileActionDialog({ 
+                                  open: true, 
+                                  fileUrl: message.mediaUrl!, 
+                                  fileName: 'תמונה.jpg',
+                                  candidateId: selectedChat?.candidateId
+                                })}
+                                data-testid="image-media"
                               />
                             ) : (
                               <div className="flex items-center gap-2 p-2 bg-gray-100 dark:bg-gray-600 rounded">
@@ -639,7 +646,16 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
                         )}
                         
                         {message.messageType === 'document' && (
-                          <div className="flex items-center gap-3 p-3 bg-gray-100 dark:bg-gray-600 rounded-lg">
+                          <div 
+                            className="flex items-center gap-3 p-3 bg-gray-100 dark:bg-gray-600 rounded-lg cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-500 transition-colors"
+                            onClick={() => message.mediaUrl && setFileActionDialog({ 
+                              open: true, 
+                              fileUrl: message.mediaUrl, 
+                              fileName: message.fileName || 'מסמך',
+                              candidateId: selectedChat?.candidateId
+                            })}
+                            data-testid="document-media"
+                          >
                             <FileText className="w-6 h-6 flex-shrink-0" />
                             <div className="flex-1 min-w-0">
                               <p className="text-sm font-medium truncate">{message.fileName || 'מסמך'}</p>
@@ -649,17 +665,7 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
                                 </p>
                               )}
                             </div>
-                            {message.mediaUrl && (
-                              <a 
-                                href={message.mediaUrl} 
-                                download={message.fileName}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex-shrink-0"
-                              >
-                                <Download className="w-5 h-5" />
-                              </a>
-                            )}
+                            <Download className="w-5 h-5 flex-shrink-0" />
                           </div>
                         )}
                         
@@ -867,6 +873,86 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
             </Button>
             <Button onClick={handleEditName} disabled={!editedName.trim()}>
               שמור
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* File Action Dialog */}
+      <Dialog open={fileActionDialog?.open || false} onOpenChange={(open) => !open && setFileActionDialog(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>פעולה על קובץ</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <p className="text-sm text-muted-foreground text-center">
+              מה ברצונך לעשות עם הקובץ?
+            </p>
+            <p className="text-sm font-medium text-center">
+              {fileActionDialog?.fileName}
+            </p>
+            <div className="flex flex-col gap-3">
+              <Button 
+                onClick={() => {
+                  if (fileActionDialog?.fileUrl) {
+                    const link = document.createElement('a');
+                    link.href = fileActionDialog.fileUrl;
+                    link.download = fileActionDialog.fileName;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    setFileActionDialog(null);
+                    toast({ title: 'הקובץ הורד בהצלחה', variant: 'default' });
+                  }
+                }}
+                className="w-full"
+                data-testid="button-download-file"
+              >
+                <Download className="ml-2 h-4 w-4" />
+                הורד את הקובץ למחשב
+              </Button>
+              
+              {fileActionDialog?.candidateId ? (
+                <Button 
+                  onClick={() => {
+                    window.open(`/candidates/${fileActionDialog.candidateId}`, '_blank');
+                    setFileActionDialog(null);
+                  }}
+                  variant="outline"
+                  className="w-full"
+                  data-testid="button-open-candidate"
+                >
+                  <User className="ml-2 h-4 w-4" />
+                  פתח כרטיס מועמד
+                </Button>
+              ) : (
+                <Button 
+                  onClick={() => {
+                    toast({ 
+                      title: 'לא נמצא מועמד', 
+                      description: 'אין מועמד מקושר לצ\'אט זה',
+                      variant: 'destructive' 
+                    });
+                    setFileActionDialog(null);
+                  }}
+                  variant="outline"
+                  className="w-full"
+                  disabled
+                  data-testid="button-no-candidate"
+                >
+                  <User className="ml-2 h-4 w-4" />
+                  אין מועמד מקושר
+                </Button>
+              )}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button 
+              variant="ghost" 
+              onClick={() => setFileActionDialog(null)}
+              data-testid="button-cancel-file-action"
+            >
+              ביטול
             </Button>
           </DialogFooter>
         </DialogContent>
