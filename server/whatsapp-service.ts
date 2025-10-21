@@ -613,13 +613,22 @@ class WhatsAppService {
       });
 
       if (existingChat) {
+        // Update name if we have a better one (from pushName or candidate)
+        const updateData: any = {
+          lastMessageAt: timestamp,
+          lastMessagePreview: messageText || caption || `[${messageType}]`,
+          unreadCount: fromMe ? 0 : (existingChat.unreadCount || 0) + 1,
+          updatedAt: new Date()
+        };
+        
+        // If chat has no name, or if we have a better name from senderName
+        if (!existingChat.name || (senderName && senderName !== existingChat.name && !senderName.match(/^\d+$/))) {
+          updateData.name = senderName;
+          logger.info(`📝 Updating chat name from "${existingChat.name}" to "${senderName}"`);
+        }
+        
         await db.update(whatsappChats)
-          .set({
-            lastMessageAt: timestamp,
-            lastMessagePreview: messageText || caption || `[${messageType}]`,
-            unreadCount: fromMe ? 0 : (existingChat.unreadCount || 0) + 1,
-            updatedAt: new Date()
-          })
+          .set(updateData)
           .where(eq(whatsappChats.id, existingChat.id));
         
         // Update profile picture if not set
