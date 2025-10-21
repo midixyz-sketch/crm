@@ -439,9 +439,9 @@ export default function WhatsAppChats() {
 
   // Continue in next part...
   return (
-    <div className="h-screen flex flex-row-reverse">
+    <div className="h-screen flex">
       {/* Sidebar - Chat List */}
-      <div className="w-80 border-r flex flex-col bg-background dark:bg-muted/30">
+      <div className="w-80 border-l flex flex-col bg-background dark:bg-muted/30">
         <div className="p-4 border-b bg-background space-y-3">
           <div>
             <h2 className="text-lg font-semibold" data-testid="text-chats-title">שיחות WhatsApp</h2>
