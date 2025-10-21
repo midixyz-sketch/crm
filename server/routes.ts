@@ -6,7 +6,7 @@ import path from "path";
 import fs from "fs";
 import { storage } from "./storage";
 import { db } from "./db";
-import { eq, and, desc, sql, isNotNull } from "drizzle-orm";
+import { eq, and, desc, sql, isNotNull, not } from "drizzle-orm";
 import { isAuthenticated } from "./localAuth";
 import { requireRole, requirePermission, injectUserPermissions } from "./authMiddleware";
 import { 
@@ -5757,23 +5757,28 @@ ${recommendation}
       // Build where conditions based on tab
       let whereConditions;
       if (tab === 'group') {
-        // Groups only (not archived)
+        // Groups only (not archived, not status)
         whereConditions = and(
           eq(whatsappChats.isGroup, true),
-          eq(whatsappChats.isArchived, false)
+          eq(whatsappChats.isArchived, false),
+          not(eq(whatsappChats.remoteJid, 'status@broadcast'))
         );
-        console.log('🔍 Filtering: isGroup=true, isArchived=false');
+        console.log('🔍 Filtering: isGroup=true, isArchived=false, not status');
       } else if (tab === 'archived') {
-        // Archived chats (both groups and individuals)
-        whereConditions = eq(whatsappChats.isArchived, true);
-        console.log('🔍 Filtering: isArchived=true');
+        // Archived chats (both groups and individuals, not status)
+        whereConditions = and(
+          eq(whatsappChats.isArchived, true),
+          not(eq(whatsappChats.remoteJid, 'status@broadcast'))
+        );
+        console.log('🔍 Filtering: isArchived=true, not status');
       } else {
-        // Individual chats (not groups, not archived)
+        // Individual chats (not groups, not archived, not status)
         whereConditions = and(
           eq(whatsappChats.isGroup, false),
-          eq(whatsappChats.isArchived, false)
+          eq(whatsappChats.isArchived, false),
+          not(eq(whatsappChats.remoteJid, 'status@broadcast'))
         );
-        console.log('🔍 Filtering: isGroup=false, isArchived=false');
+        console.log('🔍 Filtering: isGroup=false, isArchived=false, not status');
       }
 
       const chats = await db.query.whatsappChats.findMany({
