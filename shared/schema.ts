@@ -39,6 +39,7 @@ export const users = pgTable("users", {
   passwordResetExpires: timestamp("password_reset_expires"), // תפוגת טוקן איפוס
   lastLogin: timestamp("last_login"),
   isActive: boolean("is_active").default(true),
+  requiresApproval: boolean("requires_approval").default(false), // רכז חיצוני דורש אישור לפני שליחת מועמדים
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -48,7 +49,7 @@ export const jobStatusEnum = pgEnum('job_status', ['active', 'paused', 'closed']
 export const applicationStatusEnum = pgEnum('application_status', ['submitted', 'reviewed', 'interview', 'interview_scheduled', 'rejected', 'accepted']);
 export const rejectionReasonEnum = pgEnum('rejection_reason', ['lack_of_experience', 'geographic_mismatch', 'salary_demands', 'qualifications_mismatch', 'other']);
 export const emailStatusEnum = pgEnum('email_status', ['pending', 'sent', 'failed', 'delivered', 'bounced']);
-export const roleTypeEnum = pgEnum('role_type', ['super_admin', 'admin', 'user', 'job_viewer', 'restricted_admin']);
+export const roleTypeEnum = pgEnum('role_type', ['super_admin', 'admin', 'user', 'job_viewer', 'restricted_admin', 'external_recruiter']);
 
 // Roles table
 export const roles = pgTable("roles", {
@@ -675,6 +676,31 @@ export type EnrichedCandidate = Candidate & {
   creatorUsername?: string | null;
 };
 
+// Job Assignments table - for assigning jobs to external recruiters
+export const jobAssignments = pgTable("job_assignments", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  jobId: varchar("job_id").notNull().references(() => jobs.id, { onDelete: 'cascade' }),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }), // רכז חיצוני
+  assignedBy: varchar("assigned_by").references(() => users.id), // אדמין שהקצה
+  commission: integer("commission"), // עמלה בשקלים (אופציונלי)
+  isActive: boolean("is_active").default(true),
+  assignedAt: timestamp("assigned_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// External Activity Log table - for logging all external recruiter activities
+export const externalActivityLog = pgTable("external_activity_log", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id), // רכז חיצוני
+  action: varchar("action").notNull(), // login, view_jobs, submit_candidate, etc.
+  resourceType: varchar("resource_type"), // job, candidate, etc.
+  resourceId: varchar("resource_id"), // ID של המשרה/מועמד וכו'
+  details: jsonb("details"), // פרטים נוספים
+  ipAddress: varchar("ip_address"),
+  userAgent: text("user_agent"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // WhatsApp Sessions table - for storing WhatsApp authentication state
 export const whatsappSessions = pgTable("whatsapp_sessions", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -802,4 +828,29 @@ export type InsertWhatsappChat = z.infer<typeof insertWhatsappChatSchema>;
 export type WhatsappChatWithMessages = WhatsappChat & {
   messages: WhatsappMessage[];
   candidate?: Candidate;
+};
+
+// Insert schemas for External Recruiters
+export const insertJobAssignmentSchema = createInsertSchema(jobAssignments).omit({
+  id: true,
+  assignedAt: true,
+  updatedAt: true,
+});
+
+export const insertExternalActivityLogSchema = createInsertSchema(externalActivityLog).omit({
+  id: true,
+  createdAt: true,
+});
+
+// Types for External Recruiters
+export type JobAssignment = typeof jobAssignments.$inferSelect;
+export type InsertJobAssignment = z.infer<typeof insertJobAssignmentSchema>;
+
+export type ExternalActivityLog = typeof externalActivityLog.$inferSelect;
+export type InsertExternalActivityLog = z.infer<typeof insertExternalActivityLogSchema>;
+
+export type JobAssignmentWithDetails = JobAssignment & {
+  job: JobWithClient;
+  user: User;
+  assignedByUser?: User;
 };
