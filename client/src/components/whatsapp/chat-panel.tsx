@@ -91,6 +91,12 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
     queryKey: ['/api/whatsapp/messages', selectedChat?.remoteJid],
     enabled: !!selectedChat,
     refetchInterval: 3000,
+    queryFn: async () => {
+      if (!selectedChat?.remoteJid) return [];
+      const response = await fetch(`/api/whatsapp/messages/${encodeURIComponent(selectedChat.remoteJid)}`);
+      if (!response.ok) throw new Error('Failed to fetch messages');
+      return response.json();
+    },
   });
 
   // Send message mutation
