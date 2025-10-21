@@ -11,8 +11,6 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { format } from 'date-fns';
-import { he } from 'date-fns/locale';
 import { queryClient, apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 
@@ -330,36 +328,17 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
                             <AvatarFallback className="bg-green-500 text-white"></AvatarFallback>
                           </Avatar>
                           <div className="flex-1 min-w-0 pr-3">
-                            <div className="flex items-center justify-between mb-1 gap-2">
+                            <div className="flex items-center justify-between gap-2">
                               <div className="flex items-center gap-2 flex-1 min-w-0">
-                                <p className="font-medium text-sm truncate">{chat.name}</p>
-                                {chat.isPinned && <Pin className="h-3 w-3 text-amber-500 flex-shrink-0" />}
+                                <p className="font-medium truncate">{chat.name || chat.remoteJid}</p>
+                                {chat.isPinned && <Pin className="h-4 w-4 text-amber-500 flex-shrink-0" />}
                               </div>
-                              <span className="text-xs text-gray-500 flex-shrink-0 whitespace-nowrap">
-                                {chat.lastMessageAt
-                                  ? format(new Date(chat.lastMessageAt), 'HH:mm', { locale: he })
-                                  : ''}
-                              </span>
-                            </div>
-                            <div className="flex items-center justify-between">
-                              <p className="text-sm text-gray-500 truncate">
-                                {chat.lastMessagePreview}
-                              </p>
                               {chat.unreadCount > 0 && (
                                 <span className="bg-green-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center flex-shrink-0">
                                   {chat.unreadCount}
                                 </span>
                               )}
                             </div>
-                            {(chat.tags || []).length > 0 && (
-                              <div className="flex flex-wrap gap-1 mt-1">
-                                {chat.tags!.map(tag => (
-                                  <Badge key={tag} variant="secondary" className="text-xs">
-                                    {tag}
-                                  </Badge>
-                                ))}
-                              </div>
-                            )}
                           </div>
                         </button>
                         
