@@ -1191,6 +1191,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const jobId = bodyData.jobId;
       delete bodyData.jobId; // Remove from candidate data
       
+      // Save original values to detect WhatsApp uploads later
+      const originalFirstName = bodyData.firstName;
+      const originalLastName = bodyData.lastName;
+      
       const candidateData = insertCandidateSchema.parse(bodyData);
       
       // If CV file was uploaded, add the path and extract content
@@ -1278,14 +1282,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const candidate = await storage.createCandidate(candidateData);
       
+      // Determine if this was a WhatsApp upload (check if we extracted data from CV with placeholder values)
+      const isWhatsAppUpload = originalFirstName === 'ממתין' || originalLastName === 'לעדכון';
+      const userName = req.user ? `${(req.user as any).firstName || ''} ${(req.user as any).lastName || ''}`.trim() : candidateData.recruitmentSource || 'משתמש';
+      
       // Create initial event for manual candidate creation
       await storage.addCandidateEvent({
         candidateId: candidate.id,
         eventType: 'created',
-        description: `מועמד נוצר ידנית על ידי ${candidateData.recruitmentSource || 'משתמש'}`,
+        description: isWhatsAppUpload 
+          ? `מועמד הועלה דרך ממשק ווצאפ על ידי ${userName}`
+          : `מועמד נוצר ידנית על ידי ${userName}`,
         metadata: {
-          source: 'manual_entry',
+          source: isWhatsAppUpload ? 'whatsapp_upload' : 'manual_entry',
           createdByUsername: candidateData.recruitmentSource,
+          userName: userName,
           cvUploaded: !!candidateData.cvPath,
           timestamp: new Date().toISOString()
         },
