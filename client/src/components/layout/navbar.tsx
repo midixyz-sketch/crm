@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
-import { LayoutDashboard, Users, Building2, Briefcase, Mail, BarChart3, Settings, UserCheck, Search, Menu, Calendar, Shield, LogOut, Upload, RefreshCw } from "lucide-react";
+import { LayoutDashboard, Users, Building2, Briefcase, Mail, BarChart3, Settings, UserCheck, Search, Menu, Calendar, Shield, LogOut, Upload, RefreshCw, UserCog, Clock } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { usePermissions } from "@/hooks/usePermissions";
@@ -107,6 +107,8 @@ export default function Navbar() {
                   case 'Settings': return Settings;
                   case 'BarChart3': return BarChart3;
                   case 'Shield': return Shield;
+                  case 'UserCog': return UserCog;
+                  case 'Clock': return Clock;
                   default: return Settings;
                 }
               };

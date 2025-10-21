@@ -42,7 +42,12 @@ export const PAGE_PERMISSIONS = {
   
   // דוחות ואנליטיקה
   REPORTS: 'view_reports',
-  ANALYTICS: 'view_analytics'
+  ANALYTICS: 'view_analytics',
+  
+  // רכזים חיצוניים
+  EXTERNAL_RECRUITERS: 'manage_external_recruiters',
+  PENDING_APPROVALS: 'view_pending_approvals',
+  MY_JOBS: 'view_my_jobs'
 } as const;
 
 export const MENU_PERMISSIONS = {
@@ -261,8 +266,9 @@ export const ROLE_PERMISSIONS = {
   external_recruiter: [
     // רכז חיצוני - גישה מאוד מוגבלת
     // רואה רק משרות שהוקצו לו, יכול להעלות מועמדים חדשים בלבד
-    PAGE_PERMISSIONS.JOBS, // רק למשרות המוקצות
+    PAGE_PERMISSIONS.MY_JOBS, // דף "המשרות שלי"
     PAGE_PERMISSIONS.ADD_CANDIDATE, // יכול להוסיף מועמדים חדשים בלבד
+    PAGE_PERMISSIONS.SETTINGS, // גישה להגדרות בסיסיות
     
     // רכיבי ממשק מינימליים
     COMPONENT_PERMISSIONS.SIDEBAR,
