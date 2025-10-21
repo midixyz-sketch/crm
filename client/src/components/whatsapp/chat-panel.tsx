@@ -162,11 +162,22 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
 
     // Apply search filter
     if (searchQuery) {
+      const query = searchQuery.toLowerCase();
       filtered = filtered.filter(chat => {
-        const nameMatch = (chat.name || '').toLowerCase().includes(searchQuery.toLowerCase());
-        const phoneMatch = (chat.remoteJid || '').toLowerCase().includes(searchQuery.toLowerCase());
-        const tagMatch = (chat.tags || []).some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()));
-        return nameMatch || phoneMatch || tagMatch;
+        // חיפוש בשם השיחה
+        const nameMatch = (chat.name || '').toLowerCase().includes(query);
+        
+        // חיפוש במספר טלפון (גם עם וגם בלי @s.whatsapp.net)
+        const phoneNumber = (chat.remoteJid || '').split('@')[0];
+        const phoneMatch = phoneNumber.toLowerCase().includes(query);
+        
+        // חיפוש בתוויות
+        const tagMatch = (chat.tags || []).some(tag => tag.toLowerCase().includes(query));
+        
+        // חיפוש בתוכן ההודעה האחרונה
+        const messageMatch = (chat.lastMessage || '').toLowerCase().includes(query);
+        
+        return nameMatch || phoneMatch || tagMatch || messageMatch;
       });
     }
 
