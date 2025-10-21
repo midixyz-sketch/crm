@@ -896,9 +896,6 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
             <DialogTitle>פעולה על קובץ</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
-            <p className="text-sm text-muted-foreground text-center">
-              מה ברצונך לעשות עם הקובץ?
-            </p>
             <p className="text-sm font-medium text-center">
               {fileActionDialog?.fileName}
             </p>
@@ -920,7 +917,7 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
                 data-testid="button-download-file"
               >
                 <Download className="ml-2 h-4 w-4" />
-                הורד את הקובץ למחשב
+                האם להוריד למחשב?
               </Button>
               
               {fileActionDialog?.candidateId ? (
@@ -960,7 +957,7 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
                   data-testid="button-create-candidate"
                 >
                   <UserPlus className="ml-2 h-4 w-4" />
-                  הוסף כמועמד חדש
+                  האם לפתוח מועמד חדש?
                 </Button>
               )}
             </div>
@@ -981,11 +978,11 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
       <Dialog open={linkPhoneDialog?.open || false} onOpenChange={(open) => !open && setLinkPhoneDialog(null)}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>קישור מספר טלפון למועמד</DialogTitle>
+            <DialogTitle>הוספת מועמד חדש</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <p className="text-sm text-muted-foreground text-center">
-              האם לקשר את מספר הטלפון מהשיחה למועמד החדש?
+              האם להשתמש במספר המועמד שמופיע בשיחה לכרטיס המועמד?
             </p>
             <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg">
               <p className="text-sm font-medium text-center">
@@ -1036,7 +1033,7 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
                 data-testid="button-link-phone-yes"
               >
                 <Phone className="ml-2 h-4 w-4" />
-                כן, קשר את מספר הטלפון
+                כן, השתמש במספר
               </Button>
               
               <Button 
@@ -1079,7 +1076,7 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
                 data-testid="button-link-phone-no"
               >
                 <UserPlus className="ml-2 h-4 w-4" />
-                לא, צור מועמד ללא מספר
+                לא, ללא מספר
               </Button>
             </div>
           </div>
