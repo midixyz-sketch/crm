@@ -177,6 +177,24 @@ export function useDetailedPermissions() {
         icon: "BarChart3" 
       },
       { 
+        permission: 'manage_external_recruiters' as PagePermission, 
+        name: "ניהול רכזים", 
+        href: "/external-recruiters", 
+        icon: "UserCog" 
+      },
+      { 
+        permission: 'view_pending_approvals' as PagePermission, 
+        name: "אישור מועמדים", 
+        href: "/pending-approvals", 
+        icon: "Clock" 
+      },
+      { 
+        permission: 'view_my_jobs' as PagePermission, 
+        name: "המשרות שלי", 
+        href: "/my-jobs", 
+        icon: "Briefcase" 
+      },
+      { 
         permission: 'access_settings' as PagePermission, 
         name: "הגדרות", 
         href: "/settings", 
