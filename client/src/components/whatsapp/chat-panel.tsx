@@ -191,9 +191,9 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-white dark:bg-gray-900 z-40 flex flex-row-reverse" dir="rtl" data-testid="whatsapp-chat-panel">
+    <div className="fixed inset-0 bg-white dark:bg-gray-900 z-40 flex flex-row-reverse h-screen" dir="rtl" data-testid="whatsapp-chat-panel">
       {/* Right Side - Chats List */}
-      <div className="w-80 border-l border-gray-200 dark:border-gray-700 flex flex-col bg-background h-screen">
+      <div className="w-80 border-l border-gray-200 dark:border-gray-700 flex flex-col bg-background h-full">
         <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-[#008069] text-white flex-shrink-0">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -415,7 +415,7 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
       </div>
 
       {/* Left Side - Main Chat Area */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col h-full">
         {!selectedChat ? (
           <div className="flex-1 flex items-center justify-center bg-gray-50 dark:bg-gray-800">
             <div className="text-center text-gray-500">
