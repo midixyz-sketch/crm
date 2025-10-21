@@ -636,7 +636,10 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
                             ) : (
                               <div className="flex items-center gap-2 p-2 bg-gray-100 dark:bg-gray-600 rounded">
                                 <ImageIcon className="w-5 h-5" />
-                                <span className="text-sm">תמונה</span>
+                                <div className="flex-1">
+                                  <span className="text-sm">תמונה</span>
+                                  <p className="text-xs opacity-70 text-amber-600 dark:text-amber-400">קובץ לא זמין</p>
+                                </div>
                               </div>
                             )}
                             {message.caption && (
@@ -647,7 +650,10 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
                         
                         {message.messageType === 'document' && (
                           <div 
-                            className="flex items-center gap-3 p-3 bg-gray-100 dark:bg-gray-600 rounded-lg cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-500 transition-colors"
+                            className={cn(
+                              "flex items-center gap-3 p-3 bg-gray-100 dark:bg-gray-600 rounded-lg",
+                              message.mediaUrl && "cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-500 transition-colors"
+                            )}
                             onClick={() => message.mediaUrl && setFileActionDialog({ 
                               open: true, 
                               fileUrl: message.mediaUrl, 
@@ -659,13 +665,15 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
                             <FileText className="w-6 h-6 flex-shrink-0" />
                             <div className="flex-1 min-w-0">
                               <p className="text-sm font-medium truncate">{message.fileName || 'מסמך'}</p>
-                              {message.fileSize && (
+                              {message.fileSize ? (
                                 <p className="text-xs opacity-70">
                                   {(message.fileSize / 1024).toFixed(1)} KB
                                 </p>
+                              ) : message.mediaUrl ? null : (
+                                <p className="text-xs opacity-70 text-amber-600 dark:text-amber-400">קובץ לא זמין</p>
                               )}
                             </div>
-                            <Download className="w-5 h-5 flex-shrink-0" />
+                            {message.mediaUrl && <Download className="w-5 h-5 flex-shrink-0" />}
                           </div>
                         )}
                         
