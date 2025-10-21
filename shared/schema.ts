@@ -727,6 +727,7 @@ export const whatsappChats = pgTable("whatsapp_chats", {
   isGroup: boolean("is_group").default(false), // is this a group chat
   isPinned: boolean("is_pinned").default(false), // is chat pinned
   isArchived: boolean("is_archived").default(false), // is chat archived
+  tags: text("tags").array(), // array of tags for filtering and organization
   unreadCount: integer("unread_count").default(0), // number of unread messages
   lastMessageAt: timestamp("last_message_at"), // timestamp of last message
   lastMessagePreview: text("last_message_preview"), // preview of last message

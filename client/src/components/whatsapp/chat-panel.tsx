@@ -278,12 +278,14 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
 
   // Handle add tag
   const handleAddTag = () => {
-    if (!selectedChat?.candidateId || !newTag.trim()) return;
+    if (!selectedChat || !newTag.trim()) return;
     const currentTags = selectedChat.tags || [];
     if (!currentTags.includes(newTag.trim())) {
-      updateTagsMutation.mutate({
-        candidateId: selectedChat.candidateId,
-        tags: [...currentTags, newTag.trim()],
+      updateChatMutation.mutate({
+        id: selectedChat.id,
+        updates: {
+          tags: [...currentTags, newTag.trim()],
+        },
       });
       setNewTag('');
     }
@@ -291,11 +293,13 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
 
   // Handle remove tag
   const handleRemoveTag = (tag: string) => {
-    if (!selectedChat?.candidateId) return;
+    if (!selectedChat) return;
     const currentTags = selectedChat.tags || [];
-    updateTagsMutation.mutate({
-      candidateId: selectedChat.candidateId,
-      tags: currentTags.filter(t => t !== tag),
+    updateChatMutation.mutate({
+      id: selectedChat.id,
+      updates: {
+        tags: currentTags.filter(t => t !== tag),
+      },
     });
   };
 
