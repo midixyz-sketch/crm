@@ -217,8 +217,14 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
   // Filter chats by tab, search, and tags
   const filteredChats = useMemo(() => {
     let filtered = chats.filter(chat => {
-      const chatType = chat.chatType || 'individual';
-      return chatType === activeTab;
+      if (activeTab === 'individual') {
+        return !chat.isGroup && !chat.isArchived;
+      } else if (activeTab === 'group') {
+        return chat.isGroup && !chat.isArchived;
+      } else if (activeTab === 'archived') {
+        return chat.isArchived;
+      }
+      return false;
     });
 
     // Apply search filter
@@ -531,7 +537,12 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
                     ))}
                   </div>
                   <p className="text-xs text-gray-500 mt-2">
-                    {filteredChats.length} מתוך {chats.filter(c => (c.chatType || 'individual') === activeTab).length} שיחות
+                    {filteredChats.length} מתוך {chats.filter(c => {
+                      if (activeTab === 'individual') return !c.isGroup && !c.isArchived;
+                      if (activeTab === 'group') return c.isGroup && !c.isArchived;
+                      if (activeTab === 'archived') return c.isArchived;
+                      return false;
+                    }).length} שיחות
                   </p>
                 </div>
               )}
