@@ -697,7 +697,7 @@ class WhatsAppService {
           // Get contact name from contacts list
           const contact = contacts.find((c: any) => c.id === remoteJid);
           const phoneNumber = remoteJid.split('@')[0];
-          const defaultName = isGroup ? `קבוצה ${phoneNumber}` : `WhatsApp ${phoneNumber}`;
+          const defaultName = isGroup ? `קבוצה ${phoneNumber}` : phoneNumber;
           const chatName = chat.name || contact?.name || contact?.notify || defaultName;
 
           // Check if chat already exists
