@@ -1444,7 +1444,7 @@ export default function CandidateDetail() {
                                       : event.createdByUser.username}
                                   </span>
                                 )}
-                                {event.metadata?.source && <span>{event.createdByUser ? ' | ' : ''}מקור: {event.metadata.source === 'manual_entry' ? 'הכנסה ידנית' : event.metadata.source === 'cv_upload' ? 'העלאת קורות חיים' : event.metadata.source}</span>}
+                                {event.metadata?.source && <span>{event.createdByUser ? ' | ' : ''}מקור: {event.metadata.source === 'manual_entry' ? 'הכנסה ידנית' : event.metadata.source === 'cv_upload' ? 'העלאת קורות חיים' : event.metadata.source === 'whatsapp_upload' ? `הועלה דרך ווצאפ${event.metadata.userName ? ' - ' + event.metadata.userName : ''}` : event.metadata.source}</span>}
                                 {event.metadata?.createdBy && !event.createdByUser && <span> | נוצר על ידי: {event.metadata.createdBy}</span>}
                                 {event.metadata?.jobCode && <span> | קוד משרה: {event.metadata.jobCode}</span>}
                                 {event.metadata.jobTitle && <span> | משרה: {event.metadata.jobTitle}</span>}
