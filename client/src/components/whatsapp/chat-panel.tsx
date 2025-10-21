@@ -1175,6 +1175,19 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
                         toast({ title: 'מועמד נוצר בהצלחה עם מספר הטלפון!' });
                         setLinkPhoneDialog(null);
                       }
+                    } else if (uploadResponse.status === 409) {
+                      // Duplicate candidate
+                      const errorData = await uploadResponse.json();
+                      console.log('⚠️ Duplicate candidate found:', errorData);
+                      if (errorData.existingCandidate) {
+                        setDuplicateCandidate(errorData.existingCandidate);
+                        toast({ 
+                          title: 'המועמד כבר קיים במערכת', 
+                          description: 'תוכל לעבור לכרטיס המועמד הקיים',
+                        });
+                      } else {
+                        toast({ title: errorData.message || 'מועמד כבר קיים במערכת' });
+                      }
                     } else {
                       const errorText = await uploadResponse.text();
                       console.error('❌ STEP 2 FAILED: Upload error:', errorText);
@@ -1251,6 +1264,19 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
                         console.warn('⚠️ Response is not JSON (no phone), content-type:', contentType);
                         toast({ title: 'מועמד נוצר בהצלחה!' });
                         setLinkPhoneDialog(null);
+                      }
+                    } else if (uploadResponse.status === 409) {
+                      // Duplicate candidate
+                      const errorData = await uploadResponse.json();
+                      console.log('⚠️ Duplicate candidate found (no phone):', errorData);
+                      if (errorData.existingCandidate) {
+                        setDuplicateCandidate(errorData.existingCandidate);
+                        toast({ 
+                          title: 'המועמד כבר קיים במערכת', 
+                          description: 'תוכל לעבור לכרטיס המועמד הקיים',
+                        });
+                      } else {
+                        toast({ title: errorData.message || 'מועמד כבר קיים במערכת' });
                       }
                     } else {
                       const errorText = await uploadResponse.text();
