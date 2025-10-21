@@ -59,7 +59,7 @@ Preferred communication style: Simple, everyday language.
     -   Robust reconnection logic and comprehensive error handling prioritize stability.
     -   Interface positioned with padding-top to avoid navbar overlap, ensuring all UI elements are visible.
 
-## External Recruiters Module
+## External Recruiters Module (COMPLETE - UI + Backend)
 -   **Role-Based System**: `external_recruiter` role with restricted permissions.
 -   **Job Assignments**: Admins assign specific jobs to external recruiters via `job_assignments` table with optional commission per job.
 -   **Limited Access**: External recruiters can only upload new candidates to assigned jobs, cannot view client names or candidate history.
@@ -67,10 +67,15 @@ Preferred communication style: Simple, everyday language.
 -   **Activity Logging**: All external recruiter actions tracked in `external_activity_log` table.
 -   **Security**: API routes enforce user can only view own assignments; job assignment lists filtered by `isActive=true` and user ID.
 -   **Permissions**: 
-    -   `allowedJobIds` array populated from job assignments
+    -   `allowedJobIds` array dynamically populated from job assignments
     -   Cannot access dashboard, candidates list, clients, calendar, emails, settings, or analytics
     -   Automatically sets recruitment source to recruiter's name
     -   No visibility into candidate event history
+-   **UI Pages**:
+    -   `/external-recruiters` - Admin management page for assigning jobs to recruiters, viewing assignments, setting commissions
+    -   `/my-jobs` - Recruiter work page showing assigned jobs with commission, upload candidate functionality
+    -   `/pending-approvals` - Admin page for approving/rejecting candidates from recruiters with requiresApproval flag
+    -   Dynamic sidebar navigation: shows different menus based on user role (admin sees management pages, recruiter sees only "My Jobs")
 
 # External Dependencies
 
