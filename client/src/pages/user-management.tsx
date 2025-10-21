@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { usePermissions, type UserWithRoles, type Role } from "@/hooks/usePermissions";
+import { useDetailedPermissions } from "@/hooks/useDetailedPermissions";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -28,6 +29,10 @@ export default function UserManagement() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { canManageUsers, canManageRoles, allRoles, userWithRoles, isLoading: permissionsLoading } = usePermissions();
+  const { canAccessPage } = useDetailedPermissions();
+  
+  // בדוק אם יש הרשאה לניהול משתמשים
+  const hasUserManagementAccess = canAccessPage('manage_users');
   const [selectedUser, setSelectedUser] = useState<UserWithRoles | null>(null);
   const [isRoleDialogOpen, setIsRoleDialogOpen] = useState(false);
   const [selectedRole, setSelectedRole] = useState<string>("");
@@ -353,7 +358,7 @@ export default function UserManagement() {
   });
 
   
-  if (!canManageUsers && !canManageRoles) {
+  if (!hasUserManagementAccess && !canManageUsers && !canManageRoles) {
     return (
       <div className="container mx-auto p-4" dir="rtl">
         <Card>
