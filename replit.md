@@ -59,6 +59,19 @@ Preferred communication style: Simple, everyday language.
     -   Robust reconnection logic and comprehensive error handling prioritize stability.
     -   Interface positioned with padding-top to avoid navbar overlap, ensuring all UI elements are visible.
 
+## External Recruiters Module
+-   **Role-Based System**: `external_recruiter` role with restricted permissions.
+-   **Job Assignments**: Admins assign specific jobs to external recruiters via `job_assignments` table with optional commission per job.
+-   **Limited Access**: External recruiters can only upload new candidates to assigned jobs, cannot view client names or candidate history.
+-   **Approval Workflow**: Optional `requiresApproval` flag per user - when enabled, candidates uploaded by external recruiter are marked `pending_approval` status and require admin review before submission to client.
+-   **Activity Logging**: All external recruiter actions tracked in `external_activity_log` table.
+-   **Security**: API routes enforce user can only view own assignments; job assignment lists filtered by `isActive=true` and user ID.
+-   **Permissions**: 
+    -   `allowedJobIds` array populated from job assignments
+    -   Cannot access dashboard, candidates list, clients, calendar, emails, settings, or analytics
+    -   Automatically sets recruitment source to recruiter's name
+    -   No visibility into candidate event history
+
 # External Dependencies
 
 ## Database & ORM

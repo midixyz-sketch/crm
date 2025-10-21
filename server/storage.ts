@@ -17,6 +17,8 @@ import {
   userRoles,
   rolePermissions,
   userPermissions,
+  jobAssignments,
+  externalActivityLog,
   type User,
   type UpsertUser,
   type UserWithRoles,
@@ -57,6 +59,11 @@ import {
   type InsertUserRole,
   type RolePermission,
   type InsertRolePermission,
+  type JobAssignment,
+  type JobAssignmentWithDetails,
+  type InsertJobAssignment,
+  type ExternalActivityLog,
+  type InsertExternalActivityLog,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, asc, like, ilike, sql, count, or, isNotNull, inArray } from "drizzle-orm";
@@ -386,6 +393,19 @@ export interface IStorage {
   createCandidateStatus(status: InsertCandidateStatus): Promise<CandidateStatus>;
   updateCandidateStatus(id: string, status: Partial<InsertCandidateStatus>): Promise<CandidateStatus>;
   deleteCandidateStatus(id: string): Promise<void>;
+
+  // Job Assignment operations (External Recruiters)
+  getJobAssignments(userId?: string, jobId?: string): Promise<JobAssignment[]>;
+  createJobAssignment(assignment: InsertJobAssignment): Promise<JobAssignment>;
+  deleteJobAssignment(id: string): Promise<void>;
+  getJobAssignmentsForUser(userId: string): Promise<JobAssignmentWithDetails[]>;
+  
+  // External Activity Log operations
+  logExternalActivity(log: InsertExternalActivityLog): Promise<ExternalActivityLog>;
+  getExternalActivityLogs(userId?: string, limit?: number): Promise<ExternalActivityLog[]>;
+  
+  // Get user by ID
+  getUserById(id: string): Promise<User | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -2790,6 +2810,86 @@ export class DatabaseStorage implements IStorage {
     if (!userWithRoles) return false;
 
     return userWithRoles.userRoles.some(userRole => userRole.role.type === roleType);
+  }
+
+  // Job Assignment operations (External Recruiters)
+  async getJobAssignments(userId?: string, jobId?: string): Promise<JobAssignment[]> {
+    const conditions = [eq(jobAssignments.isActive, true)];
+    
+    if (userId) {
+      conditions.push(eq(jobAssignments.userId, userId));
+    }
+    if (jobId) {
+      conditions.push(eq(jobAssignments.jobId, jobId));
+    }
+    
+    return await db.select().from(jobAssignments).where(and(...conditions));
+  }
+
+  async createJobAssignment(assignment: InsertJobAssignment): Promise<JobAssignment> {
+    const [newAssignment] = await db.insert(jobAssignments)
+      .values(assignment)
+      .returning();
+    return newAssignment;
+  }
+
+  async deleteJobAssignment(id: string): Promise<void> {
+    await db.update(jobAssignments)
+      .set({ isActive: false, updatedAt: new Date() })
+      .where(eq(jobAssignments.id, id));
+  }
+
+  async getJobAssignmentsForUser(userId: string): Promise<JobAssignmentWithDetails[]> {
+    const assignedByUserAlias = sql`assigned_by_user`;
+    
+    const assignments = await db
+      .select({
+        assignment: jobAssignments,
+        job: jobs,
+        client: clients,
+        user: users,
+      })
+      .from(jobAssignments)
+      .leftJoin(jobs, eq(jobAssignments.jobId, jobs.id))
+      .leftJoin(clients, eq(jobs.clientId, clients.id))
+      .leftJoin(users, eq(jobAssignments.userId, users.id))
+      .where(
+        and(
+          eq(jobAssignments.userId, userId),
+          eq(jobAssignments.isActive, true)
+        )
+      );
+
+    return assignments.map(row => ({
+      ...row.assignment,
+      job: row.job && row.client ? { ...row.job, client: row.client } : undefined,
+      user: row.user!,
+    })) as any;
+  }
+
+  // External Activity Log operations
+  async logExternalActivity(log: InsertExternalActivityLog): Promise<ExternalActivityLog> {
+    const [newLog] = await db.insert(externalActivityLog)
+      .values(log)
+      .returning();
+    return newLog;
+  }
+
+  async getExternalActivityLogs(userId?: string, limit: number = 100): Promise<ExternalActivityLog[]> {
+    let query = db.select().from(externalActivityLog)
+      .orderBy(desc(externalActivityLog.createdAt))
+      .limit(limit);
+    
+    if (userId) {
+      query = query.where(eq(externalActivityLog.userId, userId)) as any;
+    }
+    
+    return await query;
+  }
+
+  // Get user by ID  
+  async getUserById(id: string): Promise<User | undefined> {
+    return await this.getUser(id);
   }
 }
 
