@@ -91,23 +91,6 @@ export default function WhatsAppChats() {
     enabled: whatsappStatus?.isConnected === true,
   });
 
-  // Sync profile pictures when connected (one-time)
-  const [hasSyncedProfilePics, setHasSyncedProfilePics] = useState(false);
-  
-  useEffect(() => {
-    if (whatsappStatus?.isConnected && !hasSyncedProfilePics && chats.length > 0) {
-      apiRequest("POST", "/api/whatsapp/sync-profile-pictures", {})
-        .then(() => {
-          console.log('✅ Profile pictures synced');
-          queryClient.invalidateQueries({ queryKey: ["/api/whatsapp/chats"] });
-          setHasSyncedProfilePics(true);
-        })
-        .catch((error) => {
-          console.error('שגיאה בסנכרון תמונות פרופיל:', error);
-        });
-    }
-  }, [whatsappStatus?.isConnected, hasSyncedProfilePics, chats.length]);
-
   // Get selected chat
   const selectedChat = chats.find(chat => chat.id === selectedChatId);
   const selectedRemoteJid = selectedChat?.remoteJid;
