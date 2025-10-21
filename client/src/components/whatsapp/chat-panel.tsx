@@ -573,7 +573,9 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
                         )}
                         <p className="text-sm">{message.messageText}</p>
                         <span className="text-xs opacity-70 mt-1 block text-left">
-                          {format(new Date(message.timestamp), 'HH:mm', { locale: he })}
+                          {message.timestamp && !isNaN(new Date(message.timestamp).getTime()) 
+                            ? format(new Date(message.timestamp), 'HH:mm', { locale: he })
+                            : ''}
                         </span>
                       </div>
                     </div>
