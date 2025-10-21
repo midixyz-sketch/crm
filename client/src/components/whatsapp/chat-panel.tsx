@@ -72,11 +72,16 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
     }
   }, [status?.isConnected, isOpen, onClose]);
 
-  // Fetch chats
+  // Fetch chats (with tab filtering on server)
   const { data: chats = [], isLoading: chatsLoading } = useQuery<Chat[]>({
-    queryKey: ['/api/whatsapp/chats'],
+    queryKey: ['/api/whatsapp/chats', activeTab],
     enabled: isOpen,
     refetchInterval: 5000,
+    queryFn: async () => {
+      const response = await fetch(`/api/whatsapp/chats?tab=${activeTab}&limit=100`);
+      if (!response.ok) throw new Error('Failed to fetch chats');
+      return response.json();
+    },
   });
 
   // Fetch messages for selected chat
@@ -125,18 +130,9 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
     return Array.from(tagsSet).sort((a, b) => a.localeCompare(b, 'he'));
   }, [chats]);
 
-  // Filter chats by tab, search, and tags
+  // Filter chats by search and tags (tab filtering done on server)
   const filteredChats = useMemo(() => {
-    let filtered = chats.filter(chat => {
-      if (activeTab === 'individual') {
-        return !chat.isGroup && !chat.isArchived;
-      } else if (activeTab === 'group') {
-        return chat.isGroup && !chat.isArchived;
-      } else if (activeTab === 'archived') {
-        return chat.isArchived;
-      }
-      return false;
-    });
+    let filtered = chats;
 
     // Apply search filter
     if (searchQuery) {
@@ -161,7 +157,7 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
       if (!b.lastMessageAt) return -1;
       return new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime();
     });
-  }, [chats, activeTab, searchQuery, selectedTagFilter]);
+  }, [chats, searchQuery, selectedTagFilter]);
 
   // Auto-scroll to bottom when chat changes
   useEffect(() => {
