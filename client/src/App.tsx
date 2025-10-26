@@ -34,6 +34,7 @@ import WhatsAppChats from "@/pages/whatsapp-chats";
 import ExternalRecruiters from "@/pages/external-recruiters";
 import MyJobs from "@/pages/my-jobs";
 import PendingApprovals from "@/pages/pending-approvals";
+import UploadCandidateExternal from "@/pages/upload-candidate-external";
 
 import { useQuery } from "@tanstack/react-query";
 import { Redirect } from "wouter";
@@ -105,6 +106,7 @@ function Router() {
           <Route path="/whatsapp-chats" component={WhatsAppChats} />
           <Route path="/external-recruiters" component={ExternalRecruiters} />
           <Route path="/my-jobs" component={MyJobs} />
+          <Route path="/upload-candidate" component={UploadCandidateExternal} />
           <Route path="/pending-approvals" component={PendingApprovals} />
           <Route component={NotFound} />
         </Switch>

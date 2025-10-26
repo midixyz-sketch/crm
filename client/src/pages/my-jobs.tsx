@@ -104,7 +104,7 @@ export default function MyJobsPage() {
                   </Button>
                   <Button
                     size="sm"
-                    onClick={() => setLocation(`/candidates/new?jobId=${job.id}`)}
+                    onClick={() => setLocation(`/upload-candidate?jobId=${job.id}`)}
                     className="flex-1"
                     data-testid={`button-upload-candidate-${job.id}`}
                   >
@@ -161,7 +161,7 @@ export default function MyJobsPage() {
               </Button>
               <Button
                 onClick={() => {
-                  setLocation(`/candidates/new?jobId=${selectedJob.id}`);
+                  setLocation(`/upload-candidate?jobId=${selectedJob.id}`);
                   setSelectedJob(null);
                 }}
                 className="flex-1"
