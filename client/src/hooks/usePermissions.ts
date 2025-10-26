@@ -12,7 +12,7 @@ export interface Permission {
 export interface Role {
   id: string;
   name: string;
-  type: 'super_admin' | 'admin' | 'user';
+  type: 'super_admin' | 'admin' | 'user' | 'external_recruiter';
   description?: string;
 }
 
@@ -60,6 +60,8 @@ export function usePermissions() {
   const { data: allRoles, isLoading: allRolesLoading } = useQuery<Role[]>({
     queryKey: ['/api/roles'],
     enabled: !!user && (checkRole('admin') || checkRole('super_admin')),
+    staleTime: 0, // Always fetch fresh roles
+    gcTime: 0, // Don't cache roles
   });
 
   // Get all available permissions (for admin interface)
