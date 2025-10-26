@@ -1327,12 +1327,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (isExternalRecruiter) {
         await storage.logExternalActivity({
           userId: req.user!.id,
-          activityType: 'candidate_uploaded',
-          description: requiresApproval 
-            ? 'העלאת מועמד - ממתין לאישור'
-            : 'העלאת מועמד',
-          metadata: {
-            candidateId: candidate.id,
+          action: 'candidate_uploaded',
+          resourceType: 'candidate',
+          resourceId: candidate.id,
+          details: {
             candidateName: `${candidate.firstName} ${candidate.lastName}`,
             requiresApproval: requiresApproval,
             jobId: jobId || null
@@ -2856,10 +2854,10 @@ ${extractedData.achievements ? `הישגים ופעילות נוספת: ${cleanS
       // Log activity
       await storage.logExternalActivity({
         userId: assignmentData.userId,
-        activityType: 'job_assigned',
-        description: `משרה הוקצתה לרכז`,
-        metadata: {
-          jobId: assignmentData.jobId,
+        action: 'job_assigned',
+        resourceType: 'job',
+        resourceId: assignmentData.jobId,
+        details: {
           assignedBy: req.user!.id,
           commission: assignmentData.commission
         }
