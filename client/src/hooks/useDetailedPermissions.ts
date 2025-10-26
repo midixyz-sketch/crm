@@ -89,7 +89,8 @@ export function useDetailedPermissions() {
   const { data: permissions, isLoading } = useQuery<UserPermissions>({
     queryKey: ['/api/permissions/detailed', (user as any)?.id],
     enabled: isAuthenticated && !!(user as any)?.id,
-    staleTime: 5 * 60 * 1000, // 5 דקות
+    staleTime: 0, // ללא cache - תמיד שלוף מהשרת
+    gcTime: 0, // ללא cache
   });
 
   // בדוק הרשאת דף
