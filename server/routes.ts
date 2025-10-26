@@ -4580,11 +4580,11 @@ ${recommendation}
     }
     try {
       const allRoles = await storage.getRoles();
-      // Filter only the basic 3 roles: user, admin, super_admin
-      const basicRoles = allRoles.filter(role => 
-        role.type === 'user' || role.type === 'admin' || role.type === 'super_admin'
+      // Filter to show assignable roles: user, admin, super_admin, external_recruiter
+      const assignableRoles = allRoles.filter(role => 
+        role.type === 'user' || role.type === 'admin' || role.type === 'super_admin' || role.type === 'external_recruiter'
       );
-      res.json(basicRoles);
+      res.json(assignableRoles);
     } catch (error) {
       console.error("Error fetching roles:", error);
       res.status(500).json({ message: "Failed to fetch roles" });
