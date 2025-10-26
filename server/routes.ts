@@ -1780,6 +1780,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       if (updates.status !== undefined) {
         updateData.status = updates.status;
+        // עדכן תאריך עדכון סטטוס
+        updateData.lastStatusUpdate = new Date();
       }
 
       if (updates.notes !== undefined) {

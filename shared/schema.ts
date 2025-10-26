@@ -168,6 +168,7 @@ export const candidates = pgTable("candidates", {
   cvContent: text("cv_content"), // extracted text content from CV for searching
   manualCv: text("manual_cv"), // קורות חיים ידני שנכתב במערכת
   status: text("status").default('pending'),
+  lastStatusUpdate: timestamp("last_status_update").defaultNow(), // תאריך עדכון סטטוס אחרון
   rating: integer("rating"), // 1-5 rating
   notes: text("notes"),
   tags: text("tags").array(), // array of tags
