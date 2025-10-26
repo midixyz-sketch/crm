@@ -93,8 +93,15 @@ export default function UploadCandidateExternalPage() {
 
     const formData = new FormData();
     formData.append("cv", cvFile);
-    formData.append("name", candidateName);
-    if (phone) formData.append("phone", phone);
+    
+    // פיצול השם לשם פרטי ושם משפחה
+    const nameParts = candidateName.trim().split(/\s+/);
+    const firstName = nameParts[0] || candidateName;
+    const lastName = nameParts.slice(1).join(' ') || '';
+    
+    formData.append("firstName", firstName);
+    formData.append("lastName", lastName);
+    if (phone) formData.append("mobile", phone);
     if (email) formData.append("email", email);
     if (notes) formData.append("notes", notes);
     if (jobId) formData.append("jobId", jobId);
