@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
-import { Users, Building2, Briefcase, BarChart3, Settings, UserCheck, Search, Calendar, UserCog, Clock } from "lucide-react";
+import { Users, Building2, Briefcase, BarChart3, Settings, UserCheck, Search, Calendar, UserCog, Clock, History } from "lucide-react";
 import { usePermissions } from "@/hooks/usePermissions";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -28,6 +28,7 @@ export default function Sidebar() {
       ? [{ name: "המשרות שלי", href: "/my-jobs", icon: Briefcase }]
       : [
           { name: "מאגר מועמדים", href: "/candidates", icon: Users },
+          { name: "עודכנו לאחרונה", href: "/candidates/recently-updated", icon: History },
           { name: "חיפוש בקורות חיים", href: "/cv-search", icon: Search },
           { name: "יומן", href: "/calendar", icon: Calendar },
           { name: "מאגר לקוחות", href: "/clients", icon: Building2 },
