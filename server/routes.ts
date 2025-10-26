@@ -903,12 +903,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!user) {
         return res.status(404).json({ message: 'User not found' });
       }
+      
+      // קבל את תפקידי המשתמש
+      const userWithRoles = await storage.getUserWithRoles(user.id);
+      
       res.json({
         id: user.id,
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,
-        username: user.username
+        username: user.username,
+        userRoles: userWithRoles?.userRoles || []
       });
     } catch (error) {
       console.error("Error fetching user:", error);
