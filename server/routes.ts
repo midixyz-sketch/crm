@@ -2791,19 +2791,20 @@ ${extractedData.achievements ? `הישגים ופעילות נוספת: ${cleanS
   // Job Assignment routes (External Recruiters)
   app.get('/api/job-assignments', isAuthenticated, async (req, res) => {
     try {
-      // בדיקת הרשאות: רק super admin יכול לראות את כל ההקצאות
-      const userPermissions = await getUserPermissions(req.user!.id);
-      const isSuperAdmin = userPermissions.roleType === 'super_admin';
+      // בדיקת הרשאות: admin ו-super admin יכולים לראות את כל ההקצאות
+      const sessionUser = req.user as any;
+      const userId = sessionUser.id;
+      const isAdmin = await storage.hasRole(userId, 'admin') || await storage.hasRole(userId, 'super_admin');
       
-      let userId = req.query.userId as string | undefined;
+      let filterUserId = req.query.userId as string | undefined;
       const jobId = req.query.jobId as string | undefined;
       
       // רכזים חיצוניים רואים רק את ההקצאות שלהם
-      if (!isSuperAdmin) {
-        userId = req.user!.id;
+      if (!isAdmin) {
+        filterUserId = req.user!.id;
       }
       
-      const assignments = await storage.getJobAssignments(userId, jobId);
+      const assignments = await storage.getJobAssignments(filterUserId, jobId);
       res.json(assignments);
     } catch (error) {
       console.error("Error fetching job assignments:", error);
