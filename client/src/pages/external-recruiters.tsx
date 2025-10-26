@@ -38,6 +38,7 @@ export default function ExternalRecruitersPage() {
   const [selectedRecruiter, setSelectedRecruiter] = useState<string>("");
   const [selectedJobs, setSelectedJobs] = useState<string[]>([]);
   const [commission, setCommission] = useState<string>("");
+  const [jobSearchQuery, setJobSearchQuery] = useState<string>("");
 
   // קבלת רשימת כל המשתמשים עם תפקיד external_recruiter
   const { data: users = [] } = useQuery({
@@ -136,6 +137,17 @@ export default function ExternalRecruitersPage() {
         : [...prev, jobId]
     );
   };
+
+  // פילטור משרות לפי חיפוש
+  const filteredJobs = activeJobs.filter((job: any) => {
+    if (!jobSearchQuery.trim()) return true;
+    
+    const searchLower = jobSearchQuery.toLowerCase();
+    const titleMatch = job.title?.toLowerCase().includes(searchLower);
+    const jobNumberMatch = job.jobNumber?.toString().includes(jobSearchQuery);
+    
+    return titleMatch || jobNumberMatch;
+  });
 
   // קיבוץ הקצאות לפי רכז
   const assignmentsByRecruiter = assignments.reduce((acc: any, assignment: any) => {
@@ -275,16 +287,34 @@ export default function ExternalRecruitersPage() {
             </div>
 
             <div className="space-y-2">
-              <Label>בחר משרות להקצאה ({selectedJobs.length} נבחרו)</Label>
-              <ScrollArea className="h-[200px] border rounded-md p-4">
+              <div className="flex justify-between items-center">
+                <Label>בחר משרות להקצאה</Label>
+                <span className="text-sm text-muted-foreground">
+                  {selectedJobs.length} נבחרו מתוך {filteredJobs.length}
+                </span>
+              </div>
+              
+              <Input
+                placeholder="חיפוש לפי שם משרה או מספר משרה..."
+                value={jobSearchQuery}
+                onChange={(e) => setJobSearchQuery(e.target.value)}
+                className="mb-2"
+                data-testid="input-job-search"
+              />
+              
+              <ScrollArea className="h-[250px] border rounded-md p-4">
                 <div className="space-y-3">
                   {activeJobs.length === 0 ? (
                     <p className="text-sm text-muted-foreground text-center py-4">
                       אין משרות פעילות במערכת
                     </p>
+                  ) : filteredJobs.length === 0 ? (
+                    <p className="text-sm text-muted-foreground text-center py-4">
+                      לא נמצאו משרות התואמות לחיפוש
+                    </p>
                   ) : (
-                    activeJobs.map((job: any) => (
-                      <div key={job.id} className="flex items-center space-x-2 space-x-reverse">
+                    filteredJobs.map((job: any) => (
+                      <div key={job.id} className="flex items-center space-x-2 space-x-reverse hover:bg-accent rounded p-2 -mx-2">
                         <Checkbox
                           id={`job-${job.id}`}
                           checked={selectedJobs.includes(job.id)}
@@ -295,7 +325,14 @@ export default function ExternalRecruitersPage() {
                           htmlFor={`job-${job.id}`}
                           className="text-sm font-normal cursor-pointer flex-1"
                         >
-                          {job.title}
+                          <div className="flex items-center justify-between">
+                            <span>{job.title}</span>
+                            {job.jobNumber && (
+                              <span className="text-xs text-muted-foreground mr-2">
+                                #{job.jobNumber}
+                              </span>
+                            )}
+                          </div>
                         </Label>
                       </div>
                     ))
