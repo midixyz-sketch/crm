@@ -130,28 +130,16 @@ export function useDetailedPermissions() {
     return permissions.allowedJobIds.includes(jobId);
   };
 
-  // קבל רשימת דפי ניווט מותרים
+  // קבל רשימת דפי ניווט מותרים - תפריט עליון מצומצם בלבד
   const getAllowedNavigation = () => {
     if (!permissions) return [];
 
     const navigation = [
       { 
-        permission: 'view_dashboard' as PagePermission, 
-        name: "לוח בקרה", 
-        href: "/", 
-        icon: "LayoutDashboard" 
-      },
-      { 
         permission: 'view_candidates' as PagePermission, 
         name: "מאגר מועמדים", 
         href: "/candidates", 
         icon: "Users" 
-      },
-      { 
-        permission: 'view_recently_updated' as PagePermission, 
-        name: "עודכנו לאחרונה", 
-        href: "/candidates/recently-updated", 
-        icon: "RefreshCw" 
       },
       { 
         permission: 'view_cv_search' as PagePermission, 
@@ -188,24 +176,6 @@ export function useDetailedPermissions() {
         name: "דוחות ואנליטיקה", 
         href: "/reports", 
         icon: "BarChart3" 
-      },
-      { 
-        permission: 'manage_users' as PagePermission, 
-        name: "ניהול משתמשים", 
-        href: "/user-management", 
-        icon: "Shield" 
-      },
-      { 
-        permission: 'manage_external_recruiters' as PagePermission, 
-        name: "ניהול רכזים", 
-        href: "/external-recruiters", 
-        icon: "UserCog" 
-      },
-      { 
-        permission: 'view_pending_approvals' as PagePermission, 
-        name: "אישור מועמדים", 
-        href: "/pending-approvals", 
-        icon: "Clock" 
       },
       { 
         permission: 'access_settings' as PagePermission, 
