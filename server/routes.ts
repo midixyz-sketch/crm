@@ -1777,6 +1777,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         updateData.status = updates.status;
       }
 
+      if (updates.notes !== undefined) {
+        updateData.notes = updates.notes;
+      }
+
       // Update candidate
       const updated = await storage.updateCandidate(id, updateData);
 
