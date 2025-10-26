@@ -61,10 +61,8 @@ export default function ExternalRecruitersPage() {
   // מוטציה להוספת הקצאה
   const assignMutation = useMutation({
     mutationFn: async (data: { userId: string; jobId: string; commission?: number }) => {
-      return await apiRequest("/api/job-assignments", {
-        method: "POST",
-        body: JSON.stringify(data),
-      });
+      const res = await apiRequest("POST", "/api/job-assignments", data);
+      return await res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/job-assignments"] });
@@ -89,9 +87,8 @@ export default function ExternalRecruitersPage() {
   // מוטציה למחיקת הקצאה
   const deleteMutation = useMutation({
     mutationFn: async (assignmentId: string) => {
-      return await apiRequest(`/api/job-assignments/${assignmentId}`, {
-        method: "DELETE",
-      });
+      const res = await apiRequest("DELETE", `/api/job-assignments/${assignmentId}`);
+      return await res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/job-assignments"] });
