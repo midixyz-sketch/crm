@@ -2850,6 +2850,12 @@ ${extractedData.achievements ? `הישגים ופעילות נוספת: ${cleanS
         isActive: true
       };
       
+      // בדיקה אם ההקצאה כבר קיימת
+      const existingAssignments = await storage.getJobAssignments(assignmentData.userId, assignmentData.jobId);
+      if (existingAssignments.length > 0) {
+        return res.status(400).json({ message: "המשרה כבר מוקצת לרכז זה" });
+      }
+      
       const assignment = await storage.createJobAssignment(assignmentData);
       
       // Log activity
