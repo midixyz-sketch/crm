@@ -173,8 +173,9 @@ class WhatsAppService {
             const qrImage = await QRCode.toDataURL(qr);
             this.state.qrCode = qrImage;
             this.currentQR = qrImage;
-            logger.info('QR Code generated');
-            whatsappEvents.emit('qr', qrImage);
+            logger.info(`QR Code generated for user ${userId}`);
+            // Emit with userId to prevent cross-user leakage
+            whatsappEvents.emit('qr', { userId, qrCode: qrImage });
 
             // Update session in DB
             if (existingSession) {
@@ -206,18 +207,18 @@ class WhatsAppService {
           this.state.isConnected = false;
           this.state.qrCode = null;
           this.state.socket = null;
-          whatsappEvents.emit('disconnected');
+          // Emit with userId to prevent cross-user leakage
+          whatsappEvents.emit('disconnected', { userId });
 
-          // Update session in DB
-          if (existingSession) {
-            await db.update(whatsappSessions)
-              .set({ 
-                isActive: false, 
-                lastDisconnected: new Date(),
-                updatedAt: new Date() 
-              })
-              .where(eq(whatsappSessions.id, existingSession.id));
-          }
+          // Update session in DB - use sessionId and userId to ensure we update the right session
+          // This works whether existingSession was found or a new session was created
+          await db.update(whatsappSessions)
+            .set({ 
+              isActive: false, 
+              lastDisconnected: new Date(),
+              updatedAt: new Date() 
+            })
+            .where(eq(whatsappSessions.sessionId, sessionId));
 
           // Don't reconnect on conflict - it means another instance is running
           if (shouldReconnect && !isConflict) {
@@ -227,12 +228,13 @@ class WhatsAppService {
             logger.warn('Connection closed due to conflict - another instance may be running. Not reconnecting.');
           }
         } else if (connection === 'open') {
-          logger.info('WhatsApp connection opened');
+          logger.info(`WhatsApp connection opened for user ${userId}`);
           this.state.isConnected = true;
           this.state.qrCode = null;
           this.currentQR = null;
           this.state.phoneNumber = socket.user?.id.split(':')[0] || null;
-          whatsappEvents.emit('connected', this.state.phoneNumber);
+          // Emit with userId to prevent cross-user leakage
+          whatsappEvents.emit('connected', { userId, phoneNumber: this.state.phoneNumber });
 
           // Update or create session in DB
           const sessionData = {
