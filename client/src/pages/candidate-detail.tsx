@@ -100,6 +100,7 @@ export default function CandidateDetail() {
       case 'blacklisted': return 'bg-red-100 text-red-800';
       // New detailed statuses
       case 'pending': return 'bg-purple-100 text-purple-800';
+      case 'pending_approval': return 'bg-orange-100 text-orange-800';
       case 'pending_initial_screening': return 'bg-yellow-100 text-yellow-800';
       case 'in_initial_screening': return 'bg-orange-100 text-orange-800';
       case 'passed_initial_screening': return 'bg-green-100 text-green-800';
@@ -119,7 +120,7 @@ export default function CandidateDetail() {
     }
   };
 
-  const getStatusText = (status: string) => {
+  const getStatusText = (status: string, recruitmentSource?: string | null) => {
     switch (status) {
       // Legacy statuses
       case 'available': return 'זמין';
@@ -128,11 +129,13 @@ export default function CandidateDetail() {
       case 'blacklisted': return 'ברשימה שחורה';
       // New detailed statuses
       case 'pending': return 'ממתין';
+      case 'pending_approval': return 'ממתין לאישור';
       case 'pending_initial_screening': return 'ממתין לסינון ראשוני';
       case 'in_initial_screening': return 'בסינון ראשוני';
       case 'passed_initial_screening': return 'עבר סינון ראשוני';
       case 'failed_initial_screening': return 'נפסל בסינון ראשוני';
-      case 'sent_to_employer': return 'נשלח למעסיק';
+      case 'sent_to_employer': 
+        return recruitmentSource ? `נשלח ע"י ${recruitmentSource}` : 'נשלח למעסיק';
       case 'whatsapp_sent': return 'נשלחה הודעת ווצאפ';
       case 'phone_contact_made': return 'נוצר קשר טלפוני';
       case 'waiting_employer_response': return 'ממתין לתשובת מעסיק';
@@ -1059,7 +1062,7 @@ export default function CandidateDetail() {
                   </DialogHeader>
                   <div className="space-y-4">
                     <div>
-                      <label className="text-sm font-medium mb-2 block">סטטוס נוכחי: {getStatusText(candidate.status || '')}</label>
+                      <label className="text-sm font-medium mb-2 block">סטטוס נוכחי: {getStatusText(candidate.status || '', candidate.recruitmentSource)}</label>
                       <Select value={newStatus} onValueChange={setNewStatus}>
                         <SelectTrigger className="w-full">
                           <SelectValue placeholder="בחר סטטוס חדש" />

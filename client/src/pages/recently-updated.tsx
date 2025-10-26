@@ -63,6 +63,7 @@ export default function RecentlyUpdated() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
+      case 'pending_approval': return 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200';
       case 'sent_to_employer': return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
       case 'rejected_by_employer': return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
       case 'rejected': return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
@@ -70,9 +71,11 @@ export default function RecentlyUpdated() {
     }
   };
 
-  const getStatusText = (status: string) => {
+  const getStatusText = (status: string, recruitmentSource?: string | null) => {
     switch (status) {
-      case 'sent_to_employer': return 'נשלח למעסיק';
+      case 'pending_approval': return 'ממתין לאישור';
+      case 'sent_to_employer': 
+        return recruitmentSource ? `נשלח ע"י ${recruitmentSource}` : 'נשלח למעסיק';
       case 'rejected_by_employer': return 'נפסל ע"י מעסיק';
       case 'rejected': return 'נדחה';
       default: return status || 'לא הוגדר';
@@ -223,11 +226,11 @@ export default function RecentlyUpdated() {
                             {candidate.lastReferralClient || "-"}
                           </TableCell>
                           <TableCell className="text-sm">
-                            {candidate.lastReferralUserName || candidate.creatorUsername || "-"}
+                            {candidate.creatorUsername || "-"}
                           </TableCell>
                           <TableCell className="text-sm">
                             <Badge className={getStatusColor(candidate.status || 'available')}>
-                              {getStatusText(candidate.status || 'available')}
+                              {getStatusText(candidate.status || 'available', candidate.recruitmentSource)}
                             </Badge>
                           </TableCell>
                           <TableCell className="text-sm whitespace-nowrap">
