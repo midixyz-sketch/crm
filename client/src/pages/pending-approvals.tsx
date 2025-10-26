@@ -109,6 +109,7 @@ export default function PendingApprovalsPage() {
               <TableRow>
                 <TableHead className="text-right">מועמד</TableHead>
                 <TableHead className="text-right">פרטי קשר</TableHead>
+                <TableHead className="text-right">משרה</TableHead>
                 <TableHead className="text-right">הועלה על ידי</TableHead>
                 <TableHead className="text-right">תאריך העלאה</TableHead>
                 <TableHead className="text-right">סטטוס</TableHead>
@@ -138,6 +139,13 @@ export default function PendingApprovalsPage() {
                       {candidate.mobile && <div>📱 {candidate.mobile}</div>}
                       {candidate.email && (
                         <div className="text-muted-foreground">{candidate.email}</div>
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="text-sm font-medium">
+                      {candidate.lastJobTitle || (
+                        <span className="text-muted-foreground">לא צוין</span>
                       )}
                     </div>
                   </TableCell>
