@@ -556,11 +556,17 @@ export class DatabaseStorage implements IStorage {
 
     const whereCondition = conditions.length > 0 ? and(...conditions) : undefined;
 
+    // Use lastStatusUpdate for sorting if we're filtering by statuses that indicate recent updates
+    const shouldSortByLastStatusUpdate = statuses && (
+      statuses.includes('sent_to_employer') || 
+      statuses.includes('rejected_by_employer')
+    );
+
     const candidateResults = await db
       .select()
       .from(candidates)
       .where(whereCondition)
-      .orderBy(desc(candidates.createdAt))
+      .orderBy(shouldSortByLastStatusUpdate ? desc(candidates.lastStatusUpdate) : desc(candidates.createdAt))
       .limit(limit)
       .offset(offset);
 
