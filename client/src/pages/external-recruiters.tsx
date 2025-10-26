@@ -26,6 +26,8 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Plus, Trash2, Users } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -34,7 +36,7 @@ export default function ExternalRecruitersPage() {
   const { toast } = useToast();
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
   const [selectedRecruiter, setSelectedRecruiter] = useState<string>("");
-  const [selectedJob, setSelectedJob] = useState<string>("");
+  const [selectedJobs, setSelectedJobs] = useState<string[]>([]);
   const [commission, setCommission] = useState<string>("");
 
   // קבלת רשימת כל המשתמשים עם תפקיד external_recruiter
@@ -64,27 +66,6 @@ export default function ExternalRecruitersPage() {
       const res = await apiRequest("POST", "/api/job-assignments", data);
       return await res.json();
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/job-assignments"] });
-      toast({
-        title: "הצלחה",
-        description: "המשרה הוקצתה לרכז בהצלחה",
-      });
-      setIsAssignDialogOpen(false);
-      setSelectedRecruiter("");
-      setSelectedJob("");
-      setCommission("");
-    },
-    onError: (error: any) => {
-      const errorMessage = error?.message?.includes("כבר מוקצת") 
-        ? "המשרה כבר מוקצת לרכז זה" 
-        : "אירעה שגיאה בהקצאת המשרה";
-      toast({
-        title: "שגיאה",
-        description: errorMessage,
-        variant: "destructive",
-      });
-    },
   });
 
   // מוטציה למחיקת הקצאה
@@ -109,21 +90,51 @@ export default function ExternalRecruitersPage() {
     },
   });
 
-  const handleAssign = () => {
-    if (!selectedRecruiter || !selectedJob) {
+  const handleAssign = async () => {
+    if (!selectedRecruiter || selectedJobs.length === 0) {
       toast({
         title: "שגיאה",
-        description: "יש לבחור רכז ומשרה",
+        description: "יש לבחור רכז ולפחות משרה אחת",
         variant: "destructive",
       });
       return;
     }
 
-    assignMutation.mutate({
-      userId: selectedRecruiter,
-      jobId: selectedJob,
-      commission: commission ? parseInt(commission) : undefined,
-    });
+    // הקצאת כל המשרות שנבחרו
+    try {
+      for (const jobId of selectedJobs) {
+        await assignMutation.mutateAsync({
+          userId: selectedRecruiter,
+          jobId: jobId,
+          commission: commission ? parseInt(commission) : undefined,
+        });
+      }
+      
+      toast({
+        title: "הצלחה",
+        description: `${selectedJobs.length} משרות הוקצו בהצלחה`,
+      });
+      
+      setIsAssignDialogOpen(false);
+      setSelectedRecruiter("");
+      setSelectedJobs([]);
+      setCommission("");
+      queryClient.invalidateQueries({ queryKey: ["/api/job-assignments"] });
+    } catch (error: any) {
+      toast({
+        title: "שגיאה",
+        description: error?.message || "אירעה שגיאה בהקצאת המשרות",
+        variant: "destructive",
+      });
+    }
+  };
+  
+  const toggleJobSelection = (jobId: string) => {
+    setSelectedJobs(prev => 
+      prev.includes(jobId) 
+        ? prev.filter(id => id !== jobId)
+        : [...prev, jobId]
+    );
   };
 
   // קיבוץ הקצאות לפי רכז
@@ -264,23 +275,37 @@ export default function ExternalRecruitersPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="job">בחר משרה</Label>
-              <Select value={selectedJob} onValueChange={setSelectedJob}>
-                <SelectTrigger id="job" data-testid="select-job">
-                  <SelectValue placeholder="בחר משרה..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {activeJobs.map((job: any) => (
-                    <SelectItem key={job.id} value={job.id}>
-                      {job.title}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label>בחר משרות להקצאה ({selectedJobs.length} נבחרו)</Label>
+              <ScrollArea className="h-[200px] border rounded-md p-4">
+                <div className="space-y-3">
+                  {activeJobs.length === 0 ? (
+                    <p className="text-sm text-muted-foreground text-center py-4">
+                      אין משרות פעילות במערכת
+                    </p>
+                  ) : (
+                    activeJobs.map((job: any) => (
+                      <div key={job.id} className="flex items-center space-x-2 space-x-reverse">
+                        <Checkbox
+                          id={`job-${job.id}`}
+                          checked={selectedJobs.includes(job.id)}
+                          onCheckedChange={() => toggleJobSelection(job.id)}
+                          data-testid={`checkbox-job-${job.id}`}
+                        />
+                        <Label
+                          htmlFor={`job-${job.id}`}
+                          className="text-sm font-normal cursor-pointer flex-1"
+                        >
+                          {job.title}
+                        </Label>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </ScrollArea>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="commission">עמלה (אופציונלי)</Label>
+              <Label htmlFor="commission">עמלה לכל משרה (אופציונלי)</Label>
               <Input
                 id="commission"
                 type="number"
