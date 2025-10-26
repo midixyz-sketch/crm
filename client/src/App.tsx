@@ -38,6 +38,7 @@ import UploadCandidateExternal from "@/pages/upload-candidate-external";
 
 import { useQuery } from "@tanstack/react-query";
 import { Redirect } from "wouter";
+import { RouteGuard } from "@/components/route-guard";
 
 function HomePage() {
   const { data: currentUser } = useQuery({
@@ -75,13 +76,14 @@ function Router() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <Navbar />
-      {!isExternalRecruiter && <ReminderPopup />}
-      {!isExternalRecruiter && <WhatsAppWidget />}
-      {!isExternalRecruiter && <WhatsAppNotificationContainer />}
-      <main className="w-full px-4 sm:px-6 lg:px-8 py-6">
-        <Switch>
+    <RouteGuard>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+        <Navbar />
+        {!isExternalRecruiter && <ReminderPopup />}
+        {!isExternalRecruiter && <WhatsAppWidget />}
+        {!isExternalRecruiter && <WhatsAppNotificationContainer />}
+        <main className="w-full px-4 sm:px-6 lg:px-8 py-6">
+          <Switch>
           <Route path="/" component={HomePage} />
           <Route path="/candidates" component={Candidates} />
           <Route path="/candidates/recently-updated" component={RecentlyUpdated} />
@@ -109,9 +111,10 @@ function Router() {
           <Route path="/upload-candidate" component={UploadCandidateExternal} />
           <Route path="/pending-approvals" component={PendingApprovals} />
           <Route component={NotFound} />
-        </Switch>
-      </main>
-    </div>
+          </Switch>
+        </main>
+      </div>
+    </RouteGuard>
   );
 }
 
