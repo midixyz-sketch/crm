@@ -920,6 +920,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         firstName: user.firstName,
         lastName: user.lastName,
         username: user.username,
+        requiresApproval: user.requiresApproval || false,
         userRoles: userWithRoles?.userRoles || []
       });
     } catch (error) {
