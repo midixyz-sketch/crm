@@ -137,7 +137,7 @@ export function useDetailedPermissions() {
     const navigation = [
       { 
         permission: 'view_candidates' as PagePermission, 
-        name: "מאגר מועמדים", 
+        name: "מועמדים", 
         href: "/candidates", 
         icon: "Users" 
       },
@@ -161,13 +161,13 @@ export function useDetailedPermissions() {
       },
       { 
         permission: 'view_clients' as PagePermission, 
-        name: "מאגר לקוחות", 
+        name: "לקוחות", 
         href: "/clients", 
         icon: "Building2" 
       },
       { 
         permission: 'view_jobs' as PagePermission, 
-        name: "מאגר משרות", 
+        name: "משרות", 
         href: "/jobs", 
         icon: "Briefcase" 
       },
