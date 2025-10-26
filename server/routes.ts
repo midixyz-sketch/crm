@@ -907,6 +907,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // קבל את תפקידי המשתמש
       const userWithRoles = await storage.getUserWithRoles(user.id);
       
+      // Prevent caching to ensure fresh user data with roles
+      res.set({
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      });
+      
       res.json({
         id: user.id,
         email: user.email,

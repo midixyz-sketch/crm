@@ -37,11 +37,11 @@ export default function LoginPage() {
           description: "התחברת למערכת בהצלחה",
         });
         
-        // Invalidate auth queries
-        queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
-        queryClient.invalidateQueries({ queryKey: ["/api/user"] });
+        // Invalidate auth queries to refresh user data
+        await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+        await queryClient.invalidateQueries({ queryKey: ["/api/user"] });
         
-        // Navigate to dashboard
+        // Always navigate to "/" - HomePage will redirect based on role
         navigate('/');
       } else {
         const errorData = await response.json();
