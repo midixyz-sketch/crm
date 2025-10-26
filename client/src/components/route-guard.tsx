@@ -6,7 +6,6 @@ const ALLOWED_ROUTES_FOR_EXTERNAL_RECRUITER = [
   "/my-jobs",
   "/upload-candidate",
   "/login",
-  "/",
 ];
 
 export function RouteGuard({ children }: { children: React.ReactNode }) {
@@ -23,9 +22,15 @@ export function RouteGuard({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!currentUser || !isExternalRecruiter) return;
 
+    // רכז חיצוני שמנסה לגשת לדף הבית - הפנה ל-/my-jobs
+    if (location === "/") {
+      console.log("🔄 Redirecting external recruiter from homepage to /my-jobs");
+      setLocation("/my-jobs");
+      return;
+    }
+
     // בדיקה אם הנתיב המבוקש מותר לרכז חיצוני
     const isAllowed = ALLOWED_ROUTES_FOR_EXTERNAL_RECRUITER.some(route => {
-      if (route === "/") return location === "/";
       return location.startsWith(route);
     });
 
