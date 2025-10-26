@@ -35,6 +35,8 @@ import ExternalRecruiters from "@/pages/external-recruiters";
 import MyJobs from "@/pages/my-jobs";
 import PendingApprovals from "@/pages/pending-approvals";
 import UploadCandidateExternal from "@/pages/upload-candidate-external";
+import Reports from "@/pages/reports";
+import { PermissionWrapper } from "@/components/permissions/permission-wrapper";
 
 import { useQuery } from "@tanstack/react-query";
 import { Redirect } from "wouter";
@@ -60,6 +62,24 @@ function HomePage() {
 
   // כל השאר - הצג דשבורד
   return <Dashboard />;
+}
+
+function ProtectedReports() {
+  return (
+    <PermissionWrapper 
+      permission="view_reports" 
+      fallback={
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <h2 className="text-2xl font-bold mb-2">אין לך הרשאה לצפות בדף זה</h2>
+            <p className="text-muted-foreground">צור קשר עם המנהל למתן הרשאות דוחות ואנליטיקה.</p>
+          </div>
+        </div>
+      }
+    >
+      <Reports />
+    </PermissionWrapper>
+  );
 }
 
 function Router() {
@@ -120,6 +140,7 @@ function Router() {
           <Route path="/my-jobs" component={MyJobs} />
           <Route path="/upload-candidate" component={UploadCandidateExternal} />
           <Route path="/pending-approvals" component={PendingApprovals} />
+          <Route path="/reports" component={ProtectedReports} />
           <Route component={NotFound} />
           </Switch>
         </main>

@@ -6,7 +6,7 @@ import path from "path";
 import fs from "fs";
 import { storage } from "./storage";
 import { db } from "./db";
-import { eq, and, desc, sql, isNotNull, not } from "drizzle-orm";
+import { eq, and, desc, asc, sql, isNotNull, not, gte, lte, inArray } from "drizzle-orm";
 import { isAuthenticated } from "./localAuth";
 import { requireRole, requirePermission, injectUserPermissions } from "./authMiddleware";
 import { 
@@ -28,7 +28,9 @@ import {
   insertRolePermissionSchema,
   whatsappChats,
   whatsappMessages,
-  whatsappSessions
+  whatsappSessions,
+  externalActivityLog,
+  users
 } from "@shared/schema";
 import { z } from "zod";
 import mammoth from 'mammoth';
@@ -6298,6 +6300,212 @@ ${recommendation}
     } catch (error) {
       console.error('שגיאה בקבלת הודעות WhatsApp למועמד:', error);
       res.status(500).json({ message: 'שגיאה בקבלת הודעות' });
+    }
+  });
+
+  // ============== Reports & Analytics Endpoints ==============
+  
+  // GET /api/reports/candidates-by-time - קבלת מועמדים לפי זמן ומקור גיוס
+  app.get('/api/reports/candidates-by-time', isAuthenticated, requirePermission(PAGE_PERMISSIONS.REPORTS), async (req, res) => {
+    try {
+      const { startDate, endDate, recruitmentSource } = req.query;
+      
+      // Build WHERE conditions
+      let conditions: any[] = [];
+      
+      if (startDate) {
+        conditions.push(gte(candidates.createdAt, new Date(startDate as string)));
+      }
+      if (endDate) {
+        conditions.push(lte(candidates.createdAt, new Date(endDate as string)));
+      }
+      if (recruitmentSource && recruitmentSource !== 'all') {
+        conditions.push(eq(candidates.recruitmentSource, recruitmentSource as string));
+      }
+      
+      // Get candidates grouped by date and recruitment source
+      const candidateData = await db.query.candidates.findMany({
+        where: conditions.length > 0 ? and(...conditions) : undefined,
+        orderBy: [asc(candidates.createdAt)],
+      });
+      
+      // Group by date
+      const groupedByDate = candidateData.reduce((acc: any, candidate: any) => {
+        const date = new Date(candidate.createdAt).toISOString().split('T')[0];
+        if (!acc[date]) {
+          acc[date] = 0;
+        }
+        acc[date]++;
+        return acc;
+      }, {});
+      
+      // Group by recruitment source
+      const groupedBySource = candidateData.reduce((acc: any, candidate: any) => {
+        const source = candidate.recruitmentSource || 'לא ידוע';
+        if (!acc[source]) {
+          acc[source] = 0;
+        }
+        acc[source]++;
+        return acc;
+      }, {});
+      
+      // Get all unique recruitment sources for filter
+      const allSources = await db.selectDistinct({ source: candidates.recruitmentSource })
+        .from(candidates)
+        .where(isNotNull(candidates.recruitmentSource));
+      
+      res.json({
+        byDate: Object.entries(groupedByDate).map(([date, count]) => ({ date, count })),
+        bySource: Object.entries(groupedBySource).map(([source, count]) => ({ source, count })),
+        availableSources: allSources.map(s => s.source).filter(Boolean),
+        total: candidateData.length,
+      });
+    } catch (error) {
+      console.error('שגיאה בקבלת דוח מועמדים:', error);
+      res.status(500).json({ message: 'שגיאה בקבלת נתונים' });
+    }
+  });
+  
+  // GET /api/reports/recruiter-activity - קבלת פעילות כל הרכזים
+  app.get('/api/reports/recruiter-activity', isAuthenticated, requirePermission(PAGE_PERMISSIONS.REPORTS), async (req, res) => {
+    try {
+      const { startDate, endDate, action } = req.query;
+      
+      // Build WHERE conditions
+      let conditions: any[] = [];
+      
+      if (startDate) {
+        conditions.push(gte(externalActivityLog.createdAt, new Date(startDate as string)));
+      }
+      if (endDate) {
+        conditions.push(lte(externalActivityLog.createdAt, new Date(endDate as string)));
+      }
+      if (action && action !== 'all') {
+        conditions.push(eq(externalActivityLog.action, action as string));
+      }
+      
+      // Get all activity logs
+      const activityLogs = await db.query.externalActivityLog.findMany({
+        where: conditions.length > 0 ? and(...conditions) : undefined,
+        orderBy: [desc(externalActivityLog.createdAt)],
+      });
+      
+      // Get user details for each unique userId
+      const userIds = [...new Set(activityLogs.map(log => log.userId))];
+      const usersData = await db.query.users.findMany({
+        where: inArray(users.id, userIds),
+      });
+      
+      // Create user map
+      const userMap = usersData.reduce((acc: any, user: any) => {
+        acc[user.id] = {
+          name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email,
+          email: user.email,
+        };
+        return acc;
+      }, {});
+      
+      // Group by user
+      const groupedByUser = activityLogs.reduce((acc: any, log: any) => {
+        if (!acc[log.userId]) {
+          acc[log.userId] = {
+            userId: log.userId,
+            userName: userMap[log.userId]?.name || 'משתמש לא ידוע',
+            userEmail: userMap[log.userId]?.email || '',
+            totalActions: 0,
+            actionBreakdown: {},
+          };
+        }
+        acc[log.userId].totalActions++;
+        
+        const actionType = log.action || 'unknown';
+        if (!acc[log.userId].actionBreakdown[actionType]) {
+          acc[log.userId].actionBreakdown[actionType] = 0;
+        }
+        acc[log.userId].actionBreakdown[actionType]++;
+        
+        return acc;
+      }, {});
+      
+      // Get all unique action types for filter
+      const allActions = [...new Set(activityLogs.map(log => log.action).filter(Boolean))];
+      
+      res.json({
+        recruiterActivity: Object.values(groupedByUser),
+        availableActions: allActions,
+        totalActivities: activityLogs.length,
+      });
+    } catch (error) {
+      console.error('שגיאה בקבלת פעילות רכזים:', error);
+      res.status(500).json({ message: 'שגיאה בקבלת נתונים' });
+    }
+  });
+  
+  // GET /api/reports/recruiter-activity/:userId - קבלת פעילות רכז ספציפי לפי ימים
+  app.get('/api/reports/recruiter-activity/:userId', isAuthenticated, requirePermission(PAGE_PERMISSIONS.REPORTS), async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const { startDate, endDate, action } = req.query;
+      
+      // Build WHERE conditions
+      let conditions: any[] = [eq(externalActivityLog.userId, userId)];
+      
+      if (startDate) {
+        conditions.push(gte(externalActivityLog.createdAt, new Date(startDate as string)));
+      }
+      if (endDate) {
+        conditions.push(lte(externalActivityLog.createdAt, new Date(endDate as string)));
+      }
+      if (action && action !== 'all') {
+        conditions.push(eq(externalActivityLog.action, action as string));
+      }
+      
+      // Get activity logs for specific user
+      const activityLogs = await db.query.externalActivityLog.findMany({
+        where: and(...conditions),
+        orderBy: [asc(externalActivityLog.createdAt)],
+      });
+      
+      // Get user details
+      const user = await db.query.users.findFirst({
+        where: eq(users.id, userId),
+      });
+      
+      // Group by date
+      const groupedByDate = activityLogs.reduce((acc: any, log: any) => {
+        const date = new Date(log.createdAt).toISOString().split('T')[0];
+        if (!acc[date]) {
+          acc[date] = {
+            date,
+            totalActions: 0,
+            actionBreakdown: {},
+          };
+        }
+        acc[date].totalActions++;
+        
+        const actionType = log.action || 'unknown';
+        if (!acc[date].actionBreakdown[actionType]) {
+          acc[date].actionBreakdown[actionType] = 0;
+        }
+        acc[date].actionBreakdown[actionType]++;
+        
+        return acc;
+      }, {});
+      
+      // Get all unique action types for filter
+      const allActions = [...new Set(activityLogs.map(log => log.action).filter(Boolean))];
+      
+      res.json({
+        userId,
+        userName: user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email : 'משתמש לא ידוע',
+        userEmail: user?.email || '',
+        activityByDate: Object.values(groupedByDate),
+        availableActions: allActions,
+        totalActivities: activityLogs.length,
+      });
+    } catch (error) {
+      console.error('שגיאה בקבלת פעילות רכז:', error);
+      res.status(500).json({ message: 'שגיאה בקבלת נתונים' });
     }
   });
 
