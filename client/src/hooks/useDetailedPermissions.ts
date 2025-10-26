@@ -136,6 +136,12 @@ export function useDetailedPermissions() {
 
     const navigation = [
       { 
+        permission: 'view_dashboard' as PagePermission, 
+        name: "לוח בקרה", 
+        href: "/", 
+        icon: "LayoutDashboard" 
+      },
+      { 
         permission: 'view_candidates' as PagePermission, 
         name: "מאגר מועמדים", 
         href: "/candidates", 
