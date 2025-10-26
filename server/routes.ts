@@ -2832,7 +2832,16 @@ ${extractedData.achievements ? `הישגים ופעילות נוספת: ${cleanS
     }
   });
 
-  app.post('/api/job-assignments', isAuthenticated, requireRole('super_admin'), async (req, res) => {
+  app.post('/api/job-assignments', isAuthenticated, async (req, res) => {
+    // Check if user has admin or super_admin role
+    const sessionUser = req.user as any;
+    const userId = sessionUser.id;
+    const hasAdminRole = await storage.hasRole(userId, 'admin') || await storage.hasRole(userId, 'super_admin');
+    
+    if (!hasAdminRole) {
+      return res.status(403).json({ message: "Forbidden - Required role: admin or super_admin" });
+    }
+
     try {
       const assignmentData = {
         userId: req.body.userId,
