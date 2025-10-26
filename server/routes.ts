@@ -1773,8 +1773,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
         updateData.tags = Array.isArray(updates.tags) ? updates.tags : [];
       }
 
+      if (updates.status !== undefined) {
+        updateData.status = updates.status;
+      }
+
       // Update candidate
       const updated = await storage.updateCandidate(id, updateData);
+
+      // Create event if status changed
+      if (updates.status && updates.status !== currentCandidate.status) {
+        const statusTranslations: Record<string, string> = {
+          'new': 'חדש',
+          'interviewed': 'רואיין',
+          'offered': 'הוצע',
+          'hired': 'התקבל',
+          'rejected': 'נדחה',
+          'in_process': 'בתהליך',
+          'pending_approval': 'ממתין לאישור',
+          'contacted': 'יצרנו קשר'
+        };
+
+        await storage.createCandidateEvent({
+          candidateId: id,
+          eventType: 'status_change',
+          description: `סטטוס המועמד השתנה מ-${statusTranslations[currentCandidate.status as keyof typeof statusTranslations] || currentCandidate.status} ל-${statusTranslations[updates.status as keyof typeof statusTranslations] || updates.status}`,
+          metadata: {
+            previousStatus: currentCandidate.status,
+            newStatus: updates.status,
+            changeType: 'manual',
+            updatedBy: req.user?.id,
+            timestamp: new Date().toISOString()
+          },
+          createdBy: req.user?.id || null
+        });
+      }
 
       res.json(updated);
     } catch (error) {
