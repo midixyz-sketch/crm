@@ -32,10 +32,10 @@ export default function PendingApprovalsPage() {
   const allCandidates = candidatesData?.candidates || [];
   const candidates = allCandidates.filter((c: any) => c.createdByRoleType === 'external_recruiter');
 
-  // מוטציה לאישור מועמד
+  // מוטציה לאישור מועמד - משנה סטטוס ל-"נשלח למעסיק"
   const approveMutation = useMutation({
     mutationFn: async ({ candidateId, notes }: { candidateId: string; notes: string }) => {
-      return await apiRequest("PATCH", `/api/candidates/${candidateId}`, { status: "new", notes });
+      return await apiRequest("PATCH", `/api/candidates/${candidateId}`, { status: "sent_to_employer", notes });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/candidates"] });
