@@ -45,9 +45,18 @@ function HomePage() {
     queryKey: ["/api/auth/user"],
   });
 
-  // DEBUG: לוג של המידע
+  // DEBUG: לוג מפורט של המידע
   console.log('HomePage - currentUser:', currentUser);
   console.log('HomePage - userRoles:', (currentUser as any)?.userRoles);
+  
+  // בדוק את המבנה המדויק של כל תפקיד
+  if ((currentUser as any)?.userRoles) {
+    (currentUser as any).userRoles.forEach((ur: any, index: number) => {
+      console.log(`HomePage - userRole[${index}]:`, ur);
+      console.log(`HomePage - userRole[${index}].roleType:`, ur.roleType);
+      console.log(`HomePage - userRole[${index}].role?.type:`, ur.role?.type);
+    });
+  }
 
   // בדיקה נכונה - roleType נמצא ישירות ב-userRoles
   const isExternalRecruiter = (currentUser as any)?.userRoles?.some((ur: any) => ur.roleType === "external_recruiter");
