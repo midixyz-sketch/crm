@@ -34,16 +34,16 @@ export default function Sidebar() {
           { name: "מאגר משרות", href: "/jobs", icon: Briefcase },
           { name: "ראיונות", href: "/interviews", icon: UserCheck },
           { name: "דוחות ואנליטיקה", href: "/reports", icon: BarChart3 },
+          ...(isSuperAdmin 
+            ? [
+                { name: "ניהול רכזים", href: "/external-recruiters", icon: UserCog },
+                { name: "אישור מועמדים", href: "/pending-approvals", icon: Clock },
+              ]
+            : []
+          ),
+          { name: "הגדרות", href: "/settings", icon: Settings },
         ]
     ),
-    ...(isSuperAdmin 
-      ? [
-          { name: "ניהול רכזים", href: "/external-recruiters", icon: UserCog },
-          { name: "אישור מועמדים", href: "/pending-approvals", icon: Clock },
-        ]
-      : []
-    ),
-    { name: "הגדרות", href: "/settings", icon: Settings },
   ];
 
   // WhatsApp status query - always enabled when dialog is open
