@@ -46,7 +46,15 @@ Preferred communication style: Simple, everyday language.
 -   **Optimized Candidate Table**: Streamlined table view focusing on essential information to avoid horizontal scrolling.
 -   **Candidate Detail Page**: Comprehensive profile with inline editing, CV display, and an expandable event history panel.
 -   **WhatsApp Web Integration**: Embedded WhatsApp functionality within the CRM via `@whiskeysockets/baileys`.
-    -   **PERSONAL PER-USER WHATSAPP**: Each user has their own independent WhatsApp connection. Users must scan QR code from their personal device. Multi-user architecture with `WhatsAppServiceManager` managing separate `WhatsAppService` instances per userId.
+    -   **PERSONAL PER-USER WHATSAPP**: Each user has their own independent WhatsApp connection. Users must scan QR code from their personal device.
+    -   **Multi-User Architecture** (October 2025):
+        -   `WhatsAppServiceManager` singleton manages Map of `WhatsAppService` instances keyed by userId
+        -   Each user gets separate session directory: `whatsapp_auth/session_${userId}`
+        -   **API Isolation**: All endpoints use `getUserWhatsAppService(userId)` with `isAuthenticated` middleware to ensure users only access their own WhatsApp
+        -   **Event Isolation**: WhatsApp events emit with userId payload (`{userId, qrCode/phoneNumber}`) to prevent cross-user data leakage
+        -   **Session Persistence**: Database updates use `sessionId` to correctly handle new session creation during QR flow
+        -   **Auto-Initialization**: Server startup initializes WhatsApp for all users with active sessions (via `whatsapp_user_sessions` table)
+        -   **Security**: No SSE/EventSource consumers currently exist; future implementations must filter events by userId
     -   Features include QR code connection, full chat page with individual/group/archived tabs, profile pictures, pin/unpin chats, tagging, search/filters, message bubbles, real-time updates, and full RTL support.
     -   **RTL Layout**: Chat list positioned on the right side, active chat on the left side (proper Hebrew RTL layout using flexbox without flex-row-reverse).
     -   **Full-Screen Chat Interface**: Full-screen overlay (z-40) with prominent minimize button (64x64px, green, top-center) positioned below main navbar.
