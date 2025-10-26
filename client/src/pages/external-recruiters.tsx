@@ -75,10 +75,13 @@ export default function ExternalRecruitersPage() {
       setSelectedJob("");
       setCommission("");
     },
-    onError: () => {
+    onError: (error: any) => {
+      const errorMessage = error?.message?.includes("כבר מוקצת") 
+        ? "המשרה כבר מוקצת לרכז זה" 
+        : "אירעה שגיאה בהקצאת המשרה";
       toast({
         title: "שגיאה",
-        description: "אירעה שגיאה בהקצאת המשרה",
+        description: errorMessage,
         variant: "destructive",
       });
     },
