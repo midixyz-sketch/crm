@@ -35,8 +35,32 @@ import ExternalRecruiters from "@/pages/external-recruiters";
 import MyJobs from "@/pages/my-jobs";
 import PendingApprovals from "@/pages/pending-approvals";
 
+import { useQuery } from "@tanstack/react-query";
+import { Redirect } from "wouter";
+
+function HomePage() {
+  const { data: currentUser } = useQuery({
+    queryKey: ["/api/auth/user"],
+  });
+
+  const isExternalRecruiter = (currentUser as any)?.userRoles?.some((ur: any) => ur.role?.type === "external_recruiter");
+
+  if (isExternalRecruiter) {
+    return <Redirect to="/my-jobs" />;
+  }
+
+  return <Dashboard />;
+}
+
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
+
+  const { data: currentUser } = useQuery({
+    queryKey: ["/api/auth/user"],
+    enabled: isAuthenticated,
+  });
+
+  const isExternalRecruiter = (currentUser as any)?.userRoles?.some((ur: any) => ur.role?.type === "external_recruiter");
 
   if (isLoading || !isAuthenticated) {
     return (
@@ -52,12 +76,12 @@ function Router() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <Navbar />
-      <ReminderPopup />
-      <WhatsAppWidget />
-      <WhatsAppNotificationContainer />
+      {!isExternalRecruiter && <ReminderPopup />}
+      {!isExternalRecruiter && <WhatsAppWidget />}
+      {!isExternalRecruiter && <WhatsAppNotificationContainer />}
       <main className="w-full px-4 sm:px-6 lg:px-8 py-6">
         <Switch>
-          <Route path="/" component={Dashboard} />
+          <Route path="/" component={HomePage} />
           <Route path="/candidates" component={Candidates} />
           <Route path="/candidates/recently-updated" component={RecentlyUpdated} />
           <Route path="/candidates/new" component={AddCandidate} />
