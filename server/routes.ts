@@ -2880,7 +2880,17 @@ ${extractedData.achievements ? `הישגים ופעילות נוספת: ${cleanS
   app.delete('/api/job-assignments/:id', isAuthenticated, requireRole('super_admin'), async (req, res) => {
     try {
       await storage.deleteJobAssignment(req.params.id);
-      res.status(204).send();
+      
+      // Log activity
+      await storage.logExternalActivity({
+        userId: req.user!.id,
+        action: 'delete_job_assignment',
+        resourceType: 'job_assignment',
+        resourceId: req.params.id,
+        details: { deletedAt: new Date() }
+      });
+      
+      res.json({ success: true, message: "ההקצאה נמחקה בהצלחה" });
     } catch (error) {
       console.error("Error deleting job assignment:", error);
       res.status(500).json({ message: "Failed to delete job assignment" });
