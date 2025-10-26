@@ -24,17 +24,24 @@ export default function UploadCandidateExternalPage() {
   const [email, setEmail] = useState("");
   const [notes, setNotes] = useState("");
 
-  // קבלת פרטי המשרה
-  const { data: jobData } = useQuery({
-    queryKey: [`/api/jobs/${jobId}`],
-    enabled: !!jobId,
+  // קבלת פרטי המשתמש הנוכחי
+  const { data: currentUser } = useQuery({
+    queryKey: ["/api/auth/user"],
   });
 
-  const job = jobData?.job;
+  // קבלת פרטי המשרה מההקצאות
+  const { data: assignments = [] } = useQuery({
+    queryKey: [`/api/users/${(currentUser as any)?.id}/job-assignments`],
+    enabled: !!(currentUser as any)?.id,
+  });
+
+  // מצא את המשרה מתוך ההקצאות
+  const assignment = assignments.find((a: any) => a.jobId === jobId);
+  const job = assignment?.job;
 
   const uploadMutation = useMutation({
     mutationFn: async (formData: FormData) => {
-      const res = await fetch("/api/candidates/upload", {
+      const res = await fetch("/api/candidates", {
         method: "POST",
         body: formData,
       });
@@ -42,9 +49,14 @@ export default function UploadCandidateExternalPage() {
       return res.json();
     },
     onSuccess: () => {
+      // בדיקה אם המשתמש דורש אישור
+      const requiresApproval = (currentUser as any)?.requiresApproval;
+      
       toast({
         title: "הצלחה!",
-        description: "המועמד הועלה בהצלחה ונשלח לאישור",
+        description: requiresApproval 
+          ? "המועמד הועלה בהצלחה וממתין לאישור המנהל"
+          : "המועמד הועלה בהצלחה ונשלח ללקוח",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/candidates"] });
       setLocation("/my-jobs");
