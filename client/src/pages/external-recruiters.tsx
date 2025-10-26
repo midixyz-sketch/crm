@@ -39,7 +39,7 @@ export default function ExternalRecruitersPage() {
 
   // קבלת רשימת כל המשתמשים עם תפקיד external_recruiter
   const { data: users = [] } = useQuery({
-    queryKey: ["/api/users"],
+    queryKey: ["/api/users/all"],
   });
 
   const externalRecruiters = users.filter((user: any) =>
