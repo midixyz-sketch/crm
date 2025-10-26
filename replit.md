@@ -76,7 +76,8 @@ Preferred communication style: Simple, everyday language.
     -   Optional `requiresApproval` flag per user
     -   When `requiresApproval=true`: candidates get "pending_approval" status, await admin review
     -   When `requiresApproval=false`: candidates get "sent_to_employer" status immediately
-    -   **CRITICAL**: External recruiter candidates **DO NOT** create job_applications - they bypass interviews page entirely and go straight to employer or approval
+    -   **CRITICAL**: External recruiter candidates **DO NOT** create job_applications - they bypass interviews page entirely and go straight to employer or approval (enforced in server/routes.ts lines 1358-1379)
+    -   **Status Tracking**: `lastStatusUpdate` field (added October 2025) automatically updates when candidate status changes, ensuring approved candidates appear in "Recently Updated" page
 -   **Activity Logging**: All external recruiter actions tracked in `external_activity_log` table.
 -   **Security**: API routes enforce user can only view own assignments; job assignment lists filtered by `isActive=true` and user ID.
 -   **Permissions**: 
@@ -87,9 +88,13 @@ Preferred communication style: Simple, everyday language.
 -   **UI Pages**:
     -   `/external-recruiters` - Admin management page for assigning jobs to recruiters, viewing assignments, setting commissions
     -   `/my-jobs` - Recruiter work page showing assigned jobs with commission, upload candidate functionality
-    -   `/pending-approvals` - Admin page for approving/rejecting candidates from recruiters with requiresApproval flag; approved candidates receive "sent_to_employer" status and appear in "Recently Updated" page
+    -   `/pending-approvals` - Admin page for approving/rejecting candidates from recruiters with requiresApproval flag; approved candidates receive "sent_to_employer" status, `lastStatusUpdate` is refreshed, and they appear in "Recently Updated" page
     -   Dynamic sidebar navigation: shows different menus based on user role (admin sees management pages, recruiter sees only "My Jobs")
 -   **Workflow Isolation**: External recruiter candidates skip interviews page - only regular staff uploads go to `/interviews/:jobId` for review
+-   **Implementation Details** (October 2025):
+    -   `storage.updateCandidate()` automatically sets `lastStatusUpdate = new Date()` whenever status field is updated
+    -   Candidates table includes `lastStatusUpdate` timestamp field (default NOW())
+    -   "Recently Updated" page sorts by `lastStatusUpdate DESC` instead of `createdAt`
 
 ## Reports & Analytics Module (October 2025)
 -   **Permission-Protected**: Access controlled by `view_reports` permission on both client (PermissionWrapper) and server (requirePermission middleware)
