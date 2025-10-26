@@ -148,6 +148,12 @@ export function useDetailedPermissions() {
         icon: "Users" 
       },
       { 
+        permission: 'view_recently_updated' as PagePermission, 
+        name: "עודכנו לאחרונה", 
+        href: "/candidates/recently-updated", 
+        icon: "RefreshCw" 
+      },
+      { 
         permission: 'view_cv_search' as PagePermission, 
         name: "חיפוש בקורות חיים", 
         href: "/cv-search", 
