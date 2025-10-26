@@ -1133,5 +1133,58 @@ class WhatsAppService {
   }
 }
 
-// Singleton instance
-export const whatsappService = new WhatsAppService();
+// Multi-user WhatsApp Service Manager
+class WhatsAppServiceManager {
+  private services: Map<string, WhatsAppService> = new Map();
+
+  /**
+   * Get or create WhatsApp service instance for a specific user
+   */
+  getServiceForUser(userId: string): WhatsAppService {
+    if (!this.services.has(userId)) {
+      logger.info(`Creating new WhatsApp service instance for user ${userId}`);
+      this.services.set(userId, new WhatsAppService());
+    }
+    return this.services.get(userId)!;
+  }
+
+  /**
+   * Remove WhatsApp service instance for a user (on logout)
+   */
+  async removeServiceForUser(userId: string): Promise<void> {
+    const service = this.services.get(userId);
+    if (service) {
+      try {
+        await service.logout();
+      } catch (error) {
+        logger.error(`Error logging out user ${userId}: ${error}`);
+      }
+      this.services.delete(userId);
+      logger.info(`Removed WhatsApp service for user ${userId}`);
+    }
+  }
+
+  /**
+   * Get all active user IDs with WhatsApp connections
+   */
+  getActiveUsers(): string[] {
+    return Array.from(this.services.keys());
+  }
+
+  /**
+   * Get status for all users (for admin dashboard)
+   */
+  getAllStatuses(): Map<string, any> {
+    const statuses = new Map();
+    this.services.forEach((service, userId) => {
+      statuses.set(userId, service.getStatus());
+    });
+    return statuses;
+  }
+}
+
+// Export the multi-user service manager
+export const whatsappServiceManager = new WhatsAppServiceManager();
+
+// For backward compatibility during migration - will be removed
+export const whatsappService = whatsappServiceManager.getServiceForUser('default');

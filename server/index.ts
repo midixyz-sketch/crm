@@ -3,10 +3,10 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { setupAuth } from "./localAuth";
-import { whatsappService } from "./whatsapp-service";
+import { whatsappServiceManager } from "./whatsapp-service";
 import { db } from "./db";
 import { whatsappSessions } from "@shared/schema";
-import { desc } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 
 const app = express();
 app.use(express.json());
@@ -81,16 +81,33 @@ app.use((req, res, next) => {
     log(`serving on port ${port}`);
     console.log('✅ שרת מקומי פועל ללא תלות בשירותים חיצוניים');
     
-    // Auto-initialize WhatsApp if there's an existing session
+    // Auto-initialize WhatsApp for all users with existing active sessions
     try {
-      const existingSession = await db.query.whatsappSessions.findFirst({
+      // Get all active sessions grouped by user (get latest per user)
+      const existingSessions = await db.query.whatsappSessions.findMany({
+        where: eq(whatsappSessions.isActive, true),
         orderBy: [desc(whatsappSessions.createdAt)]
       });
       
-      if (existingSession && existingSession.userId) {
-        console.log('🔄 מאתחל חיבור WhatsApp אוטומטי...');
-        await whatsappService.initialize(existingSession.userId);
-        console.log('✅ WhatsApp מחובר אוטומטית');
+      // Group by userId and initialize each user's WhatsApp
+      const userIds = [...new Set(existingSessions.map(s => s.userId).filter(Boolean))];
+      
+      if (userIds.length > 0) {
+        console.log(`🔄 מאתחל חיבור WhatsApp אוטומטי עבור ${userIds.length} משתמשים...`);
+        
+        for (const userId of userIds) {
+          try {
+            const service = whatsappServiceManager.getServiceForUser(userId as string);
+            await service.initialize(userId as string);
+            console.log(`✅ WhatsApp מחובר עבור משתמש ${userId}`);
+          } catch (error) {
+            console.log(`⚠️ לא הצלחנו לאתחל WhatsApp עבור משתמש ${userId}:`, error);
+          }
+        }
+        
+        console.log('✅ כל ה-WhatsApp sessions אותחלו');
+      } else {
+        console.log('ℹ️ אין sessions פעילים לאתחול');
       }
     } catch (error) {
       console.log('ℹ️ WhatsApp לא אותחל אוטומטית:', error);
