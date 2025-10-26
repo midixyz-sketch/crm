@@ -13,16 +13,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-const navigation = [
-  { name: "מאגר מועמדים", href: "/candidates", icon: Users },
-  { name: "חיפוש בקורות חיים", href: "/cv-search", icon: Search },
-  { name: "יומן", href: "/calendar", icon: Calendar },
-  { name: "מאגר לקוחות", href: "/clients", icon: Building2 },
-  { name: "מאגר משרות", href: "/jobs", icon: Briefcase },
-  { name: "ראיונות", href: "/interviews", icon: UserCheck },
-  { name: "דוחות ואנליטיקה", href: "/reports", icon: BarChart3 },
-  { name: "הגדרות", href: "/settings", icon: Settings },
-];
 
 export default function Navbar() {
   const [location] = useLocation();
@@ -167,8 +157,28 @@ export default function Navbar() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
-                {navigation.map((item) => {
-                    const Icon = item.icon;
+                {getAllowedNavigation().map((item) => {
+                    const getIcon = (iconName: string) => {
+                      switch (iconName) {
+                        case 'LayoutDashboard': return LayoutDashboard;
+                        case 'Users': return Users;
+                        case 'RefreshCw': return RefreshCw;
+                        case 'Search': return Search;
+                        case 'Calendar': return Calendar;
+                        case 'Building2': return Building2;
+                        case 'Briefcase': return Briefcase;
+                        case 'UserCheck': return UserCheck;
+                        case 'Mail': return Mail;
+                        case 'Settings': return Settings;
+                        case 'BarChart3': return BarChart3;
+                        case 'Shield': return Shield;
+                        case 'UserCog': return UserCog;
+                        case 'Clock': return Clock;
+                        default: return Settings;
+                      }
+                    };
+                    
+                    const Icon = getIcon(item.icon);
                     const isActive = location === item.href;
                     
                     return (
