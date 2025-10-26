@@ -31,7 +31,10 @@ export type PagePermission =
   | 'manage_users'
   | 'access_settings'
   | 'view_reports'
-  | 'view_analytics';
+  | 'view_analytics'
+  | 'manage_external_recruiters'
+  | 'view_pending_approvals'
+  | 'view_my_jobs';
 
 export type MenuPermission = 
   | 'view_main_navigation'
@@ -176,6 +179,18 @@ export function useDetailedPermissions() {
         name: "ראיונות", 
         href: "/interviews", 
         icon: "UserCheck" 
+      },
+      { 
+        permission: 'manage_external_recruiters' as PagePermission, 
+        name: "רכזים חיצוניים", 
+        href: "/external-recruiters", 
+        icon: "UserCog" 
+      },
+      { 
+        permission: 'view_pending_approvals' as PagePermission, 
+        name: "ממתינים לאישור", 
+        href: "/pending-approvals", 
+        icon: "Clock" 
       },
       { 
         permission: 'view_reports' as PagePermission, 
