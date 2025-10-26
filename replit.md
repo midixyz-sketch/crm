@@ -83,8 +83,20 @@ Preferred communication style: Simple, everyday language.
 -   **UI Pages**:
     -   `/external-recruiters` - Admin management page for assigning jobs to recruiters, viewing assignments, setting commissions
     -   `/my-jobs` - Recruiter work page showing assigned jobs with commission, upload candidate functionality
-    -   `/pending-approvals` - Admin page for approving/rejecting candidates from recruiters with requiresApproval flag
+    -   `/pending-approvals` - Admin page for approving/rejecting candidates from recruiters with requiresApproval flag; approved candidates receive "sent_to_employer" status and appear in "Recently Updated" page
     -   Dynamic sidebar navigation: shows different menus based on user role (admin sees management pages, recruiter sees only "My Jobs")
+
+## Reports & Analytics Module (October 2025)
+-   **Permission-Protected**: Access controlled by `view_reports` permission on both client (PermissionWrapper) and server (requirePermission middleware)
+-   **Three Analytics Sections**:
+    -   **Candidates by Time/Source**: Line chart showing candidate growth over time with filters for date range and recruitment source
+    -   **Recruiter Activity Tracking**: Table showing all recruiter actions (upload, approve, reject) with date/action filters
+    -   **Individual Recruiter Performance**: Bar charts displaying daily candidate uploads per recruiter with 7/30-day views
+-   **API Endpoints** (all protected with requirePermission):
+    -   `/api/reports/candidates-by-time` - Aggregates candidates by date and recruitment source
+    -   `/api/reports/recruiter-activity` - Fetches external recruiter activity logs with filters
+    -   `/api/reports/recruiter-activity/:userId` - Daily performance metrics for specific recruiter
+-   **Cache Invalidation**: Pending approvals page properly invalidates both `/api/candidates` and `/api/candidates/enriched` for consistent UI refresh
 
 # External Dependencies
 
