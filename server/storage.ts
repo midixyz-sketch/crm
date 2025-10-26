@@ -1096,9 +1096,16 @@ export class DatabaseStorage implements IStorage {
       console.log(`📱 נירמול טלפון בעדכון: "${originalMobile}" → "${normalizedCandidate.mobile}"`);
     }
     
+    // אם הסטטוס משתנה, עדכן גם את lastStatusUpdate
+    const updateData: any = { ...normalizedCandidate, updatedAt: new Date() };
+    if (normalizedCandidate.status) {
+      updateData.lastStatusUpdate = new Date();
+      console.log(`🔄 סטטוס מתעדכן ל-"${normalizedCandidate.status}", מעדכן גם lastStatusUpdate`);
+    }
+    
     const [updatedCandidate] = await db
       .update(candidates)
-      .set({ ...normalizedCandidate, updatedAt: new Date() })
+      .set(updateData)
       .where(eq(candidates.id, id))
       .returning();
     return updatedCandidate;
