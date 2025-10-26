@@ -5648,43 +5648,20 @@ ${recommendation}
   });
 
   // ==================== WhatsApp API Endpoints ====================
-  // Import WhatsApp service
-  const { whatsappService, whatsappEvents } = await import('./whatsapp-service');
+  // Import WhatsApp service manager
+  const { whatsappServiceManager, whatsappEvents } = await import('./whatsapp-service');
 
-  // Global lock for WhatsApp initialization - prevents concurrent connections
-  let whatsappInitLock = false;
-  let whatsappInitQueue: Array<{ resolve: () => void; reject: (err: any) => void }> = [];
-
-  async function safeWhatsAppInit(userId: string): Promise<void> {
-    // If already initializing, queue this request
-    if (whatsappInitLock) {
-      console.log('WhatsApp init already in progress, queueing request...');
-      return new Promise((resolve, reject) => {
-        whatsappInitQueue.push({ resolve, reject });
-      });
-    }
-
-    whatsappInitLock = true;
-    try {
-      await whatsappService.initialize(userId);
-      
-      // Resolve all queued requests
-      whatsappInitQueue.forEach(({ resolve }) => resolve());
-      whatsappInitQueue = [];
-    } catch (error) {
-      // Reject all queued requests
-      whatsappInitQueue.forEach(({ reject }) => reject(error));
-      whatsappInitQueue = [];
-      throw error;
-    } finally {
-      whatsappInitLock = false;
-    }
+  // Helper to get user's WhatsApp service
+  function getUserWhatsAppService(userId: string) {
+    return whatsappServiceManager.getServiceForUser(userId);
   }
 
-  // GET /api/whatsapp/status - Get WhatsApp connection status
+  // GET /api/whatsapp/status - Get WhatsApp connection status (per user)
   app.get('/api/whatsapp/status', isAuthenticated, async (req, res) => {
     try {
-      const status = whatsappService.getStatus();
+      const user = req.user as any;
+      const service = getUserWhatsAppService(user.id);
+      const status = service.getStatus();
       res.json(status);
     } catch (error) {
       console.error('שגיאה בקבלת סטטוס WhatsApp:', error);
@@ -5692,10 +5669,12 @@ ${recommendation}
     }
   });
 
-  // GET /api/whatsapp/qr - Get current QR code
+  // GET /api/whatsapp/qr - Get current QR code (per user)
   app.get('/api/whatsapp/qr', isAuthenticated, async (req, res) => {
     try {
-      const qr = whatsappService.getCurrentQR();
+      const user = req.user as any;
+      const service = getUserWhatsAppService(user.id);
+      const qr = service.getCurrentQR();
       if (qr) {
         res.json({ qr });
       } else {
@@ -5707,11 +5686,12 @@ ${recommendation}
     }
   });
 
-  // POST /api/whatsapp/initialize - Initialize WhatsApp connection
+  // POST /api/whatsapp/initialize - Initialize WhatsApp connection (per user)
   app.post('/api/whatsapp/initialize', isAuthenticated, async (req, res) => {
     try {
       const user = req.user as any;
-      await safeWhatsAppInit(user.id);
+      const service = getUserWhatsAppService(user.id);
+      await service.initialize(user.id);
       res.json({ message: 'WhatsApp מאותחל' });
     } catch (error) {
       console.error('שגיאה באתחול WhatsApp:', error);
@@ -5719,10 +5699,11 @@ ${recommendation}
     }
   });
 
-  // POST /api/whatsapp/logout - Logout from WhatsApp
+  // POST /api/whatsapp/logout - Logout from WhatsApp (per user)
   app.post('/api/whatsapp/logout', isAuthenticated, async (req, res) => {
     try {
-      await whatsappService.logout();
+      const user = req.user as any;
+      await whatsappServiceManager.removeServiceForUser(user.id);
       res.json({ message: 'התנתקת מWhatsApp' });
     } catch (error) {
       console.error('שגיאה בהתנתקות מWhatsApp:', error);
@@ -5730,18 +5711,19 @@ ${recommendation}
     }
   });
 
-  // POST /api/whatsapp/reconnect - Reconnect WhatsApp to resync chats
+  // POST /api/whatsapp/reconnect - Reconnect WhatsApp to resync chats (per user)
   app.post('/api/whatsapp/reconnect', isAuthenticated, async (req, res) => {
     try {
       const user = req.user as any;
       console.log('🔄 Reconnecting WhatsApp to resync chats...');
       
       // Logout first
-      await whatsappService.logout();
+      await whatsappServiceManager.removeServiceForUser(user.id);
       await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds
       
       // Initialize again
-      await safeWhatsAppInit(user.id);
+      const service = getUserWhatsAppService(user.id);
+      await service.initialize(user.id);
       
       res.json({ message: 'WhatsApp מתחבר מחדש' });
     } catch (error) {
@@ -5750,16 +5732,18 @@ ${recommendation}
     }
   });
 
-  // POST /api/whatsapp/send - Send a WhatsApp message
+  // POST /api/whatsapp/send - Send a WhatsApp message (per user)
   app.post('/api/whatsapp/send', isAuthenticated, async (req, res) => {
     try {
+      const user = req.user as any;
       const { to, text } = req.body;
       
       if (!to || !text) {
         return res.status(400).json({ message: 'חסרים פרמטרים' });
       }
 
-      const success = await whatsappService.sendMessage(to, text);
+      const service = getUserWhatsAppService(user.id);
+      const success = await service.sendMessage(to, text);
       
       if (success) {
         res.json({ message: 'ההודעה נשלחה בהצלחה' });
@@ -5802,8 +5786,10 @@ ${recommendation}
       
       const remoteJid = `${formattedNumber}@s.whatsapp.net`;
 
-      // Send the message
-      const success = await whatsappService.sendMessage(remoteJid, message);
+      // Send the message using user's WhatsApp service
+      const user = req.user as any;
+      const service = getUserWhatsAppService(user.id);
+      const success = await service.sendMessage(remoteJid, message);
       
       if (!success) {
         return res.status(500).json({ message: 'שגיאה בשליחת הודעה - ודא שWhatsApp מחובר' });
@@ -5851,9 +5837,10 @@ ${recommendation}
     }
   });
 
-  // POST /api/whatsapp/send-file - Send a file via WhatsApp
+  // POST /api/whatsapp/send-file - Send a file via WhatsApp (per user)
   app.post('/api/whatsapp/send-file', isAuthenticated, upload.single('file'), async (req, res) => {
     try {
+      const user = req.user as any;
       const { to, caption } = req.body;
       const file = req.file;
 
@@ -5861,7 +5848,8 @@ ${recommendation}
         return res.status(400).json({ message: 'חסרים פרמטרים' });
       }
 
-      const success = await whatsappService.sendFile(
+      const service = getUserWhatsAppService(user.id);
+      const success = await service.sendFile(
         to,
         file.path,
         caption,
@@ -6093,9 +6081,10 @@ ${recommendation}
     }
   });
 
-  // GET /api/whatsapp/profile-picture/:phone - Get WhatsApp profile picture
+  // GET /api/whatsapp/profile-picture/:phone - Get WhatsApp profile picture (per user)
   app.get('/api/whatsapp/profile-picture/:phone', isAuthenticated, async (req, res) => {
     try {
+      const user = req.user as any;
       const { phone } = req.params;
       
       // Format phone number to WhatsApp format
@@ -6111,8 +6100,9 @@ ${recommendation}
       
       const remoteJid = whatsappNumber + '@s.whatsapp.net';
       
-      // Get profile picture URL from WhatsApp
-      const profilePicUrl = await whatsappService.getProfilePicture(remoteJid);
+      // Get profile picture URL from WhatsApp using user's service
+      const service = getUserWhatsAppService(user.id);
+      const profilePicUrl = await service.getProfilePicture(remoteJid);
       
       res.json({ profilePicUrl });
     } catch (error) {
@@ -6121,9 +6111,11 @@ ${recommendation}
     }
   });
 
-  // POST /api/whatsapp/sync-profile-pictures - Sync profile pictures for all chats
+  // POST /api/whatsapp/sync-profile-pictures - Sync profile pictures for all chats (per user)
   app.post('/api/whatsapp/sync-profile-pictures', isAuthenticated, async (req, res) => {
     try {
+      const user = req.user as any;
+      const service = getUserWhatsAppService(user.id);
       const allChats = await db.query.whatsappChats.findMany();
       
       let updatedCount = 0;
@@ -6131,8 +6123,8 @@ ${recommendation}
 
       for (const chat of allChats) {
         try {
-          // Get profile picture URL from WhatsApp
-          const profilePicUrl = await whatsappService.getProfilePicture(chat.remoteJid);
+          // Get profile picture URL from WhatsApp using user's service
+          const profilePicUrl = await service.getProfilePicture(chat.remoteJid);
           
           if (profilePicUrl) {
             await db.update(whatsappChats)
