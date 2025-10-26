@@ -34,6 +34,7 @@ export default function Candidates() {
     switch (status) {
       case 'available': return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
       case 'pending': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
+      case 'pending_approval': return 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200';
       case 'sent_to_employer': return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
       case 'in_interview': return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200';
       case 'hired': return 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200';
@@ -61,11 +62,13 @@ export default function Candidates() {
     }
   };
 
-  const getStatusText = (status: string) => {
+  const getStatusText = (status: string, recruitmentSource?: string | null) => {
     switch (status) {
       case 'available': return 'זמין';
       case 'pending': return 'ממתין';
-      case 'sent_to_employer': return 'נשלח למעסיק';
+      case 'pending_approval': return 'ממתין לאישור';
+      case 'sent_to_employer': 
+        return recruitmentSource ? `נשלח ע"י ${recruitmentSource}` : 'נשלח למעסיק';
       case 'in_interview': return 'בתהליך ראיון';
       case 'hired': return 'התקבל';
       case 'rejected': return 'נדחה';
@@ -516,7 +519,7 @@ export default function Candidates() {
                           </TableCell>
                           <TableCell className="text-sm">
                             <Badge className={getStatusColor(candidate.status || 'available')}>
-                              {getStatusText(candidate.status || 'available')}
+                              {getStatusText(candidate.status || 'available', candidate.recruitmentSource)}
                             </Badge>
                           </TableCell>
                           <TableCell className="text-sm">
