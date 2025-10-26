@@ -5399,7 +5399,7 @@ ${recommendation}
         }
       }
       
-      // אם המשתמש הוא job_viewer, קבל את רשימת המשרות המותרות
+      // אם המשתמש הוא job_viewer או external_recruiter, קבל את רשימת המשרות המותרות
       const jobViewerRole = userWithRoles.userRoles.find(ur => ur.role.type === 'job_viewer');
       if (jobViewerRole && jobViewerRole.allowedJobIds) {
         try {
@@ -5408,6 +5408,26 @@ ${recommendation}
           console.error('שגיאה בפענוח רשימת משרות מותרות:', e);
         }
       }
+      
+      // External recruiter - get allowed jobs from job_assignments
+      const externalRecruiterRole = userWithRoles.userRoles.find(ur => ur.role.type === 'external_recruiter');
+      if (externalRecruiterRole) {
+        try {
+          const assignments = await storage.getJobAssignments(targetUserId);
+          detailedPermissions.allowedJobIds = assignments
+            .filter(a => a.isActive) // רק משרות פעילות
+            .map(a => a.jobId);
+        } catch (e) {
+          console.error('שגיאה בקבלת משרות לרכז חיצוני:', e);
+        }
+      }
+      
+      // Prevent caching to ensure fresh permissions data
+      res.set({
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      });
       
       res.json(detailedPermissions);
     } catch (error) {
