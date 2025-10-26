@@ -2824,7 +2824,23 @@ ${extractedData.achievements ? `הישגים ופעילות נוספת: ${cleanS
       }
       
       const assignments = await storage.getJobAssignmentsForUser(requestedUserId);
-      res.json(assignments);
+      
+      // אם המשתמש הוא external recruiter - הסר פרטי לקוח מהמשרות
+      const isExternalRecruiter = userPermissions.roleType === 'external_recruiter';
+      
+      const filteredAssignments = assignments.map(assignment => {
+        if (isExternalRecruiter && assignment.job) {
+          // הסר את פרטי הלקוח מהמשרה
+          const { client, clientId, ...jobWithoutClient } = assignment.job as any;
+          return {
+            ...assignment,
+            job: jobWithoutClient
+          };
+        }
+        return assignment;
+      });
+      
+      res.json(filteredAssignments);
     } catch (error) {
       console.error("Error fetching user job assignments:", error);
       res.status(500).json({ message: "Failed to fetch user job assignments" });
