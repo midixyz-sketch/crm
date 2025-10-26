@@ -1355,6 +1355,74 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
+      // 🚀 AUTO-SEND TO EMPLOYER: If external recruiter with requiresApproval=false uploads candidate with jobId
+      // Then automatically send the candidate to employer via email (like autoSendToClient feature)
+      if (isExternalRecruiter && !requiresApproval && jobId) {
+        console.log(`🚀 רכז חיצוני ללא דרישת אישור העלה מועמד - שולח אוטומטית למעסיק...`);
+        
+        try {
+          // Get job with client details
+          const job = await storage.getJob(jobId);
+          
+          if (job && job.client && job.selectedContactPersonIds && job.selectedContactPersonIds.length > 0) {
+            console.log(`📧 נמצאה משרה: ${job.title} - שולח למעסיק...`);
+            
+            // Import email service
+            const { sendCandidateToEmployer } = await import("./emailService");
+            
+            // Filter selected contact persons
+            const contactPersons = job.client.contactPersons as any[];
+            const selectedContactPersons = contactPersons.filter(
+              (cp: any) => job.selectedContactPersonIds!.includes(cp.id)
+            );
+            
+            // Send to all selected contact persons
+            for (const contactPerson of selectedContactPersons) {
+              try {
+                console.log(`📤 שולח מועמד ${candidate.id} למייל: ${contactPerson.email} (${contactPerson.name || 'ללא שם'})`);
+                
+                const result = await sendCandidateToEmployer({
+                  candidateId: candidate.id,
+                  to: contactPerson.email,
+                  toName: contactPerson.name,
+                  jobTitle: job.title,
+                  reviewerFeedback: `מועמד חדש התקבל אוטומטית מרכז חיצוני למשרה: ${job.title}`,
+                });
+                
+                if (result.success) {
+                  console.log(`✅ מועמד נשלח בהצלחה למייל: ${contactPerson.email}`);
+                  
+                  // Add event to candidate
+                  await storage.addCandidateEvent({
+                    candidateId: candidate.id,
+                    eventType: "candidate_sent",
+                    description: `מועמד נשלח אוטומטית למעסיק: ${contactPerson.name || contactPerson.email} (רכז חיצוני)`,
+                    metadata: {
+                      jobId: job.id,
+                      jobTitle: job.title,
+                      sentTo: contactPerson.email,
+                      sentToName: contactPerson.name,
+                      automatic: true,
+                      externalRecruiter: true,
+                    },
+                    createdBy: req.user?.id || null
+                  });
+                } else {
+                  console.error(`❌ שגיאה בשליחת מועמד למייל ${contactPerson.email}:`, result.error);
+                }
+              } catch (error: any) {
+                console.error(`❌ שגיאה בשליחת מועמד למעסיק:`, error.message);
+              }
+            }
+          } else {
+            console.log(`⚠️ משרה ${jobId} לא נמצאה או אין לה אנשי קשר - מועמד לא נשלח למעסיק`);
+          }
+        } catch (error: any) {
+          console.error(`❌ שגיאה בשליחה אוטומטית למעסיק:`, error.message);
+          // Don't fail the candidate creation, just log the error
+        }
+      }
+      
       // Create job application ONLY if NOT external recruiter
       // רכזים חיצוניים לא צריכים job_application - המועמדים שלהם הולכים ישר למעסיק או לאישור
       if (jobId && !isExternalRecruiter) {

@@ -75,9 +75,10 @@ Preferred communication style: Simple, everyday language.
 -   **Approval Workflow**: 
     -   Optional `requiresApproval` flag per user
     -   When `requiresApproval=true`: candidates get "pending_approval" status, await admin review
-    -   When `requiresApproval=false`: candidates get "sent_to_employer" status immediately
-    -   **CRITICAL**: External recruiter candidates **DO NOT** create job_applications - they bypass interviews page entirely and go straight to employer or approval (enforced in server/routes.ts lines 1358-1379)
+    -   When `requiresApproval=false`: candidates get "sent_to_employer" status immediately AND are **automatically emailed to employer** (like autoSendToClient feature)
+    -   **CRITICAL**: External recruiter candidates **DO NOT** create job_applications - they bypass interviews page entirely and go straight to employer or approval (enforced in server/routes.ts lines 1429+)
     -   **Status Tracking**: `lastStatusUpdate` field (added October 2025) automatically updates when candidate status changes, ensuring approved candidates appear in "Recently Updated" page
+    -   **Auto-Send to Employer** (October 2025): When external recruiter with `requiresApproval=false` uploads candidate to job, system automatically sends candidate to all selected contact persons via email (server/routes.ts lines 1361-1427)
 -   **Activity Logging**: All external recruiter actions tracked in `external_activity_log` table.
 -   **Security**: API routes enforce user can only view own assignments; job assignment lists filtered by `isActive=true` and user ID.
 -   **Permissions**: 
