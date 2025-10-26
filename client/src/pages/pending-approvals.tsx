@@ -33,10 +33,7 @@ export default function PendingApprovalsPage() {
   // מוטציה לאישור מועמד
   const approveMutation = useMutation({
     mutationFn: async (candidateId: string) => {
-      return await apiRequest(`/api/candidates/${candidateId}`, {
-        method: "PATCH",
-        body: JSON.stringify({ status: "new" }),
-      });
+      return await apiRequest("PATCH", `/api/candidates/${candidateId}`, { status: "new" });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/candidates"] });
@@ -57,10 +54,7 @@ export default function PendingApprovalsPage() {
   // מוטציה לדחיית מועמד
   const rejectMutation = useMutation({
     mutationFn: async (candidateId: string) => {
-      return await apiRequest(`/api/candidates/${candidateId}`, {
-        method: "PATCH",
-        body: JSON.stringify({ status: "rejected" }),
-      });
+      return await apiRequest("PATCH", `/api/candidates/${candidateId}`, { status: "rejected" });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/candidates"] });
