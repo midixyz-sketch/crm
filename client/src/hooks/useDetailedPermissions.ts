@@ -208,12 +208,6 @@ export function useDetailedPermissions() {
         icon: "Clock" 
       },
       { 
-        permission: 'view_my_jobs' as PagePermission, 
-        name: "המשרות שלי", 
-        href: "/my-jobs", 
-        icon: "Briefcase" 
-      },
-      { 
         permission: 'access_settings' as PagePermission, 
         name: "הגדרות", 
         href: "/settings", 
