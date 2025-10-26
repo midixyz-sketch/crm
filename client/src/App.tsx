@@ -41,24 +41,31 @@ import { Redirect } from "wouter";
 import { RouteGuard } from "@/components/route-guard";
 
 function HomePage() {
-  const { data: currentUser } = useQuery({
+  const { data: currentUser, isLoading } = useQuery({
     queryKey: ["/api/auth/user"],
   });
 
   // בדיקה נכונה - roleType נמצא ישירות ב-userRoles
   const isExternalRecruiter = (currentUser as any)?.userRoles?.some((ur: any) => ur.roleType === "external_recruiter");
 
+  // טעינה - המתן עד שהנתונים נטענים
+  if (isLoading) {
+    return <div className="flex items-center justify-center min-h-screen">טוען...</div>;
+  }
+
+  // רכז חיצוני - הפנה ל-"המשרות שלי"
   if (isExternalRecruiter) {
     return <Redirect to="/my-jobs" />;
   }
 
+  // כל השאר - הצג דשבורד
   return <Dashboard />;
 }
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
 
-  const { data: currentUser } = useQuery({
+  const { data: currentUser, isLoading: isUserLoading } = useQuery({
     queryKey: ["/api/auth/user"],
     enabled: isAuthenticated,
   });
@@ -81,9 +88,10 @@ function Router() {
     <RouteGuard>
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
         <Navbar />
-        {!isExternalRecruiter && <ReminderPopup />}
-        {!isExternalRecruiter && <WhatsAppWidget />}
-        {!isExternalRecruiter && <WhatsAppNotificationContainer />}
+        {/* הצג רק אחרי שיודעים בוודאות שהמשתמש אינו רכז חיצוני */}
+        {currentUser && !isUserLoading && !isExternalRecruiter ? <ReminderPopup /> : null}
+        {currentUser && !isUserLoading && !isExternalRecruiter ? <WhatsAppWidget /> : null}
+        {currentUser && !isUserLoading && !isExternalRecruiter ? <WhatsAppNotificationContainer /> : null}
         <main className="w-full px-4 sm:px-6 lg:px-8 py-6">
           <Switch>
           <Route path="/" component={HomePage} />
