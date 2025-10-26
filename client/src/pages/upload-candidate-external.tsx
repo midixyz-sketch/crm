@@ -200,16 +200,16 @@ export default function UploadCandidateExternalPage() {
               />
             </div>
 
-            {/* הערות */}
+            {/* חוות דעת */}
             <div className="space-y-2">
               <Label htmlFor="notes" className="text-base font-medium">
-                הערות נוספות
+                חוות דעת על המועמד לשליחה למעסיק
               </Label>
               <Textarea
                 id="notes"
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                placeholder="הערות לגבי המועמד..."
+                placeholder="חוות דעת מפורטת על המועמד, כישוריו וניסיונו..."
                 rows={4}
                 data-testid="input-notes"
               />
