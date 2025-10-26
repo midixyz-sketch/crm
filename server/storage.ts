@@ -669,13 +669,21 @@ export class DatabaseStorage implements IStorage {
       )
       .orderBy(desc(jobApplications.appliedAt));
 
-    // Fetch all creator events in ONE query
+    // Fetch all creator events with user details in ONE query
     const allCreatorEvents = await db
       .select({
         candidateId: candidateEvents.candidateId,
-        metadata: candidateEvents.metadata
+        metadata: candidateEvents.metadata,
+        createdBy: candidateEvents.createdBy,
+        creatorFirstName: users.firstName,
+        creatorLastName: users.lastName,
+        creatorEmail: users.email,
+        creatorRoleType: roles.type
       })
       .from(candidateEvents)
+      .leftJoin(users, eq(candidateEvents.createdBy, users.id))
+      .leftJoin(userRoles, eq(users.id, userRoles.userId))
+      .leftJoin(roles, eq(userRoles.roleId, roles.id))
       .where(
         and(
           inArray(candidateEvents.candidateId, candidateIds),
@@ -728,8 +736,9 @@ export class DatabaseStorage implements IStorage {
       const latestReferralClient = clientAppMap.get(candidate.id);
       const creatorEvent = creatorEventMap.get(candidate.id);
 
-      const metadata = creatorEvent?.metadata as any;
-      const createdBy = metadata?.createdBy || null;
+      const createdByName = creatorEvent?.creatorFirstName && creatorEvent?.creatorLastName
+        ? `${creatorEvent.creatorFirstName} ${creatorEvent.creatorLastName}`
+        : null;
       
       return {
         ...candidate,
@@ -742,8 +751,10 @@ export class DatabaseStorage implements IStorage {
         lastReferralClientId: latestReferralClient?.clientId || null,
         lastStatusChange: latestStatusEvent?.createdAt || null,
         lastStatusDescription: latestStatusEvent?.description || null,
-        creatorUserId: createdBy,
-        creatorUsername: null
+        createdByUserId: creatorEvent?.createdBy || null,
+        createdByName: createdByName,
+        createdByEmail: creatorEvent?.creatorEmail || null,
+        createdByRoleType: creatorEvent?.creatorRoleType || null
       };
     });
 

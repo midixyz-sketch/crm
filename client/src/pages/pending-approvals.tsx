@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import {
@@ -9,7 +10,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, XCircle, Clock, User } from "lucide-react";
+import { CheckCircle, XCircle, Clock, User, Eye } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
@@ -17,13 +19,16 @@ import { useLocation } from "wouter";
 export default function PendingApprovalsPage() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
+  const [selectedCandidate, setSelectedCandidate] = useState<any>(null);
 
-  // קבלת רשימת מועמדים ממתינים לאישור
+  // קבלת רשימת מועמדים ממתינים לאישור - מועמדים שהועלו על ידי רכזים חיצוניים
   const { data: candidatesData, isLoading } = useQuery({
-    queryKey: ["/api/candidates", { status: "pending_approval" }],
+    queryKey: ["/api/candidates/enriched", { statuses: "pending_approval,pending" }],
   });
 
-  const candidates = candidatesData?.candidates || [];
+  // סינון רק מועמדים שהועלו על ידי רכזים חיצוניים
+  const allCandidates = candidatesData?.candidates || [];
+  const candidates = allCandidates.filter((c: any) => c.createdByRoleType === 'external_recruiter');
 
   // מוטציה לאישור מועמד
   const approveMutation = useMutation({
@@ -108,7 +113,7 @@ export default function PendingApprovalsPage() {
               <TableRow>
                 <TableHead className="text-right">מועמד</TableHead>
                 <TableHead className="text-right">פרטי קשר</TableHead>
-                <TableHead className="text-right">מקור גיוס</TableHead>
+                <TableHead className="text-right">הועלה על ידי</TableHead>
                 <TableHead className="text-right">תאריך העלאה</TableHead>
                 <TableHead className="text-right">סטטוס</TableHead>
                 <TableHead className="text-right">פעולות</TableHead>
@@ -141,7 +146,16 @@ export default function PendingApprovalsPage() {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Badge variant="outline">{candidate.recruitmentSource || "לא צוין"}</Badge>
+                    <div className="flex flex-col gap-1">
+                      <div className="font-medium">
+                        {candidate.createdByName || candidate.recruitmentSource || "לא ידוע"}
+                      </div>
+                      {candidate.createdByEmail && (
+                        <div className="text-xs text-muted-foreground">
+                          {candidate.createdByEmail}
+                        </div>
+                      )}
+                    </div>
                   </TableCell>
                   <TableCell>
                     {new Date(candidate.createdAt).toLocaleDateString("he-IL")}
@@ -157,10 +171,11 @@ export default function PendingApprovalsPage() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => setLocation(`/candidates/${candidate.id}`)}
+                        onClick={() => setSelectedCandidate(candidate)}
                         data-testid={`button-view-${candidate.id}`}
                       >
-                        צפייה
+                        <Eye className="w-4 h-4 ml-1" />
+                        חוות דעת
                       </Button>
                       <Button
                         variant="default"
@@ -190,6 +205,66 @@ export default function PendingApprovalsPage() {
           </Table>
         </div>
       )}
+
+      {/* דיאלוג צפייה בחוות דעת */}
+      <Dialog open={!!selectedCandidate} onOpenChange={() => setSelectedCandidate(null)}>
+        <DialogContent className="sm:max-w-[600px]" dir="rtl">
+          <DialogHeader>
+            <DialogTitle>
+              חוות דעת על {selectedCandidate?.firstName} {selectedCandidate?.lastName}
+            </DialogTitle>
+            <DialogDescription>
+              מועמד שהועלה על ידי: {selectedCandidate?.createdByName || selectedCandidate?.recruitmentSource}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            {/* פרטי המועמד */}
+            <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-lg">
+              <h3 className="font-semibold mb-2">פרטי המועמד</h3>
+              <div className="space-y-1 text-sm">
+                <div><strong>שם:</strong> {selectedCandidate?.firstName} {selectedCandidate?.lastName}</div>
+                {selectedCandidate?.mobile && <div><strong>טלפון:</strong> {selectedCandidate.mobile}</div>}
+                {selectedCandidate?.email && <div><strong>אימייל:</strong> {selectedCandidate.email}</div>}
+                {selectedCandidate?.profession && <div><strong>תחום:</strong> {selectedCandidate.profession}</div>}
+              </div>
+            </div>
+
+            {/* חוות דעת */}
+            <div>
+              <h3 className="font-semibold mb-2">חוות דעת הרכז</h3>
+              <div className="bg-white dark:bg-slate-900 border rounded-lg p-4 min-h-[100px] whitespace-pre-wrap">
+                {selectedCandidate?.notes || "לא סופקה חוות דעת"}
+              </div>
+            </div>
+
+            {/* כפתורים */}
+            <div className="flex gap-3 pt-4 border-t">
+              <Button
+                variant="outline"
+                onClick={() => setSelectedCandidate(null)}
+                className="flex-1"
+                data-testid="button-close-dialog"
+              >
+                סגור
+              </Button>
+              <Button
+                variant="default"
+                onClick={() => {
+                  approveMutation.mutate(selectedCandidate.id);
+                  setSelectedCandidate(null);
+                }}
+                disabled={approveMutation.isPending}
+                className="flex-1"
+                data-testid="button-approve-from-dialog"
+              >
+                <CheckCircle className="w-4 h-4 ml-1" />
+                אשר ושלח ללקוח
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
