@@ -1305,9 +1305,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const recruiterUser = await storage.getUserById(req.user!.id);
         requiresApproval = recruiterUser?.requiresApproval || false;
         
-        // אם דורש אישור, סמן את המועמד בהתאם
+        // קבע סטטוס לפי requiresApproval
         if (requiresApproval) {
           candidateData.status = 'pending_approval';
+        } else {
+          candidateData.status = 'sent_to_employer';
         }
       }
       
@@ -1353,8 +1355,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      // Create job application automatically if jobId is provided
-      if (jobId) {
+      // Create job application ONLY if NOT external recruiter
+      // רכזים חיצוניים לא צריכים job_application - המועמדים שלהם הולכים ישר למעסיק או לאישור
+      if (jobId && !isExternalRecruiter) {
         try {
           await storage.createJobApplication({
             candidateId: candidate.id,
