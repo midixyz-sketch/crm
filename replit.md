@@ -46,6 +46,7 @@ Preferred communication style: Simple, everyday language.
 -   **Optimized Candidate Table**: Streamlined table view focusing on essential information to avoid horizontal scrolling.
 -   **Candidate Detail Page**: Comprehensive profile with inline editing, CV display, and an expandable event history panel.
 -   **WhatsApp Web Integration**: Embedded WhatsApp functionality within the CRM via `@whiskeysockets/baileys`.
+    -   **PERSONAL PER-USER WHATSAPP**: Each user has their own independent WhatsApp connection. Users must scan QR code from their personal device. Multi-user architecture with `WhatsAppServiceManager` managing separate `WhatsAppService` instances per userId.
     -   Features include QR code connection, full chat page with individual/group/archived tabs, profile pictures, pin/unpin chats, tagging, search/filters, message bubbles, real-time updates, and full RTL support.
     -   **RTL Layout**: Chat list positioned on the right side, active chat on the left side (proper Hebrew RTL layout using flexbox without flex-row-reverse).
     -   **Full-Screen Chat Interface**: Full-screen overlay (z-40) with prominent minimize button (64x64px, green, top-center) positioned below main navbar.
@@ -53,7 +54,7 @@ Preferred communication style: Simple, everyday language.
     -   **Message Delivery Status**: WhatsApp-style delivery indicators - single check (sent), double gray check (delivered), double blue check (read).
     -   **Rich Media Support**: Automatic download and display of images, documents, videos, audio messages, and stickers with preview, playback, and download capabilities.
     -   **Emoji Picker**: Full emoji selector with search functionality for easy emoji insertion in messages.
-    -   Includes a singleton pattern for stable connections, a floating button with unread counts, and intelligent chat synchronization.
+    -   Each user's WhatsApp data stored separately in database with userId foreign key. Auto-initialization on server start for all users with active sessions.
     -   Message sending from candidate pages, automatic status updates, event logging, and chat linking based on phone numbers.
     -   Supports auto-detection of CV attachments and phone number normalization.
     -   Robust reconnection logic and comprehensive error handling prioritize stability.
