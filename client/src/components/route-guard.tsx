@@ -15,8 +15,9 @@ export function RouteGuard({ children }: { children: React.ReactNode }) {
     queryKey: ["/api/auth/user"],
   });
 
+  // בדיקה נכונה - roleType נמצא ישירות ב-userRoles
   const isExternalRecruiter = (currentUser as any)?.userRoles?.some(
-    (ur: any) => ur.role?.type === "external_recruiter"
+    (ur: any) => ur.roleType === "external_recruiter"
   );
 
   useEffect(() => {

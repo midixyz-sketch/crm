@@ -45,7 +45,8 @@ function HomePage() {
     queryKey: ["/api/auth/user"],
   });
 
-  const isExternalRecruiter = (currentUser as any)?.userRoles?.some((ur: any) => ur.role?.type === "external_recruiter");
+  // בדיקה נכונה - roleType נמצא ישירות ב-userRoles
+  const isExternalRecruiter = (currentUser as any)?.userRoles?.some((ur: any) => ur.roleType === "external_recruiter");
 
   if (isExternalRecruiter) {
     return <Redirect to="/my-jobs" />;
@@ -62,7 +63,8 @@ function Router() {
     enabled: isAuthenticated,
   });
 
-  const isExternalRecruiter = (currentUser as any)?.userRoles?.some((ur: any) => ur.role?.type === "external_recruiter");
+  // בדיקה נכונה - roleType נמצא ישירות ב-userRoles
+  const isExternalRecruiter = (currentUser as any)?.userRoles?.some((ur: any) => ur.roleType === "external_recruiter");
 
   if (isLoading || !isAuthenticated) {
     return (
