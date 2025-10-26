@@ -10,6 +10,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
 import { CheckCircle, XCircle, Clock, User, Eye } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { queryClient, apiRequest } from "@/lib/queryClient";
@@ -20,6 +21,7 @@ export default function PendingApprovalsPage() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   const [selectedCandidate, setSelectedCandidate] = useState<any>(null);
+  const [editedNotes, setEditedNotes] = useState<string>("");
 
   // קבלת רשימת מועמדים ממתינים לאישור - מועמדים שהועלו על ידי רכזים חיצוניים
   const { data: candidatesData, isLoading } = useQuery({
@@ -32,8 +34,8 @@ export default function PendingApprovalsPage() {
 
   // מוטציה לאישור מועמד
   const approveMutation = useMutation({
-    mutationFn: async (candidateId: string) => {
-      return await apiRequest("PATCH", `/api/candidates/${candidateId}`, { status: "new" });
+    mutationFn: async ({ candidateId, notes }: { candidateId: string; notes: string }) => {
+      return await apiRequest("PATCH", `/api/candidates/${candidateId}`, { status: "new", notes });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/candidates"] });
@@ -165,7 +167,10 @@ export default function PendingApprovalsPage() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => setSelectedCandidate(candidate)}
+                        onClick={() => {
+                          setSelectedCandidate(candidate);
+                          setEditedNotes(candidate.notes || "");
+                        }}
                         data-testid={`button-view-${candidate.id}`}
                       >
                         <Eye className="w-4 h-4 ml-1" />
@@ -174,7 +179,7 @@ export default function PendingApprovalsPage() {
                       <Button
                         variant="default"
                         size="sm"
-                        onClick={() => approveMutation.mutate(candidate.id)}
+                        onClick={() => approveMutation.mutate({ candidateId: candidate.id, notes: candidate.notes || "" })}
                         disabled={approveMutation.isPending}
                         data-testid={`button-approve-${candidate.id}`}
                       >
@@ -200,8 +205,11 @@ export default function PendingApprovalsPage() {
         </div>
       )}
 
-      {/* דיאלוג צפייה בחוות דעת */}
-      <Dialog open={!!selectedCandidate} onOpenChange={() => setSelectedCandidate(null)}>
+      {/* דיאלוג צפייה וערוך חוות דעת */}
+      <Dialog open={!!selectedCandidate} onOpenChange={() => {
+        setSelectedCandidate(null);
+        setEditedNotes("");
+      }}>
         <DialogContent className="sm:max-w-[600px]" dir="rtl">
           <DialogHeader>
             <DialogTitle>
@@ -224,12 +232,20 @@ export default function PendingApprovalsPage() {
               </div>
             </div>
 
-            {/* חוות דעת */}
+            {/* חוות דעת - ניתנת לעריכה */}
             <div>
-              <h3 className="font-semibold mb-2">חוות דעת הרכז</h3>
-              <div className="bg-white dark:bg-slate-900 border rounded-lg p-4 min-h-[100px] whitespace-pre-wrap">
-                {selectedCandidate?.notes || "לא סופקה חוות דעת"}
-              </div>
+              <h3 className="font-semibold mb-2">חוות דעת לשליחה ללקוח</h3>
+              <p className="text-sm text-muted-foreground mb-2">
+                ניתן לערוך את חוות הדעת לפני השליחה ללקוח
+              </p>
+              <Textarea
+                value={editedNotes}
+                onChange={(e) => setEditedNotes(e.target.value)}
+                placeholder="חוות דעת על המועמד לשליחה למעסיק..."
+                className="min-h-[150px] resize-none"
+                dir="rtl"
+                data-testid="textarea-notes"
+              />
             </div>
 
             {/* כפתורים */}
@@ -245,8 +261,9 @@ export default function PendingApprovalsPage() {
               <Button
                 variant="default"
                 onClick={() => {
-                  approveMutation.mutate(selectedCandidate.id);
+                  approveMutation.mutate({ candidateId: selectedCandidate.id, notes: editedNotes });
                   setSelectedCandidate(null);
+                  setEditedNotes("");
                 }}
                 disabled={approveMutation.isPending}
                 className="flex-1"
