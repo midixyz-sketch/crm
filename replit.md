@@ -72,7 +72,11 @@ Preferred communication style: Simple, everyday language.
 -   **Role-Based System**: `external_recruiter` role with restricted permissions.
 -   **Job Assignments**: Admins assign specific jobs to external recruiters via `job_assignments` table with optional commission per job.
 -   **Limited Access**: External recruiters can only upload new candidates to assigned jobs, cannot view client names or candidate history.
--   **Approval Workflow**: Optional `requiresApproval` flag per user - when enabled, candidates uploaded by external recruiter are marked `pending_approval` status and require admin review before submission to client.
+-   **Approval Workflow**: 
+    -   Optional `requiresApproval` flag per user
+    -   When `requiresApproval=true`: candidates get "pending_approval" status, await admin review
+    -   When `requiresApproval=false`: candidates get "sent_to_employer" status immediately
+    -   **CRITICAL**: External recruiter candidates **DO NOT** create job_applications - they bypass interviews page entirely and go straight to employer or approval
 -   **Activity Logging**: All external recruiter actions tracked in `external_activity_log` table.
 -   **Security**: API routes enforce user can only view own assignments; job assignment lists filtered by `isActive=true` and user ID.
 -   **Permissions**: 
@@ -85,6 +89,7 @@ Preferred communication style: Simple, everyday language.
     -   `/my-jobs` - Recruiter work page showing assigned jobs with commission, upload candidate functionality
     -   `/pending-approvals` - Admin page for approving/rejecting candidates from recruiters with requiresApproval flag; approved candidates receive "sent_to_employer" status and appear in "Recently Updated" page
     -   Dynamic sidebar navigation: shows different menus based on user role (admin sees management pages, recruiter sees only "My Jobs")
+-   **Workflow Isolation**: External recruiter candidates skip interviews page - only regular staff uploads go to `/interviews/:jobId` for review
 
 ## Reports & Analytics Module (October 2025)
 -   **Permission-Protected**: Access controlled by `view_reports` permission on both client (PermissionWrapper) and server (requirePermission middleware)
