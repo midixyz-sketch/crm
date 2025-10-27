@@ -39,6 +39,7 @@ import { queryClient } from "@/lib/queryClient";
 import { ReminderForm } from "@/components/reminder-form";
 import { EmailDialog } from "@/components/email-dialog";
 import { WhatsAppHistoryTab } from "@/components/candidate/whatsapp-history-tab";
+import { FileViewer } from "@/components/file-viewer";
 import type { Candidate } from "@shared/schema";
 
 export default function CandidateDetail() {
@@ -66,6 +67,7 @@ export default function CandidateDetail() {
   const [interviewDialogOpen, setInterviewDialogOpen] = useState(false);
   const [selectedInterviewJobIds, setSelectedInterviewJobIds] = useState<string[]>([]);
   const [jobSearchQuery, setJobSearchQuery] = useState("");
+  const [fileViewerOpen, setFileViewerOpen] = useState(false);
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
       toast({
@@ -1537,11 +1539,12 @@ export default function CandidateDetail() {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => window.open(`/uploads/${candidate.cvPath?.replace('uploads/', '')}`, '_blank')}
+                            onClick={() => setFileViewerOpen(true)}
                             className="flex items-center gap-2"
+                            data-testid="button-view-cv"
                           >
-                            <Download className="w-4 h-4" />
-                            הורד
+                            <Eye className="w-4 h-4" />
+                            הצג
                           </Button>
                           <Button
                             variant="outline"
@@ -1913,6 +1916,22 @@ export default function CandidateDetail() {
           candidateId={candidate?.id}
           candidateName={candidate ? `${candidate.firstName} ${candidate.lastName}` : ""}
         />
+
+        {/* File Viewer for CV */}
+        {candidate?.cvPath && (
+          <FileViewer
+            isOpen={fileViewerOpen}
+            onClose={() => setFileViewerOpen(false)}
+            fileUrl={`/api/candidates/${candidate.id}/cv`}
+            fileName={candidate.cvPath.split('/').pop() || 'CV.pdf'}
+            mimeType={
+              candidate.cvPath.toLowerCase().endsWith('.pdf') ? 'application/pdf' :
+              candidate.cvPath.toLowerCase().endsWith('.docx') ? 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' :
+              candidate.cvPath.toLowerCase().match(/\.(jpg|jpeg|png|gif|webp|bmp)$/i) ? 'image/' + candidate.cvPath.split('.').pop() :
+              undefined
+            }
+          />
+        )}
       </div>
     );
   }
