@@ -2360,25 +2360,12 @@ ${extractedData.achievements ? `הישגים ופעילות נוספת: ${cleanS
 
   app.put('/api/clients/:id', isAuthenticated, async (req, res) => {
     try {
-      console.log('📝 Updating client:', req.params.id);
-      console.log('📋 Contact persons in request:', req.body.contactPersons);
-      console.log('📊 Number of contact persons:', req.body.contactPersons?.length);
-      
       const clientData = insertClientSchema.partial().parse(req.body);
-      
-      console.log('✅ After validation, contact persons:', clientData.contactPersons);
-      console.log('✅ Number after validation:', clientData.contactPersons?.length);
-      
       const client = await storage.updateClient(req.params.id, clientData);
-      
-      console.log('💾 Saved to DB, contact persons:', client.contactPersons);
-      console.log('💾 Number in DB:', client.contactPersons?.length);
-      
       res.json(client);
     } catch (error) {
       console.error("Error updating client:", error);
       if (error instanceof z.ZodError) {
-        console.error("Validation errors:", JSON.stringify(error.errors, null, 2));
         return res.status(400).json({ message: "Validation error", errors: error.errors });
       }
       res.status(500).json({ message: "Failed to update client" });
