@@ -40,6 +40,7 @@ export default function PendingApprovalsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/candidates"] });
       queryClient.invalidateQueries({ queryKey: ["/api/candidates/enriched"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/candidates/recently-updated"] });
       toast({
         title: "הצלחה",
         description: "המועמד אושר בהצלחה",
@@ -62,6 +63,7 @@ export default function PendingApprovalsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/candidates"] });
       queryClient.invalidateQueries({ queryKey: ["/api/candidates/enriched"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/candidates/recently-updated"] });
       toast({
         title: "הצלחה",
         description: "המועמד נדחה",
