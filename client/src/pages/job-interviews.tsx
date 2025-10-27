@@ -795,34 +795,36 @@ export default function JobInterviews() {
               </CardHeader>
               <CardContent className="space-y-4">
                 {/* Quick Status Buttons */}
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <Button
                     onClick={handleApprove}
                     disabled={updateApplicationMutation.isPending}
-                    className="bg-green-600 hover:bg-green-700 text-white"
+                    className="bg-green-600 hover:bg-green-700 text-white flex items-center justify-center whitespace-nowrap"
                     data-testid="button-approve"
                   >
-                    <CheckCircle className="h-4 w-4 mr-2" />
-                    ✅ מתאים
+                    <CheckCircle className="h-4 w-4 ml-2" />
+                    מתאים
                   </Button>
                   <Button
                     onClick={handleReject}
                     disabled={updateApplicationMutation.isPending}
                     variant="destructive"
+                    className="flex items-center justify-center whitespace-nowrap"
                     data-testid="button-reject"
                   >
-                    <XCircle className="h-4 w-4 mr-2" />
-                    ❌ לא מתאים
+                    <XCircle className="h-4 w-4 ml-2" />
+                    לא מתאים
                   </Button>
                   <Dialog open={interviewDialog} onOpenChange={setInterviewDialog}>
                     <DialogTrigger asChild>
                       <Button
                         disabled={updateApplicationMutation.isPending}
                         variant="outline"
+                        className="flex items-center justify-center whitespace-nowrap"
                         data-testid="button-more-review"
                       >
-                        <Calendar className="h-4 w-4 mr-2" />
-                        🔄 נדרש ראיון נוסף
+                        <Calendar className="h-4 w-4 ml-2" />
+                        נדרש ראיון נוסף
                       </Button>
                     </DialogTrigger>
                     <DialogContent>
