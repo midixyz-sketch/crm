@@ -45,6 +45,7 @@ Preferred communication style: Simple, everyday language.
 -   **Candidate Event History with User Tracking**: Comprehensive audit trail of all candidate interactions, displaying the creating user for each event.
 -   **Optimized Candidate Table**: Streamlined table view focusing on essential information to avoid horizontal scrolling.
 -   **Candidate Detail Page**: Comprehensive profile with inline editing, CV display, and an expandable event history panel.
+-   **In-Browser File Preview** (October 2025): Integrated file viewer supporting PDF (PDF.js with zoom/navigation), Word documents (Mammoth.js HTML conversion), and images. Files display in modal dialog without triggering automatic downloads. Job interviews and candidate detail pages use `/api/candidates/:id/cv` endpoint for viewing, with separate explicit download buttons.
 -   **WhatsApp Web Integration**: Embedded WhatsApp functionality within the CRM via `@whiskeysockets/baileys`.
     -   **PERSONAL PER-USER WHATSAPP**: Each user has their own independent WhatsApp connection. Users must scan QR code from their personal device.
     -   **Multi-User Architecture** (October 2025):
