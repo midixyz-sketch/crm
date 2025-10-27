@@ -1872,7 +1872,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           'contacted': 'יצרנו קשר'
         };
 
-        await storage.createCandidateEvent({
+        await storage.addCandidateEvent({
           candidateId: id,
           eventType: 'status_change',
           description: `סטטוס המועמד השתנה מ-${statusTranslations[currentCandidate.status as keyof typeof statusTranslations] || currentCandidate.status} ל-${statusTranslations[updates.status as keyof typeof statusTranslations] || updates.status}`,
