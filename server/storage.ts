@@ -620,15 +620,20 @@ export class DatabaseStorage implements IStorage {
       .where(inArray(jobApplications.candidateId, candidateIds))
       .orderBy(desc(jobApplications.appliedAt));
 
-    // Fetch all status events in ONE query
+    // Fetch all status events with user details in ONE query
     const allStatusEvents = await db
       .select({
         candidateId: candidateEvents.candidateId,
         eventType: candidateEvents.eventType,
         description: candidateEvents.description,
-        createdAt: candidateEvents.createdAt
+        createdAt: candidateEvents.createdAt,
+        createdBy: candidateEvents.createdBy,
+        updaterFirstName: users.firstName,
+        updaterLastName: users.lastName,
+        updaterUsername: users.username
       })
       .from(candidateEvents)
+      .leftJoin(users, eq(candidateEvents.createdBy, users.id))
       .where(
         and(
           inArray(candidateEvents.candidateId, candidateIds),
@@ -747,6 +752,10 @@ export class DatabaseStorage implements IStorage {
         ? `${creatorEvent.creatorFirstName} ${creatorEvent.creatorLastName}`
         : null;
       
+      const lastStatusUpdatedBy = latestStatusEvent?.updaterFirstName && latestStatusEvent?.updaterLastName
+        ? `${latestStatusEvent.updaterFirstName} ${latestStatusEvent.updaterLastName}`
+        : latestStatusEvent?.updaterUsername || null;
+      
       return {
         ...candidate,
         lastJobTitle: latestJobApp?.jobTitle || null,
@@ -758,6 +767,8 @@ export class DatabaseStorage implements IStorage {
         lastReferralClientId: latestReferralClient?.clientId || null,
         lastStatusChange: latestStatusEvent?.createdAt || null,
         lastStatusDescription: latestStatusEvent?.description || null,
+        lastStatusUpdatedBy: lastStatusUpdatedBy,
+        lastStatusUpdatedById: latestStatusEvent?.createdBy || null,
         createdByUserId: creatorEvent?.createdBy || null,
         createdByName: createdByName,
         createdByEmail: creatorEvent?.creatorEmail || null,
