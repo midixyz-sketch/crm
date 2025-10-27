@@ -1005,6 +1005,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Candidate routes
 
+  // Get users who updated candidate statuses (for filtering)
+  app.get('/api/candidates/status-updaters', isAuthenticated, async (req, res) => {
+    try {
+      const updaters = await db
+        .selectDistinct({
+          id: users.id,
+          firstName: users.firstName,
+          lastName: users.lastName,
+          username: users.username
+        })
+        .from(candidateEvents)
+        .innerJoin(users, eq(candidateEvents.createdBy, users.id))
+        .where(eq(candidateEvents.eventType, 'status_change'))
+        .orderBy(users.firstName, users.lastName);
+      
+      res.json(updaters);
+    } catch (error) {
+      console.error("Error fetching status updaters:", error);
+      res.status(500).json({ message: "Failed to fetch status updaters" });
+    }
+  });
+
   // Get recently updated candidates (rejected or sent to employer)
   app.get('/api/candidates/recently-updated', isAuthenticated, async (req, res) => {
     try {
@@ -1012,6 +1034,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const offset = parseInt(req.query.offset as string) || 0;
       const statusFilter = req.query.status as string;
       const jobFilter = req.query.jobs as string;
+      const userFilter = req.query.users as string;
       const dateFrom = req.query.dateFrom as string;
       const dateTo = req.query.dateTo as string;
       
@@ -1025,7 +1048,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         undefined, // dateFilter
         statuses,
         jobFilter, // jobs
-        undefined, // users
+        userFilter, // users - filter by recruiter who updated status
         dateFrom, // dateFrom
         dateTo  // dateTo
       );

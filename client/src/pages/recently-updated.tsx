@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Filter } from "lucide-react";
-import type { EnrichedCandidate, Job } from "@shared/schema";
+import type { EnrichedCandidate, Job, User } from "@shared/schema";
 
 export default function RecentlyUpdated() {
   const { toast } = useToast();
@@ -21,13 +21,14 @@ export default function RecentlyUpdated() {
   // Filters
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [jobFilter, setJobFilter] = useState<string>("all");
+  const [userFilter, setUserFilter] = useState<string>("all");
   const [dateFrom, setDateFrom] = useState<string>("");
   const [dateTo, setDateTo] = useState<string>("");
 
   // Reset page when filters change
   useEffect(() => {
     setPage(0);
-  }, [statusFilter, jobFilter, dateFrom, dateTo]);
+  }, [statusFilter, jobFilter, userFilter, dateFrom, dateTo]);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -49,12 +50,19 @@ export default function RecentlyUpdated() {
     enabled: isAuthenticated,
   });
 
+  // Load status updaters (recruiters) for filter
+  const { data: updatersData } = useQuery<User[]>({
+    queryKey: ["/api/candidates/status-updaters"],
+    enabled: isAuthenticated,
+  });
+
   const { data: candidatesData, isLoading: candidatesLoading } = useQuery<{ candidates: EnrichedCandidate[]; total: number }>({
     queryKey: ["/api/candidates/recently-updated", { 
       limit: PAGE_SIZE,
       offset,
       status: statusFilter !== "all" ? statusFilter : undefined,
       jobs: jobFilter !== "all" ? jobFilter : undefined,
+      users: userFilter !== "all" ? userFilter : undefined,
       dateFrom: dateFrom || undefined,
       dateTo: dateTo || undefined
     }],
@@ -88,6 +96,7 @@ export default function RecentlyUpdated() {
   const handleClearFilters = () => {
     setStatusFilter("all");
     setJobFilter("all");
+    setUserFilter("all");
     setDateFrom("");
     setDateTo("");
     setPage(0);
@@ -107,7 +116,7 @@ export default function RecentlyUpdated() {
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white">סינונים</h3>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
           <div className="space-y-2">
             <Label htmlFor="status-filter">סטטוס</Label>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -134,6 +143,25 @@ export default function RecentlyUpdated() {
                 {jobsData?.jobs?.map((job) => (
                   <SelectItem key={job.id} value={job.id}>
                     {job.title}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="user-filter">רכז</Label>
+            <Select value={userFilter} onValueChange={setUserFilter}>
+              <SelectTrigger id="user-filter" data-testid="select-user-filter">
+                <SelectValue placeholder="כל הרכזים" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">כל הרכזים</SelectItem>
+                {updatersData?.map((user) => (
+                  <SelectItem key={user.id} value={user.id}>
+                    {user.firstName && user.lastName 
+                      ? `${user.firstName} ${user.lastName}` 
+                      : user.username}
                   </SelectItem>
                 ))}
               </SelectContent>
