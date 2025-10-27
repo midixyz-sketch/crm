@@ -50,6 +50,13 @@ export default function JobForm({ job, onSuccess }: JobFormProps) {
   const selectedClientId = form.watch("clientId");
   const selectedClient = clientsData?.clients.find(c => c.id === selectedClientId);
   const contactPersons = selectedClient?.contactPersons || [];
+  
+  // DEBUG: Log contact persons to see if they have IDs
+  if (selectedClient && contactPersons.length > 0) {
+    console.log('🔍 Contact persons for client:', selectedClient.companyName);
+    console.log('📋 Contact persons data:', JSON.stringify(contactPersons, null, 2));
+    console.log('❓ Do all have IDs?', contactPersons.every((p: any) => p.id));
+  }
 
   const createJob = useMutation({
     mutationFn: async (data: InsertJob) => {
