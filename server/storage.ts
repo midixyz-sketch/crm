@@ -559,7 +559,8 @@ export class DatabaseStorage implements IStorage {
     // Use lastStatusUpdate for sorting if we're filtering by statuses that indicate recent updates
     const shouldSortByLastStatusUpdate = statuses && (
       statuses.includes('sent_to_employer') || 
-      statuses.includes('rejected_by_employer')
+      statuses.includes('rejected_by_employer') ||
+      statuses.includes('rejected')
     );
 
     const candidateResults = await db

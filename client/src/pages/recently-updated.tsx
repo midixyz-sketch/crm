@@ -94,7 +94,7 @@ export default function RecentlyUpdated() {
     <div className="min-h-screen w-full max-w-full space-y-6 p-6" dir="rtl">
       <div className="mb-6">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white">עודכנו לאחרונה</h1>
-        <p className="text-gray-600 dark:text-gray-400 mt-2">מועמדים שנפסלו או נשלחו למעסיק</p>
+        <p className="text-gray-600 dark:text-gray-400 mt-2">מועמדים שנפסלו, נדחו או נשלחו למעסיק</p>
       </div>
 
       {/* Filters Section */}
@@ -115,6 +115,7 @@ export default function RecentlyUpdated() {
                 <SelectItem value="all">הכל</SelectItem>
                 <SelectItem value="sent_to_employer">נשלח למעסיק</SelectItem>
                 <SelectItem value="rejected_by_employer">נפסל ע"י מעסיק</SelectItem>
+                <SelectItem value="rejected">נדחה</SelectItem>
               </SelectContent>
             </Select>
           </div>
