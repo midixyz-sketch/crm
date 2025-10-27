@@ -1015,8 +1015,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const dateFrom = req.query.dateFrom as string;
       const dateTo = req.query.dateTo as string;
       
-      // Filter only rejected_by_employer or sent_to_employer statuses (or specific status if provided)
-      const statuses = statusFilter || 'rejected_by_employer,sent_to_employer';
+      // Filter only rejected_by_employer, rejected, or sent_to_employer statuses (or specific status if provided)
+      const statuses = statusFilter || 'rejected_by_employer,rejected,sent_to_employer';
       
       const result = await storage.getCandidatesEnriched(
         limit, 
