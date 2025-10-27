@@ -73,7 +73,6 @@ export default function RecentlyUpdated() {
     switch (status) {
       case 'pending_approval': return 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200';
       case 'sent_to_employer': return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
-      case 'rejected_by_employer': return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
       case 'rejected': return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
       case 'interview': return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200';
       case 'interview_scheduled': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
@@ -85,7 +84,6 @@ export default function RecentlyUpdated() {
     switch (status) {
       case 'pending_approval': return 'ממתין לאישור';
       case 'sent_to_employer': return 'נשלח למעסיק';
-      case 'rejected_by_employer': return 'נפסל ע"י מעסיק';
       case 'rejected': return 'נפסל בראיון';
       case 'interview': return 'ממתין לראיון';
       case 'interview_scheduled': return 'תואם ראיון נוסף';
@@ -106,7 +104,7 @@ export default function RecentlyUpdated() {
     <div className="min-h-screen w-full max-w-full space-y-6 p-6" dir="rtl">
       <div className="mb-6">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white">עודכנו לאחרונה</h1>
-        <p className="text-gray-600 dark:text-gray-400 mt-2">מועמדים שנפסלו, נדחו או נשלחו למעסיק</p>
+        <p className="text-gray-600 dark:text-gray-400 mt-2">מועמדים שנפסלו בראיון או נשלחו למעסיק</p>
       </div>
 
       {/* Filters Section */}
@@ -126,8 +124,7 @@ export default function RecentlyUpdated() {
               <SelectContent>
                 <SelectItem value="all">הכל</SelectItem>
                 <SelectItem value="sent_to_employer">נשלח למעסיק</SelectItem>
-                <SelectItem value="rejected_by_employer">נפסל ע"י מעסיק</SelectItem>
-                <SelectItem value="rejected">נדחה</SelectItem>
+                <SelectItem value="rejected">נפסל בראיון</SelectItem>
               </SelectContent>
             </Select>
           </div>
