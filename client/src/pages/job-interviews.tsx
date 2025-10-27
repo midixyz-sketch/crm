@@ -944,7 +944,7 @@ export default function JobInterviews() {
                       </div>
                     </div>
                     <iframe
-                      src={`/api/candidates/${currentApplication.candidate.id}/download-cv`}
+                      src={`/api/candidates/${currentApplication.candidate.id}/cv`}
                       className="w-full border-0 bg-white dark:bg-gray-800"
                       title={`קורות חיים - ${currentApplication.candidate.firstName} ${currentApplication.candidate.lastName}`}
                       style={{ height: 'calc(100vh - 250px)', minHeight: '700px' }}

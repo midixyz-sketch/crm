@@ -50,14 +50,6 @@ export default function JobForm({ job, onSuccess }: JobFormProps) {
   const selectedClientId = form.watch("clientId");
   const selectedClient = clientsData?.clients.find(c => c.id === selectedClientId);
   const contactPersons = selectedClient?.contactPersons || [];
-  
-  // DEBUG: Log to help diagnose contact person display issue
-  console.log('🔍 DEBUG - Job Form Contact Persons:');
-  console.log('Total clients loaded:', clientsData?.clients?.length);
-  console.log('Selected client ID:', selectedClientId);
-  console.log('Selected client:', selectedClient);
-  console.log('Contact persons array:', contactPersons);
-  console.log('Number of contact persons:', contactPersons.length);
 
   const createJob = useMutation({
     mutationFn: async (data: InsertJob) => {
