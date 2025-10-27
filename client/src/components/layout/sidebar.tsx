@@ -25,24 +25,24 @@ export default function Sidebar() {
   // Build navigation based on permissions
   const navigation = [
     ...(isExternalRecruiter 
-      ? [{ name: "המשרות שלי", href: "/my-jobs", icon: Briefcase }]
+      ? [{ name: "My Jobs", href: "/my-jobs", icon: Briefcase }]
       : [
-          { name: "מאגר מועמדים", href: "/candidates", icon: Users },
-          { name: "עודכנו לאחרונה", href: "/candidates/recently-updated", icon: History },
-          { name: "חיפוש בקורות חיים", href: "/cv-search", icon: Search },
-          { name: "יומן", href: "/calendar", icon: Calendar },
-          { name: "מאגר לקוחות", href: "/clients", icon: Building2 },
-          { name: "מאגר משרות", href: "/jobs", icon: Briefcase },
-          { name: "ראיונות", href: "/interviews", icon: UserCheck },
-          { name: "דוחות ואנליטיקה", href: "/reports", icon: BarChart3 },
+          { name: "Candidates", href: "/candidates", icon: Users },
+          { name: "Recently Updated", href: "/candidates/recently-updated", icon: History },
+          { name: "CV Search", href: "/cv-search", icon: Search },
+          { name: "Calendar", href: "/calendar", icon: Calendar },
+          { name: "Clients", href: "/clients", icon: Building2 },
+          { name: "Jobs", href: "/jobs", icon: Briefcase },
+          { name: "Interviews", href: "/interviews", icon: UserCheck },
+          { name: "Reports & Analytics", href: "/reports", icon: BarChart3 },
           ...(isSuperAdmin 
             ? [
-                { name: "ניהול רכזים", href: "/external-recruiters", icon: UserCog },
-                { name: "אישור מועמדים", href: "/pending-approvals", icon: Clock },
+                { name: "Manage Recruiters", href: "/external-recruiters", icon: UserCog },
+                { name: "Pending Approvals", href: "/pending-approvals", icon: Clock },
               ]
             : []
           ),
-          { name: "הגדרות", href: "/settings", icon: Settings },
+          { name: "Settings", href: "/settings", icon: Settings },
         ]
     ),
   ];
@@ -62,13 +62,13 @@ export default function Sidebar() {
       });
       refetchStatus();
       toast({
-        title: "WhatsApp מאותחל",
-        description: "סרוק את קוד ה-QR עם WhatsApp בטלפון שלך",
+        title: "WhatsApp Initialized",
+        description: "Scan the QR code with WhatsApp on your phone",
       });
     } catch (error) {
       toast({
-        title: "שגיאה",
-        description: "לא ניתן לאתחל את WhatsApp",
+        title: "Error",
+        description: "Unable to initialize WhatsApp",
         variant: "destructive",
       });
     }
@@ -81,13 +81,13 @@ export default function Sidebar() {
       });
       refetchStatus();
       toast({
-        title: "התנתקת מWhatsApp",
-        description: "WhatsApp נותק בהצלחה",
+        title: "Disconnected from WhatsApp",
+        description: "WhatsApp disconnected successfully",
       });
     } catch (error) {
       toast({
-        title: "שגיאה",
-        description: "לא ניתן להתנתק מWhatsApp",
+        title: "Error",
+        description: "Unable to disconnect from WhatsApp",
         variant: "destructive",
       });
     }
@@ -103,7 +103,7 @@ export default function Sidebar() {
         >
           <div className="flex flex-col items-center text-center">
             <h1 className="text-3xl font-bold text-primary">Linkjob</h1>
-            <p className="text-base text-gray-600 dark:text-gray-300 mt-1">מערכת לניהול הגיוס</p>
+            <p className="text-base text-gray-600 dark:text-gray-300 mt-1">Recruitment Management System</p>
           </div>
         </button>
       </div>
@@ -112,14 +112,14 @@ export default function Sidebar() {
       <Dialog open={whatsappDialogOpen} onOpenChange={setWhatsappDialogOpen}>
         <DialogContent className="sm:max-w-md" dir="rtl">
           <DialogHeader>
-            <DialogTitle>חיבור WhatsApp</DialogTitle>
+            <DialogTitle>WhatsApp Connection</DialogTitle>
           </DialogHeader>
           
           <div className="space-y-4">
             {isLoading ? (
               <div className="text-center space-y-4 py-8">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-                <p className="text-sm text-gray-600">טוען...</p>
+                <p className="text-sm text-gray-600">Loading...</p>
               </div>
             ) : whatsappStatus?.isConnected ? (
               <div className="text-center space-y-4">
@@ -129,9 +129,9 @@ export default function Sidebar() {
                   </svg>
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold text-green-600">מחובר בהצלחה!</h3>
+                  <h3 className="text-lg font-semibold text-green-600">Connected Successfully!</h3>
                   <p className="text-sm text-gray-600 mt-2">
-                    WhatsApp מחובר למספר: {whatsappStatus.phoneNumber || 'לא זמין'}
+                    WhatsApp connected to number: {whatsappStatus.phoneNumber || 'Not available'}
                   </p>
                 </div>
                 <Button
@@ -139,13 +139,13 @@ export default function Sidebar() {
                   variant="outline"
                   className="w-full"
                 >
-                  התנתק מWhatsApp
+                  Disconnect WhatsApp
                 </Button>
               </div>
             ) : whatsappStatus?.qrCode ? (
               <div className="text-center space-y-4">
                 <p className="text-sm text-gray-600">
-                  סרוק את קוד ה-QR עם WhatsApp בטלפון שלך
+                  Scan the QR code with WhatsApp on your phone
                 </p>
                 <div className="flex justify-center bg-white p-4 rounded-lg">
                   <img 
@@ -155,24 +155,24 @@ export default function Sidebar() {
                   />
                 </div>
                 <div className="text-xs text-gray-500 space-y-1">
-                  <p>1. פתח WhatsApp בטלפון שלך</p>
-                  <p>2. לחץ על תפריט (⋮) או הגדרות</p>
-                  <p>3. בחר "מכשירים מקושרים"</p>
-                  <p>4. לחץ על "קשר מכשיר"</p>
-                  <p>5. סרוק את הקוד</p>
+                  <p>1. Open WhatsApp on your phone</p>
+                  <p>2. Tap Menu (⋮) or Settings</p>
+                  <p>3. Select "Linked Devices"</p>
+                  <p>4. Tap "Link a Device"</p>
+                  <p>5. Scan the code</p>
                 </div>
               </div>
             ) : (
               <div className="text-center space-y-4">
                 <p className="text-sm text-gray-600">
-                  חבר את WhatsApp שלך למערכת
+                  Connect your WhatsApp to the system
                 </p>
                 <Button
                   onClick={handleInitializeWhatsApp}
                   className="w-full bg-green-600 hover:bg-green-700"
                   data-testid="button-initialize-whatsapp"
                 >
-                  התחל חיבור WhatsApp
+                  Start WhatsApp Connection
                 </Button>
               </div>
             )}

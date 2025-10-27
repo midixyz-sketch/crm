@@ -33,8 +33,8 @@ export default function LoginPage() {
       if (response.ok) {
         const data = await response.json();
         toast({
-          title: "התחברות בוצעה בהצלחה",
-          description: "התחברת למערכת בהצלחה",
+          title: "Login Successful",
+          description: "You have successfully logged into the system",
         });
         
         // Invalidate auth queries to refresh user data
@@ -47,16 +47,16 @@ export default function LoginPage() {
         const errorData = await response.json();
         toast({
           variant: "destructive",
-          title: "שגיאת התחברות",
-          description: errorData.message || "שגיאה לא ידועה",
+          title: "Login Error",
+          description: errorData.message || "Unknown error",
         });
       }
     } catch (error) {
       console.error('Authentication error:', error);
       toast({
         variant: "destructive",
-        title: "שגיאה",
-        description: "שגיאה בחיבור לשרת",
+        title: "Error",
+        description: "Server connection error",
       });
     } finally {
       setIsLoading(false);
@@ -73,11 +73,11 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
       <div className="w-full max-w-sm">
-        <h1 className="text-2xl font-bold text-center mb-6">התחברות למערכת הגיוס</h1>
+        <h1 className="text-2xl font-bold text-center mb-6">Recruitment System Login</h1>
         <form onSubmit={handleSubmit} className="space-y-4">
           <Input
             type="email"
-            placeholder="אימייל"
+            placeholder="Email"
             value={formData.email}
             onChange={(e) => handleInputChange('email', e.target.value)}
             required
@@ -85,7 +85,7 @@ export default function LoginPage() {
           />
           <Input
             type="password"
-            placeholder="סיסמה"
+            placeholder="Password"
             value={formData.password}
             onChange={(e) => handleInputChange('password', e.target.value)}
             required
@@ -97,7 +97,7 @@ export default function LoginPage() {
             disabled={isLoading}
             data-testid="button-submit"
           >
-            {isLoading ? 'טוען...' : 'התחברות'}
+            {isLoading ? 'Loading...' : 'Login'}
           </Button>
         </form>
       </div>
