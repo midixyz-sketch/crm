@@ -221,43 +221,60 @@ export default function JobInterviews() {
         lastStatusChange: new Date(),
       });
 
-      // Send candidate profile to employer via email (only if email is configured)
-      let emailSent = false;
-      let emailError = null;
+      // Send candidate profile to selected contact persons
+      let emailsSent = 0;
+      let emailsFailed = 0;
+      const contactPersons = jobData?.client?.contactPersons || [];
+      const selectedContactPersonIds = jobData?.selectedContactPersonIds || [];
       
-      if (jobData?.client?.email) {
-        try {
-          await apiRequest("POST", "/api/send-candidate-profile", {
-            candidateId: currentApplication.candidateId,
-            jobId: currentApplication.jobId,
-            reviewerFeedback: reviewerFeedback || "מועמד מומלץ למשרה",
-            recipientEmail: jobData.client.email,
-            recipientName: jobData.client.contactName,
-          });
-          emailSent = true;
-        } catch (error) {
-          console.error('Email sending failed:', error);
-          emailError = error;
-          emailSent = false;
+      // Get selected contact persons
+      const selectedContacts = contactPersons.filter((person: any) => 
+        selectedContactPersonIds.includes(person.id)
+      );
+      
+      if (selectedContacts.length > 0) {
+        // Send to all selected contact persons
+        for (const contact of selectedContacts) {
+          if (contact.email) {
+            try {
+              await apiRequest("POST", "/api/send-candidate-profile", {
+                candidateId: currentApplication.candidateId,
+                jobId: currentApplication.jobId,
+                reviewerFeedback: reviewerFeedback || "מועמד מומלץ למשרה",
+                recipientEmail: contact.email,
+                recipientName: contact.name || contact.title,
+              });
+              emailsSent++;
+            } catch (error) {
+              console.error(`Email sending failed to ${contact.email}:`, error);
+              emailsFailed++;
+            }
+          }
         }
       }
       
       // Show accurate success/error message
-      if (emailSent) {
+      if (emailsSent > 0 && emailsFailed === 0) {
         toast({
           title: "מועמד נשלח למעסיק! ✅",
-          description: "המועמד נשלח למעסיק בהצלחה עם חוות הדעת שלך",
+          description: `המועמד נשלח בהצלחה ל-${emailsSent} אנשי קשר`,
         });
-      } else if (jobData?.client?.email && emailError) {
+      } else if (emailsSent > 0 && emailsFailed > 0) {
         toast({
-          title: "מועמד אושר אבל המייל נכשל! ⚠️",
-          description: "המועמד אושר במערכת אבל לא ניתן לשלוח מייל למעסיק. אנא צור קשר ידני.",
+          title: "מועמד נשלח חלקית ⚠️",
+          description: `נשלח ל-${emailsSent} אנשי קשר, ${emailsFailed} נכשלו`,
+          variant: "destructive",
+        });
+      } else if (emailsFailed > 0) {
+        toast({
+          title: "מועמד אושר אבל המיילים נכשלו! ⚠️",
+          description: "המועמד אושר במערכת אבל לא ניתן לשלוח מיילים למעסיק. אנא צור קשר ידני.",
           variant: "destructive",
         });
       } else {
         toast({
           title: "מועמד אושר בהצלחה! ✅",
-          description: "המועמד אושר והתווסף לרשימת המועמדים המאושרים",
+          description: selectedContacts.length === 0 ? "לא נבחרו אנשי קשר למשרה זו" : "המועמד אושר והתווסף לרשימת המועמדים המאושרים",
         });
       }
 
