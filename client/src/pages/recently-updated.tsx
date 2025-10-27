@@ -67,17 +67,20 @@ export default function RecentlyUpdated() {
       case 'sent_to_employer': return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
       case 'rejected_by_employer': return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
       case 'rejected': return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
+      case 'interview': return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200';
+      case 'interview_scheduled': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
       default: return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200';
     }
   };
 
-  const getStatusText = (status: string, recruitmentSource?: string | null) => {
+  const getStatusText = (status: string) => {
     switch (status) {
       case 'pending_approval': return 'ממתין לאישור';
-      case 'sent_to_employer': 
-        return recruitmentSource ? `נשלח ע"י ${recruitmentSource}` : 'נשלח למעסיק';
+      case 'sent_to_employer': return 'נשלח למעסיק';
       case 'rejected_by_employer': return 'נפסל ע"י מעסיק';
-      case 'rejected': return 'נדחה';
+      case 'rejected': return 'נפסל בראיון';
+      case 'interview': return 'ממתין לראיון';
+      case 'interview_scheduled': return 'תואם ראיון נוסף';
       default: return status || 'לא הוגדר';
     }
   };
@@ -202,7 +205,7 @@ export default function RecentlyUpdated() {
                         <TableHead className="text-right font-medium text-gray-700 dark:text-gray-300">שם מלא</TableHead>
                         <TableHead className="text-right font-medium text-gray-700 dark:text-gray-300">שם המשרה</TableHead>
                         <TableHead className="text-right font-medium text-gray-700 dark:text-gray-300">שם החברה</TableHead>
-                        <TableHead className="text-right font-medium text-gray-700 dark:text-gray-300">יוזר שטיפל</TableHead>
+                        <TableHead className="text-right font-medium text-gray-700 dark:text-gray-300">רכז שטיפל</TableHead>
                         <TableHead className="text-right font-medium text-gray-700 dark:text-gray-300">סטטוס</TableHead>
                         <TableHead className="text-right font-medium text-gray-700 dark:text-gray-300">תאריך עדכון</TableHead>
                       </TableRow>
@@ -227,11 +230,11 @@ export default function RecentlyUpdated() {
                             {candidate.lastReferralClient || "-"}
                           </TableCell>
                           <TableCell className="text-sm">
-                            {candidate.creatorUsername || "-"}
+                            {candidate.lastStatusUpdatedBy || candidate.createdByName || "-"}
                           </TableCell>
                           <TableCell className="text-sm">
                             <Badge className={getStatusColor(candidate.status || 'available')}>
-                              {getStatusText(candidate.status || 'available', candidate.recruitmentSource)}
+                              {getStatusText(candidate.status || 'available')}
                             </Badge>
                           </TableCell>
                           <TableCell className="text-sm whitespace-nowrap">

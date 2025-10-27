@@ -668,12 +668,21 @@ export type TaskWithDetails = Task & { candidate?: Candidate; job?: JobWithClien
 // Enhanced candidate type with computed enriched data
 export type EnrichedCandidate = Candidate & {
   lastJobTitle?: string | null;
+  lastJobId?: string | null;
   lastAppliedAt?: Date | null;
   lastReferralDate?: Date | null;
   lastReferralClient?: string | null;
+  lastReferralClientId?: string | null;
   lastStatusChange?: Date | null;
   lastStatusDescription?: string | null;
+  lastStatusUpdatedBy?: string | null;
+  lastStatusUpdatedById?: string | null;
+  createdByUserId?: string | null;
+  createdByName?: string | null;
+  createdByEmail?: string | null;
+  createdByRoleType?: string | null;
   creatorUsername?: string | null;
+  recruitmentSource?: string | null;
 };
 
 // Job Assignments table - for assigning jobs to external recruiters
