@@ -33,6 +33,7 @@ import {
   users
 } from "@shared/schema";
 import { z } from "zod";
+import { nanoid } from "nanoid";
 import mammoth from 'mammoth';
 import { execSync } from 'child_process';
 import mime from 'mime-types';
@@ -6579,6 +6580,67 @@ ${recommendation}
     } catch (error) {
       console.error('שגיאה בקבלת פעילות רכז:', error);
       res.status(500).json({ message: 'שגיאה בקבלת נתונים' });
+    }
+  });
+
+  // FIX: Add IDs to contact persons that don't have them
+  app.post('/api/admin/fix-contact-person-ids', isAuthenticated, requireRole('super_admin'), async (req: any, res) => {
+    try {
+      console.log('🔧 מתחיל תיקון IDs לאנשי קשר...');
+      
+      // Get all clients
+      const allClients = await db.select().from(clients);
+      console.log(`📊 נמצאו ${allClients.length} לקוחות`);
+      
+      let fixedCount = 0;
+      let clientsFixed = 0;
+      
+      for (const client of allClients) {
+        const contactPersons = client.contactPersons as any[] || [];
+        
+        if (contactPersons.length === 0) {
+          continue;
+        }
+        
+        // Check if any contact person is missing an ID
+        const needsFix = contactPersons.some(person => !person.id);
+        
+        if (needsFix) {
+          console.log(`🔧 מתקן לקוח: ${client.companyName}`);
+          
+          // Add ID to each contact person that doesn't have one
+          const fixedContactPersons = contactPersons.map(person => {
+            if (!person.id) {
+              fixedCount++;
+              return {
+                ...person,
+                id: nanoid(),
+              };
+            }
+            return person;
+          });
+          
+          // Update the client
+          await db.update(clients)
+            .set({ contactPersons: fixedContactPersons })
+            .where(eq(clients.id, client.id));
+          
+          clientsFixed++;
+        }
+      }
+      
+      console.log(`✅ תיקון הושלם: ${fixedCount} אנשי קשר תוקנו ב-${clientsFixed} לקוחות`);
+      
+      res.json({
+        success: true,
+        message: `תיקון הושלם בהצלחה`,
+        totalClients: allClients.length,
+        clientsFixed,
+        contactPersonsFixed: fixedCount,
+      });
+    } catch (error) {
+      console.error('❌ שגיאה בתיקון IDs:', error);
+      res.status(500).json({ message: 'שגיאה בתיקון אנשי קשר' });
     }
   });
 
