@@ -38,7 +38,7 @@ Preferred communication style: Simple, everyday language.
 -   **User Management**: Admin-only user creation and role assignment with automated welcome emails.
 -   **Duplicate Send Prevention**: 30-day warning system for sending candidates to employers.
 -   **Bulk Candidate Operations**: Super admin function for deleting multiple candidates.
--   **Recently Updated Candidates Page** (Updated October 2025): Tracks status changes with filtering options. Displays recruiter who performed the status change (not the candidate creator), clear status labels ("נשלח למעסיק", "נפסל בראיון", "תואם ראיון נוסף"), and filters for sent_to_employer, rejected_by_employer, and rejected statuses.
+-   **Recently Updated Candidates Page** (Updated October 2025): Tracks status changes with comprehensive filtering options. Displays recruiter who performed the status change (not the candidate creator), clear status labels ("נשלח למעסיק", "נפסל בראיון", "תואם ראיון נוסף"), and filters for status, job, recruiter, and date range. Includes dedicated API endpoint `/api/candidates/status-updaters` for efficient recruiter list retrieval.
 -   **Dashboard Statistics**: Displays "Hired This Month" and a "Revenue" card.
 -   **WhatsApp Message Templates**: Database-driven templates with CRUD operations via UI, supporting placeholders and accessible from candidate detail pages.
 -   **Calendar & Reminders System**: Full-featured calendar for managing reminders and interviews, including candidate linking, creator tracking, priority levels, status management, and due reminder alerts.
