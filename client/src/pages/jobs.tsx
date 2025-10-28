@@ -31,8 +31,8 @@ export default function Jobs() {
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
       toast({
-        title: "Unauthorized",
-        description: "You are disconnected. Logging in again...",
+        title: "לא מורשה",
+        description: "אתה מנותק. מתחבר שוב...",
         variant: "destructive",
       });
       setTimeout(() => {
@@ -65,15 +65,15 @@ export default function Jobs() {
       queryClient.invalidateQueries({ queryKey: ["/api/candidates/enriched"] });
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
       toast({
-        title: "Success",
-        description: "Job deleted successfully",
+        title: "הצלחה",
+        description: "המשרה נמחקה בהצלחה",
       });
     },
     onError: (error) => {
       if (isUnauthorizedError(error)) {
         toast({
-          title: "Unauthorized",
-          description: "You are disconnected. Logging in again...",
+          title: "לא מורשה",
+          description: "אתה מנותק. מתחבר שוב...",
           variant: "destructive",
         });
         setTimeout(() => {
@@ -83,7 +83,7 @@ export default function Jobs() {
       }
       toast({
         title: "Error",
-        description: "Error deleting job",
+        description: "שגיאה במחיקת המשרה",
         variant: "destructive",
       });
     },
@@ -128,7 +128,7 @@ export default function Jobs() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
-          <p className="mt-4 text-lg">Loading...</p>
+          <p className="mt-4 text-lg">טוען...</p>
         </div>
       </div>
     );
@@ -147,7 +147,7 @@ export default function Jobs() {
               <div className="relative flex-1 max-w-md">
                 <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                 <Input
-                  placeholder="Search jobs..."
+                  placeholder="חיפוש משרות..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   className="pr-10"
@@ -256,7 +256,7 @@ export default function Jobs() {
                               </p>
                               <p className="text-sm text-gray-600 dark:text-gray-300">
                                 <Users className="inline h-3 w-3 ml-1" />
-                                {job.positions} positions
+                                {job.positions} משרות
                               </p>
                             </div>
                           </TableCell>
@@ -338,14 +338,14 @@ export default function Jobs() {
                 </div>
               ) : (
                 <div className="text-center py-12">
-                  <p className="text-gray-500 text-lg">No jobs found</p>
+                  <p className="text-gray-500 text-lg">לא נמצאו משרות</p>
                   <AddButton 
                     onClick={handleAddJob}
                     className="mt-4 btn-primary"
                     data-testid="button-add-first-job"
                     hideWhenNoAccess={true}
                   >
-                    Add First Job
+                    הוסף משרה ראשונה
                   </AddButton>
                 </div>
               )}

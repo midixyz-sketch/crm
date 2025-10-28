@@ -126,16 +126,16 @@ export async function setupAuth(app: Express) {
   app.post("/api/login", (req, res, next) => {
     passport.authenticate('local', (err: any, user: any, info: any) => {
       if (err) {
-        return res.status(500).json({ message: 'System error' });
+        return res.status(500).json({ message: 'שגיאה במערכת' });
       }
       
       if (!user) {
-        return res.status(401).json({ message: info?.message || 'Incorrect login credentials' });
+        return res.status(401).json({ message: info?.message || 'פרטי התחברות שגויים' });
       }
 
       req.logIn(user, (err) => {
         if (err) {
-          return res.status(500).json({ message: 'Login error' });
+          return res.status(500).json({ message: 'שגיאה בהתחברות' });
         }
         
         res.json({ 
@@ -155,7 +155,7 @@ export async function setupAuth(app: Express) {
   // Registration route - DISABLED: Only Super Admin can create users via user management
   app.post("/api/register", async (req, res) => {
     return res.status(403).json({ 
-      message: 'Self-registration is not possible. Only Super Admin can create new users via user management' 
+      message: 'רישום עצמאי אינו אפשרי. רק סופר אדמין יכול ליצור משתמשים חדשים דרך ניהול משתמשים' 
     });
   });
 
@@ -164,13 +164,13 @@ export async function setupAuth(app: Express) {
   app.post("/api/logout", (req, res) => {
     req.logout((err) => {
       if (err) {
-        return res.status(500).json({ message: 'Logout error' });
+        return res.status(500).json({ message: 'שגיאה בהתנתקות' });
       }
       res.json({ success: true });
     });
   });
 
-  console.log('✅ Local authentication system configured successfully');
+  console.log('✅ מערכת אימות מקומית הוגדרה בהצלחה');
 }
 
 export const isAuthenticated: RequestHandler = (req, res, next) => {
