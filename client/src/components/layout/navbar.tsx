@@ -47,7 +47,7 @@ export default function Navbar() {
             <Link href="/" data-testid="link-logo" className="hover:opacity-80 transition-opacity">
               <div className="flex flex-col items-start">
                 <h1 className="text-3xl font-bold text-primary">Linkjob</h1>
-                <p className="text-sm text-gray-600 dark:text-gray-300">מערכת לניהול הגיוס</p>
+                <p className="text-sm text-gray-600 dark:text-gray-300">Recruitment Management System</p>
               </div>
             </Link>
             
@@ -103,14 +103,14 @@ export default function Navbar() {
               <DropdownMenuTrigger asChild>
                 <button className="w-10 h-10 bg-primary text-white rounded-full flex items-center justify-center cursor-pointer hover:opacity-80 transition-opacity focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2">
                   <span className="text-sm font-medium">
-                    {user ? `${(user as any).firstName?.charAt(0) || ''}${(user as any).lastName?.charAt(0) || ''}` || 'מ' : 'מ'}
+                    {user ? `${(user as any).firstName?.charAt(0) || ''}${(user as any).lastName?.charAt(0) || ''}` || 'U' : 'U'}
                   </span>
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
                 <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
                   <p className="text-sm font-medium text-gray-900 dark:text-white">
-                    {user ? `${(user as any).firstName || ''} ${(user as any).lastName || ''}`.trim() || (user as any).email : 'משתמש'}
+                    {user ? `${(user as any).firstName || ''} ${(user as any).lastName || ''}`.trim() || (user as any).email : 'User'}
                   </p>
                   <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">
                     {(user as any)?.email || ''}
@@ -118,7 +118,7 @@ export default function Navbar() {
                 </div>
                 <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
                   <LogOut className="h-4 w-4 ml-2" />
-                  <span>התנתק מהמערכת</span>
+                  <span>Logout</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -130,14 +130,14 @@ export default function Navbar() {
               <DropdownMenuTrigger asChild>
                 <button className="w-9 h-9 bg-primary text-white rounded-full flex items-center justify-center cursor-pointer hover:opacity-80 transition-opacity focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2">
                   <span className="text-sm font-medium">
-                    {user ? `${(user as any).firstName?.charAt(0) || ''}${(user as any).lastName?.charAt(0) || ''}` || 'מ' : 'מ'}
+                    {user ? `${(user as any).firstName?.charAt(0) || ''}${(user as any).lastName?.charAt(0) || ''}` || 'U' : 'U'}
                   </span>
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
                 <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
                   <p className="text-sm font-medium text-gray-900 dark:text-white">
-                    {user ? `${(user as any).firstName || ''} ${(user as any).lastName || ''}`.trim() || (user as any).email : 'משתמש'}
+                    {user ? `${(user as any).firstName || ''} ${(user as any).lastName || ''}`.trim() || (user as any).email : 'User'}
                   </p>
                   <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">
                     {(user as any)?.email || ''}
@@ -145,7 +145,7 @@ export default function Navbar() {
                 </div>
                 <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
                   <LogOut className="h-4 w-4 ml-2" />
-                  <span>התנתק מהמערכת</span>
+                  <span>Logout</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
