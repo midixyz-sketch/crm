@@ -15,3 +15,8 @@ uploads/
 # Log files
 *.log
 logs/
+
+# Database backups (contain sensitive data)
+*.sql
+database_backup*.sql
+database_full_backup.sql
