@@ -4736,7 +4736,7 @@ ${recommendation}
       res.json(event);
     } catch (error) {
       console.error('Error updating interview event:', error);
-      res.status(500).json({ error: 'שגיאה בעדכון האירוע' });
+      res.status(500).json({ error: 'Error updating event' });
     }
   });
 
@@ -4746,12 +4746,12 @@ ${recommendation}
       res.json({ success: true });
     } catch (error) {
       console.error('Error deleting interview event:', error);
-      res.status(500).json({ error: 'שגיאה במחיקת האירוע' });
+      res.status(500).json({ error: 'Error deleting event' });
     }
   });
 
   // Start cPanel email monitoring
-  console.log('🚀 מפעיל מעקב מיילים אוטומטי...');
+  console.log('🚀 Launching automatic email tracking...');
   startCpanelEmailMonitoring();
 
   // RBAC Routes - Role & Permission Management
