@@ -51,7 +51,7 @@ function HomePage() {
   const isExternalRecruiter = (currentUser as any)?.userRoles?.some((ur: any) => ur.role?.type === "external_recruiter");
 
   if (isLoading) {
-    return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
+    return <div className="flex items-center justify-center min-h-screen">טוען...</div>;
   }
 
   if (isExternalRecruiter) {
@@ -68,8 +68,8 @@ function ProtectedReports() {
       fallback={
         <div className="flex items-center justify-center min-h-screen">
           <div className="text-center">
-            <h2 className="text-2xl font-bold mb-2">You don't have permission to view this page</h2>
-            <p className="text-muted-foreground">Contact the admin for reports and analytics permissions.</p>
+            <h2 className="text-2xl font-bold mb-2">אין לך הרשאה לצפות בדף זה</h2>
+            <p className="text-muted-foreground">צור קשר עם המנהל למתן הרשאות דוחות ואנליטיקה.</p>
           </div>
         </div>
       }
