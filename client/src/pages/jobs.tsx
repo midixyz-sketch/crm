@@ -31,8 +31,8 @@ export default function Jobs() {
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
       toast({
-        title: "לא מורשה",
-        description: "אתה מנותק. מתחבר שוב...",
+        title: "Unauthorized",
+        description: "You are disconnected. Logging in again...",
         variant: "destructive",
       });
       setTimeout(() => {
@@ -48,7 +48,7 @@ export default function Jobs() {
     select: (data) => ({
       ...data,
       jobs: filterJobs(data.jobs).sort((a, b) => {
-        // משרות דחופות תמיד בראש
+        // Urgent jobs always at the top
         if (a.isUrgent && !b.isUrgent) return -1;
         if (!a.isUrgent && b.isUrgent) return 1;
         return 0;
@@ -65,15 +65,15 @@ export default function Jobs() {
       queryClient.invalidateQueries({ queryKey: ["/api/candidates/enriched"] });
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
       toast({
-        title: "הצלחה",
-        description: "המשרה נמחקה בהצלחה",
+        title: "Success",
+        description: "Job deleted successfully",
       });
     },
     onError: (error) => {
       if (isUnauthorizedError(error)) {
         toast({
-          title: "לא מורשה",
-          description: "אתה מנותק. מתחבר שוב...",
+          title: "Unauthorized",
+          description: "You are disconnected. Logging in again...",
           variant: "destructive",
         });
         setTimeout(() => {
@@ -82,8 +82,8 @@ export default function Jobs() {
         return;
       }
       toast({
-        title: "שגיאה",
-        description: "שגיאה במחיקת המשרה",
+        title: "Error",
+        description: "Error deleting job",
         variant: "destructive",
       });
     },
@@ -100,7 +100,7 @@ export default function Jobs() {
   };
 
   const handleDeleteJob = (id: string) => {
-    if (confirm("האם אתה בטוח שברצונך למחוק את המשרה?")) {
+    if (confirm("Are you sure you want to delete this job?")) {
       deleteJob.mutate(id);
     }
   };
@@ -116,10 +116,10 @@ export default function Jobs() {
 
   const getStatusText = (status: string) => {
     switch (status) {
-      case 'active': return 'פעילה';
-      case 'paused': return 'מושהית';
-      case 'closed': return 'סגורה';
-      default: return status || 'לא הוגדר';
+      case 'active': return 'Active';
+      case 'paused': return 'Paused';
+      case 'closed': return 'Closed';
+      default: return status || 'Not Set';
     }
   };
 
@@ -128,7 +128,7 @@ export default function Jobs() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
-          <p className="mt-4 text-lg">טוען...</p>
+          <p className="mt-4 text-lg">Loading...</p>
         </div>
       </div>
     );
@@ -147,7 +147,7 @@ export default function Jobs() {
               <div className="relative flex-1 max-w-md">
                 <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                 <Input
-                  placeholder="חיפוש משרות..."
+                  placeholder="Search jobs..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   className="pr-10"
@@ -166,16 +166,16 @@ export default function Jobs() {
                     data-testid="button-add-job"
                   >
                     <Plus className="h-4 w-4 ml-2" />
-                    הוסף משרה
+                    Add Job
                   </AddButton>
                 </DialogTrigger>
               <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader className="sr-only">
                   <DialogTitle>
-                    {selectedJob ? "עריכת משרה" : "הוספת משרה חדשה"}
+                    {selectedJob ? "Edit Job" : "Add New Job"}
                   </DialogTitle>
                   <DialogDescription>
-                    {selectedJob ? "ערוך פרטי המשרה" : "הוסף משרה חדשה למאגר"}
+                    {selectedJob ? "Edit job details" : "Add new job to database"}
                   </DialogDescription>
                 </DialogHeader>
                 <JobForm 
@@ -216,14 +216,14 @@ export default function Jobs() {
                   <Table>
                     <TableHeader>
                       <TableRow className="bg-gray-50 dark:bg-gray-900">
-                        <TableHead className="text-right font-medium text-gray-700 dark:text-gray-300">קוד משרה</TableHead>
-                        <TableHead className="text-right font-medium text-gray-700 dark:text-gray-300">כותרת המשרה</TableHead>
-                        <TableHead className="text-right font-medium text-gray-700 dark:text-gray-300">לקוח</TableHead>
-                        <TableHead className="text-right font-medium text-gray-700 dark:text-gray-300">מיקום</TableHead>
-                        <TableHead className="text-right font-medium text-gray-700 dark:text-gray-300">שכר</TableHead>
-                        <TableHead className="text-right font-medium text-gray-700 dark:text-gray-300">סוג משרה</TableHead>
-                        <TableHead className="text-right font-medium text-gray-700 dark:text-gray-300">סטטוס</TableHead>
-                        <TableHead className="text-right font-medium text-gray-700 dark:text-gray-300">פעולות</TableHead>
+                        <TableHead className="text-right font-medium text-gray-700 dark:text-gray-300">Job Code</TableHead>
+                        <TableHead className="text-right font-medium text-gray-700 dark:text-gray-300">Job Title</TableHead>
+                        <TableHead className="text-right font-medium text-gray-700 dark:text-gray-300">Client</TableHead>
+                        <TableHead className="text-right font-medium text-gray-700 dark:text-gray-300">Location</TableHead>
+                        <TableHead className="text-right font-medium text-gray-700 dark:text-gray-300">Salary</TableHead>
+                        <TableHead className="text-right font-medium text-gray-700 dark:text-gray-300">Job Type</TableHead>
+                        <TableHead className="text-right font-medium text-gray-700 dark:text-gray-300">Status</TableHead>
+                        <TableHead className="text-right font-medium text-gray-700 dark:text-gray-300">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -256,7 +256,7 @@ export default function Jobs() {
                               </p>
                               <p className="text-sm text-gray-600 dark:text-gray-300">
                                 <Users className="inline h-3 w-3 ml-1" />
-                                {job.positions} משרות
+                                {job.positions} positions
                               </p>
                             </div>
                           </TableCell>
@@ -290,7 +290,7 @@ export default function Jobs() {
                                 onClick={() => window.open(`/jobs/${job.id}/landing`, '_blank')}
                                 className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
                                 data-testid={`button-landing-page-${job.id}`}
-                                title="דף נחיתה למפרסום"
+                                title="Landing page for advertising"
                               >
                                 <ExternalLink className="h-4 w-4" />
                               </Button>
@@ -303,7 +303,7 @@ export default function Jobs() {
                                 }}
                                 className="text-purple-600 hover:text-purple-800 dark:text-purple-400 dark:hover:text-purple-300"
                                 data-testid={`button-edit-landing-${job.id}`}
-                                title="עריכת דף פרסום"
+                                title="Edit landing page"
                               >
                                 <Settings className="h-4 w-4" />
                               </Button>
@@ -338,14 +338,14 @@ export default function Jobs() {
                 </div>
               ) : (
                 <div className="text-center py-12">
-                  <p className="text-gray-500 text-lg">לא נמצאו משרות</p>
+                  <p className="text-gray-500 text-lg">No jobs found</p>
                   <AddButton 
                     onClick={handleAddJob}
                     className="mt-4 btn-primary"
                     data-testid="button-add-first-job"
                     hideWhenNoAccess={true}
                   >
-                    הוסף משרה ראשונה
+                    Add First Job
                   </AddButton>
                 </div>
               )}
