@@ -37,7 +37,7 @@ async function createDefaultAdminUser() {
     // Check if admin user already exists
     const existingAdmin = await storage.getUserByEmail(adminEmail);
     if (existingAdmin) {
-      console.log('✅ משתמש מנהל קיים כבר');
+      console.log('✅ Admin user already exists');
       return;
     }
 
@@ -47,23 +47,23 @@ async function createDefaultAdminUser() {
     // Create admin user
     await storage.createUser({
       email: adminEmail,
-      firstName: 'מנהל',
-      lastName: 'מערכת',
+      firstName: 'Admin',
+      lastName: 'System',
       password: passwordHash,
       username: 'admin',
       isActive: true
     });
 
-    console.log('✅ נוצר משתמש מנהל ראשי:');
-    console.log(`📧 אימייל: ${adminEmail}`);
-    console.log(`🔑 סיסמה: ${adminPassword}`);
+    console.log('✅ Created main admin user:');
+    console.log(`📧 Email: ${adminEmail}`);
+    console.log(`🔑 Password: ${adminPassword}`);
   } catch (error) {
-    console.error('שגיאה ביצירת משתמש מנהל:', error);
+    console.error('Error creating admin user:', error);
   }
 }
 
 export async function setupAuth(app: Express) {
-  console.log('🔐 מגדיר מערכת אימות מקומית...');
+  console.log('🔐 Setting up local authentication system...');
   
   app.set("trust proxy", 1);
   app.use(getSession());
@@ -81,17 +81,17 @@ export async function setupAuth(app: Express) {
         const user = await storage.getUserByEmail(email);
         
         if (!user || !user.isActive) {
-          return done(null, false, { message: 'משתמש לא נמצא או לא פעיל' });
+          return done(null, false, { message: 'User not found or inactive' });
         }
 
         if (!user.password) {
-          return done(null, false, { message: 'משתמש לא מוגדר עם סיסמה' });
+          return done(null, false, { message: 'User not configured with password' });
         }
 
         const isValidPassword = await bcrypt.compare(password, user.password);
         
         if (!isValidPassword) {
-          return done(null, false, { message: 'סיסמה שגויה' });
+          return done(null, false, { message: 'Incorrect password' });
         }
 
         // Update last login
