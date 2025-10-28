@@ -64,34 +64,34 @@ export default function Candidates() {
 
   const getStatusText = (status: string, recruitmentSource?: string | null) => {
     switch (status) {
-      case 'available': return 'זמין';
-      case 'pending': return 'ממתין';
-      case 'pending_approval': return 'ממתין לאישור';
+      case 'available': return 'Available';
+      case 'pending': return 'Pending';
+      case 'pending_approval': return 'Pending Approval';
       case 'sent_to_employer': 
-        return recruitmentSource ? `נשלח ע"י ${recruitmentSource}` : 'נשלח למעסיק';
-      case 'in_interview': return 'בתהליך ראיון';
-      case 'hired': return 'התקבל';
-      case 'rejected': return 'נדחה';
-      case 'not_relevant': return 'לא רלוונטי';
-      case 'rejected_by_employer': return 'נפסל בראיון';
-      case 'invited_to_interview': return 'זומן לראיון';
-      case 'whatsapp_sent': return 'נשלחה הודעת ווצאפ';
-      case 'phone_contact_made': return 'נוצר קשר טלפוני';
-      case 'waiting_employer_response': return 'ממתין לתשובת מעסיק';
-      case 'attended_interview': return 'הגיע לראיון';
-      case 'missed_interview': return 'לא הגיע לראיון';
-      case 'passed_interview': return 'עבר ראיון';
-      case 'employment_ended': return 'סיים העסקה';
-      case 'employed': return 'מועסק';
-      case 'inactive': return 'לא פעיל';
-      case 'blacklisted': return 'ברשימה שחורה';
-      case 'submitted': return 'הוגש';
-      case 'reviewed': return 'נסקר';
-      case 'interview': return 'ראיון';
-      case 'interview_scheduled': return 'זומן לראיון';
-      case 'accepted': return 'התקבל';
-      case 'new_application': return 'מועמדות חדשה';
-      default: return status || 'לא הוגדר';
+        return recruitmentSource ? `Sent by ${recruitmentSource}` : 'Sent to Employer';
+      case 'in_interview': return 'In Interview';
+      case 'hired': return 'Hired';
+      case 'rejected': return 'Rejected';
+      case 'not_relevant': return 'Not Relevant';
+      case 'rejected_by_employer': return 'Rejected by Employer';
+      case 'invited_to_interview': return 'Invited to Interview';
+      case 'whatsapp_sent': return 'WhatsApp Sent';
+      case 'phone_contact_made': return 'Phone Contact Made';
+      case 'waiting_employer_response': return 'Waiting for Employer';
+      case 'attended_interview': return 'Attended Interview';
+      case 'missed_interview': return 'Missed Interview';
+      case 'passed_interview': return 'Passed Interview';
+      case 'employment_ended': return 'Employment Ended';
+      case 'employed': return 'Employed';
+      case 'inactive': return 'Inactive';
+      case 'blacklisted': return 'Blacklisted';
+      case 'submitted': return 'Submitted';
+      case 'reviewed': return 'Reviewed';
+      case 'interview': return 'Interview';
+      case 'interview_scheduled': return 'Interview Scheduled';
+      case 'accepted': return 'Accepted';
+      case 'new_application': return 'New Application';
+      default: return status || 'Not Set';
     }
   };
 
@@ -128,8 +128,8 @@ export default function Candidates() {
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
       toast({
-        title: "לא מורשה",
-        description: "אתה מנותק. מתחבר שוב...",
+        title: "Unauthorized",
+        description: "You are disconnected. Logging in again...",
         variant: "destructive",
       });
       setTimeout(() => {
@@ -173,10 +173,10 @@ export default function Candidates() {
 
   // Status options
   const statusOptions = [
-    { label: "נשלח למעסיק", value: "sent_to_employer" },
-    { label: "נדחה", value: "rejected" },
-    { label: "לא מתאים", value: "not_relevant" },
-    { label: "ממתין", value: "pending" },
+    { label: "Sent to Employer", value: "sent_to_employer" },
+    { label: "Rejected", value: "rejected" },
+    { label: "Not Suitable", value: "not_relevant" },
+    { label: "Pending", value: "pending" },
   ];
 
   // Job options
@@ -200,15 +200,15 @@ export default function Candidates() {
       queryClient.invalidateQueries({ queryKey: ["/api/candidates/enriched"] });
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
       toast({
-        title: "הצלחה",
-        description: "המועמד נמחק בהצלחה",
+        title: "Success",
+        description: "Candidate deleted successfully",
       });
     },
     onError: (error) => {
       if (isUnauthorizedError(error)) {
         toast({
-          title: "לא מורשה",
-          description: "אתה מנותק. מתחבר שוב...",
+          title: "Unauthorized",
+          description: "You are disconnected. Logging in again...",
           variant: "destructive",
         });
         setTimeout(() => {
@@ -217,8 +217,8 @@ export default function Candidates() {
         return;
       }
       toast({
-        title: "שגיאה",
-        description: "שגיאה במחיקת המועמד",
+        title: "Error",
+        description: "Error deleting candidate",
         variant: "destructive",
       });
     },
@@ -234,15 +234,15 @@ export default function Candidates() {
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
       setSelectedCandidates([]);
       toast({
-        title: "הצלחה",
-        description: "המועמדים נמחקו בהצלחה",
+        title: "Success",
+        description: "Candidates deleted successfully",
       });
     },
     onError: (error) => {
       if (isUnauthorizedError(error)) {
         toast({
-          title: "לא מורשה",
-          description: "אתה מנותק. מתחבר שוב...",
+          title: "Unauthorized",
+          description: "You are disconnected. Logging in again...",
           variant: "destructive",
         });
         setTimeout(() => {
@@ -251,8 +251,8 @@ export default function Candidates() {
         return;
       }
       toast({
-        title: "שגיאה",
-        description: "שגיאה במחיקת המועמדים",
+        title: "Error",
+        description: "Error deleting candidates",
         variant: "destructive",
       });
     },
@@ -290,7 +290,7 @@ export default function Candidates() {
   const handleBulkDelete = () => {
     if (selectedCandidates.length === 0) return;
     
-    if (confirm(`האם אתה בטוח שברצונך למחוק ${selectedCandidates.length} מועמדים?`)) {
+    if (confirm(`Are you sure you want to delete ${selectedCandidates.length} candidates?`)) {
       bulkDeleteCandidates.mutate(selectedCandidates);
     }
   };
@@ -314,7 +314,7 @@ export default function Candidates() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
-          <p className="mt-4 text-lg">טוען...</p>
+          <p className="mt-4 text-lg">Loading...</p>
         </div>
       </div>
     );
@@ -328,14 +328,14 @@ export default function Candidates() {
     <div dir="rtl" className="min-h-screen w-full max-w-full space-y-6 p-6">
       <div className="flex items-center gap-2 mb-6">
         <Users className="h-6 w-6" />
-        <h1 className="text-2xl font-bold">מועמדים</h1>
+        <h1 className="text-2xl font-bold">Candidates</h1>
       </div>
           <div className="mb-6 flex flex-col gap-4">
             <div className="flex flex-col sm:flex-row gap-4 flex-wrap">
               <div className="relative flex-1 min-w-[200px]">
                 <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                 <Input
-                  placeholder="חיפוש מועמדים..."
+                  placeholder="Search candidates..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   className="pr-10"
@@ -348,7 +348,7 @@ export default function Candidates() {
                   options={statusOptions}
                   selected={selectedStatuses}
                   onChange={setSelectedStatuses}
-                  placeholder="סטטוס"
+                  placeholder="Status"
                   data-testid="select-status-filter"
                 />
               </div>
@@ -358,7 +358,7 @@ export default function Candidates() {
                   options={jobOptions}
                   selected={selectedJobs}
                   onChange={setSelectedJobs}
-                  placeholder="שם המשרה"
+                  placeholder="Job Title"
                   data-testid="select-job-filter"
                 />
               </div>
@@ -368,7 +368,7 @@ export default function Candidates() {
                   options={userOptions}
                   selected={selectedUsers}
                   onChange={setSelectedUsers}
-                  placeholder="רכז"
+                  placeholder="Recruiter"
                   data-testid="select-user-filter"
                 />
               </div>
@@ -378,7 +378,7 @@ export default function Candidates() {
                   type="date"
                   value={dateFrom}
                   onChange={(e) => setDateFrom(e.target.value)}
-                  placeholder="מתאריך"
+                  placeholder="From Date"
                   className="text-sm"
                   data-testid="input-date-from"
                 />
@@ -387,7 +387,7 @@ export default function Candidates() {
                   type="date"
                   value={dateTo}
                   onChange={(e) => setDateTo(e.target.value)}
-                  placeholder="עד תאריך"
+                  placeholder="To Date"
                   className="text-sm"
                   data-testid="input-date-to"
                 />
