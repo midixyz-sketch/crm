@@ -24,8 +24,8 @@ export default function Clients() {
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
       toast({
-        title: "לא מורשה",
-        description: "אתה מנותק. מתחבר שוב...",
+        title: "Unauthorized",
+        description: "You are disconnected. Logging in again...",
         variant: "destructive",
       });
       setTimeout(() => {
@@ -47,15 +47,15 @@ export default function Clients() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/clients"] });
       toast({
-        title: "הצלחה",
-        description: "הלקוח נמחק בהצלחה",
+        title: "Success",
+        description: "Client deleted successfully",
       });
     },
     onError: (error) => {
       if (isUnauthorizedError(error)) {
         toast({
-          title: "לא מורשה",
-          description: "אתה מנותק. מתחבר שוב...",
+          title: "Unauthorized",
+          description: "You are disconnected. Logging in again...",
           variant: "destructive",
         });
         setTimeout(() => {
@@ -64,8 +64,8 @@ export default function Clients() {
         return;
       }
       toast({
-        title: "שגיאה",
-        description: "שגיאה במחיקת הלקוח",
+        title: "Error",
+        description: "Error deleting client",
         variant: "destructive",
       });
     },
@@ -82,7 +82,7 @@ export default function Clients() {
   };
 
   const handleDeleteClient = (id: string) => {
-    if (confirm("האם אתה בטוח שברצונך למחוק את הלקוח?")) {
+    if (confirm("Are you sure you want to delete this client?")) {
       deleteClient.mutate(id);
     }
   };
@@ -92,7 +92,7 @@ export default function Clients() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
-          <p className="mt-4 text-lg">טוען...</p>
+          <p className="mt-4 text-lg">Loading...</p>
         </div>
       </div>
     );
@@ -109,7 +109,7 @@ export default function Clients() {
               <div className="relative flex-1 max-w-md">
                 <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                 <Input
-                  placeholder="חיפוש לקוחות..."
+                  placeholder="Search clients..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   className="pr-10"
@@ -127,16 +127,16 @@ export default function Clients() {
                   data-testid="button-add-client"
                 >
                   <Plus className="h-4 w-4 ml-2" />
-                  הוסף לקוח
+                  Add Client
                 </Button>
               </DialogTrigger>
               <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader className="sr-only">
                   <DialogTitle>
-                    {selectedClient ? "עריכת לקוח" : "הוספת לקוח חדש"}
+                    {selectedClient ? "Edit Client" : "Add New Client"}
                   </DialogTitle>
                   <DialogDescription>
-                    {selectedClient ? "ערוך פרטי הלקוח" : "הוסף לקוח חדש למאגר"}
+                    {selectedClient ? "Edit client details" : "Add new client to database"}
                   </DialogDescription>
                 </DialogHeader>
                 <ClientForm 
@@ -163,11 +163,11 @@ export default function Clients() {
                   <Table>
                     <TableHeader>
                       <TableRow className="bg-gray-50 dark:bg-gray-900">
-                        <TableHead className="text-right font-medium text-gray-700 dark:text-gray-300">מספר לקוח</TableHead>
-                        <TableHead className="text-right font-medium text-gray-700 dark:text-gray-300">שם החברה</TableHead>
-                        <TableHead className="text-right font-medium text-gray-700 dark:text-gray-300">מצב</TableHead>
-                        <TableHead className="text-right font-medium text-gray-700 dark:text-gray-300">תחום פעילות</TableHead>
-                        <TableHead className="text-right font-medium text-gray-700 dark:text-gray-300">פעולות</TableHead>
+                        <TableHead className="text-right font-medium text-gray-700 dark:text-gray-300">Client Number</TableHead>
+                        <TableHead className="text-right font-medium text-gray-700 dark:text-gray-300">Company Name</TableHead>
+                        <TableHead className="text-right font-medium text-gray-700 dark:text-gray-300">Status</TableHead>
+                        <TableHead className="text-right font-medium text-gray-700 dark:text-gray-300">Industry</TableHead>
+                        <TableHead className="text-right font-medium text-gray-700 dark:text-gray-300">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -190,7 +190,7 @@ export default function Clients() {
                           </TableCell>
                           <TableCell>
                             <Badge className={client.isActive ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'}>
-                              {client.isActive ? 'פעיל' : 'לא פעיל'}
+                              {client.isActive ? 'Active' : 'Inactive'}
                             </Badge>
                           </TableCell>
                           <TableCell data-testid={`text-client-industry-${client.id}`}>
@@ -225,13 +225,13 @@ export default function Clients() {
                 </div>
               ) : (
                 <div className="text-center py-12">
-                  <p className="text-gray-500 text-lg">לא נמצאו לקוחות</p>
+                  <p className="text-gray-500 text-lg">No clients found</p>
                   <Button 
                     onClick={handleAddClient}
                     className="mt-4 btn-primary"
                     data-testid="button-add-first-client"
                   >
-                    הוסף לקוח ראשון
+                    Add First Client
                   </Button>
                 </div>
               )}
