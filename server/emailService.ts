@@ -17,7 +17,7 @@ async function loadEmailConfig() {
 
     // Check if cPanel credentials are properly set (not placeholder values)
     const isValidPassword = emailPass?.value && 
-      emailPass.value !== 'הכנס-כאן-את-הסיסמה-האמיתית' && 
+      emailPass.value !== 'enter-real-password-here' && 
       emailPass.value.length > 5;
 
     if (smtpHost && emailUser && isValidPassword) {
@@ -49,20 +49,20 @@ async function loadEmailConfig() {
           emailConfigLoaded = true;
           return;
         } catch (verifyError) {
-          console.error("❌ שגיאה באימות הגדרות SMTP:", verifyError);
-          console.log("🔄 ינסה הגדרות cPanel חלופיות...");
+          console.error("❌ Error validating SMTP settings:", verifyError);
+          console.log("🔄 Will try alternative cPanel settings...");
           transporter = null;
         }
       } catch (transportError) {
-        console.warn("❌ שגיאה ביצירת transporter עם הגדרות cPanel:", transportError);
+        console.warn("❌ Error creating transporter with cPanel settings:", transportError);
       }
     } else {
-      console.warn("❌ הגדרות cPanel לא תקינות - יש להגדיר סיסמה תקינה בהגדרות המערכת");
+      console.warn("❌ cPanel settings invalid - must configure valid password in system settings");
     }
 
     // Try alternative cPanel configurations if main config failed
     if (smtpHost?.value && emailUser?.value && emailPass?.value) {
-      console.log("🔄 מנסה הגדרות cPanel חלופיות...");
+      console.log("🔄 Trying alternative cPanel settings...");
       
       // Try different port and security combinations
       const alternativeConfigs = [
@@ -74,7 +74,7 @@ async function loadEmailConfig() {
       
       for (const config of alternativeConfigs) {
         try {
-          console.log(`🔧 מנסה ${config.description}...`);
+          console.log(`🔧 Trying ${config.description}...`);
           const altTransporter = nodemailer.createTransport({
             host: smtpHost.value,
             port: config.port,
@@ -94,16 +94,16 @@ async function loadEmailConfig() {
           
           await altTransporter.verify();
           transporter = altTransporter;
-          console.log(`✅ הצלחה עם ${config.description}!`);
+          console.log(`✅ Success with ${config.description}!`);
           emailConfigLoaded = true;
           return;
         } catch (altError) {
-          console.log(`❌ ${config.description} לא עובד:`, altError.message);
+          console.log(`❌ ${config.description} not working:`, altError.message);
         }
       }
     }
 
-    console.warn("❌ לא ניתן להגדיר מערכת מייל - יש להגדיר פרטי SMTP תקינים בהגדרות המערכת.");
+    console.warn("❌ Cannot configure email system - must set valid SMTP details in system settings.");
     emailConfigLoaded = false;
   } catch (error) {
     console.error("Error loading email configuration:", error);
@@ -152,8 +152,8 @@ interface EmailParams {
 
 export async function sendEmail(params: EmailParams): Promise<{ success: boolean; error?: string }> {
   console.log("🚀 ============================================");
-  console.log("🚀 sendEmail נקרא! משלים מייל אל:", params.to);
-  console.log("🚀 נושא:", params.subject);
+  console.log("🚀 sendEmail called! Sending email to:", params.to);
+  console.log("🚀 Subject:", params.subject);
   console.log("🚀 ============================================");
   
   // Ensure email configuration is loaded
@@ -167,12 +167,12 @@ export async function sendEmail(params: EmailParams): Promise<{ success: boolean
     await loadEmailConfig();
     
     if (!transporter) {
-      console.error("❌ אין transporter! לא ניתן לשלוח מייל");
+      console.error("❌ No transporter! Cannot send email");
       return { success: false, error: "Email credentials not configured - check system settings" };
     }
   }
 
-  console.log("✅ Transporter זמין - מתחיל שליחה...");
+  console.log("✅ Transporter available - starting send...");
 
   try {
     // Get the email user from database settings
@@ -189,7 +189,7 @@ export async function sendEmail(params: EmailParams): Promise<{ success: boolean
       attachments: params.attachments,
     };
 
-    console.log("📤 שולח מייל עכשיו עם האפשרויות:", {
+    console.log("📤 Sending email now with options:", {
       from: mailOptions.from,
       to: mailOptions.to,
       subject: mailOptions.subject
