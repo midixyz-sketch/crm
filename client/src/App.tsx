@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAuth } from "@/hooks/useAuth";
 import Navbar from "@/components/layout/navbar";
+import Sidebar from "@/components/layout/sidebar";
 import { ReminderPopup } from "@/components/reminder-popup";
 import { WhatsAppWidget } from "@/components/whatsapp/whatsapp-widget";
 import { WhatsAppNotificationContainer } from "@/components/whatsapp/message-notification";
@@ -47,20 +48,16 @@ function HomePage() {
     queryKey: ["/api/auth/user"],
   });
 
-  // בדיקה נכונה - role.type (לא roleType)
   const isExternalRecruiter = (currentUser as any)?.userRoles?.some((ur: any) => ur.role?.type === "external_recruiter");
 
-  // טעינה - המתן עד שהנתונים נטענים
   if (isLoading) {
-    return <div className="flex items-center justify-center min-h-screen">טוען...</div>;
+    return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
   }
 
-  // רכז חיצוני - הפנה ל-"המשרות שלי"
   if (isExternalRecruiter) {
     return <Redirect to="/my-jobs" />;
   }
 
-  // כל השאר - הצג דשבורד
   return <Dashboard />;
 }
 
@@ -71,8 +68,8 @@ function ProtectedReports() {
       fallback={
         <div className="flex items-center justify-center min-h-screen">
           <div className="text-center">
-            <h2 className="text-2xl font-bold mb-2">אין לך הרשאה לצפות בדף זה</h2>
-            <p className="text-muted-foreground">צור קשר עם המנהל למתן הרשאות דוחות ואנליטיקה.</p>
+            <h2 className="text-2xl font-bold mb-2">You don't have permission to view this page</h2>
+            <p className="text-muted-foreground">Contact the admin for reports and analytics permissions.</p>
           </div>
         </div>
       }
@@ -90,7 +87,6 @@ function Router() {
     enabled: isAuthenticated,
   });
 
-  // בדיקה נכונה - role.type (לא roleType)
   const isExternalRecruiter = (currentUser as any)?.userRoles?.some((ur: any) => ur.role?.type === "external_recruiter");
 
   if (isLoading || !isAuthenticated) {
@@ -106,44 +102,46 @@ function Router() {
 
   return (
     <RouteGuard>
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-        <Navbar />
-        {/* הצג רק אחרי שיודעים בוודאות שהמשתמש אינו רכז חיצוני */}
-        {currentUser && !isUserLoading && !isExternalRecruiter ? <ReminderPopup /> : null}
-        {currentUser && !isUserLoading && !isExternalRecruiter ? <WhatsAppWidget /> : null}
-        {currentUser && !isUserLoading && !isExternalRecruiter ? <WhatsAppNotificationContainer /> : null}
-        <main className="w-full px-4 sm:px-6 lg:px-8 py-6">
-          <Switch>
-          <Route path="/" component={HomePage} />
-          <Route path="/candidates" component={Candidates} />
-          <Route path="/candidates/recently-updated" component={RecentlyUpdated} />
-          <Route path="/candidates/new" component={AddCandidate} />
-          <Route path="/candidates/add" component={AddCandidate} />
-          <Route path="/candidates/bulk-import" component={BulkImportCandidates} />
-          <Route path="/candidates/advanced" component={AdvancedCandidate} />
-          <Route path="/candidates/:id/advanced" component={AdvancedCandidate} />
-          <Route path="/candidates/:id" component={CandidateDetail} />
-          <Route path="/cv-search" component={CVSearch} />
-          <Route path="/calendar" component={Calendar} />
-          <Route path="/clients" component={Clients} />
-          <Route path="/jobs" component={Jobs} />
-          <Route path="/jobs/:id/landing" component={JobLanding} />
-          <Route path="/interviews" component={Interviews} />
-          <Route path="/interviews/:jobId" component={JobInterviews} />
-          <Route path="/emails" component={Emails} />
-          <Route path="/email-settings" component={EmailSettings} />
-          <Route path="/system-settings" component={SystemSettings} />
-          <Route path="/user-management" component={UserManagement} />
-          <Route path="/settings" component={Settings} />
-          <Route path="/whatsapp-chats" component={WhatsAppChats} />
-          <Route path="/external-recruiters" component={ExternalRecruiters} />
-          <Route path="/my-jobs" component={MyJobs} />
-          <Route path="/upload-candidate" component={UploadCandidateExternal} />
-          <Route path="/pending-approvals" component={PendingApprovals} />
-          <Route path="/reports" component={ProtectedReports} />
-          <Route component={NotFound} />
-          </Switch>
-        </main>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex">
+        <Sidebar />
+        <div className="flex-1 flex flex-col">
+          <Navbar />
+          {currentUser && !isUserLoading && !isExternalRecruiter ? <ReminderPopup /> : null}
+          {currentUser && !isUserLoading && !isExternalRecruiter ? <WhatsAppWidget /> : null}
+          {currentUser && !isUserLoading && !isExternalRecruiter ? <WhatsAppNotificationContainer /> : null}
+          <main className="w-full px-4 sm:px-6 lg:px-8 py-6">
+            <Switch>
+            <Route path="/" component={HomePage} />
+            <Route path="/candidates" component={Candidates} />
+            <Route path="/candidates/recently-updated" component={RecentlyUpdated} />
+            <Route path="/candidates/new" component={AddCandidate} />
+            <Route path="/candidates/add" component={AddCandidate} />
+            <Route path="/candidates/bulk-import" component={BulkImportCandidates} />
+            <Route path="/candidates/advanced" component={AdvancedCandidate} />
+            <Route path="/candidates/:id/advanced" component={AdvancedCandidate} />
+            <Route path="/candidates/:id" component={CandidateDetail} />
+            <Route path="/cv-search" component={CVSearch} />
+            <Route path="/calendar" component={Calendar} />
+            <Route path="/clients" component={Clients} />
+            <Route path="/jobs" component={Jobs} />
+            <Route path="/jobs/:id/landing" component={JobLanding} />
+            <Route path="/interviews" component={Interviews} />
+            <Route path="/interviews/:jobId" component={JobInterviews} />
+            <Route path="/emails" component={Emails} />
+            <Route path="/email-settings" component={EmailSettings} />
+            <Route path="/system-settings" component={SystemSettings} />
+            <Route path="/user-management" component={UserManagement} />
+            <Route path="/settings" component={Settings} />
+            <Route path="/whatsapp-chats" component={WhatsAppChats} />
+            <Route path="/external-recruiters" component={ExternalRecruiters} />
+            <Route path="/my-jobs" component={MyJobs} />
+            <Route path="/upload-candidate" component={UploadCandidateExternal} />
+            <Route path="/pending-approvals" component={PendingApprovals} />
+            <Route path="/reports" component={ProtectedReports} />
+            <Route component={NotFound} />
+            </Switch>
+          </main>
+        </div>
       </div>
     </RouteGuard>
   );
