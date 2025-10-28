@@ -193,17 +193,17 @@ export async function testCpanelSmtp(): Promise<boolean> {
 
     // Verify connection
     await transporter.verify();
-    console.log("✅ cPanel SMTP connection successful!");
+    console.log("✅ חיבור cPanel SMTP הצליח!");
     return true;
   } catch (error: any) {
-    console.error("❌ cPanel SMTP error:", error.message);
+    console.error("❌ שגיאת cPanel SMTP:", error.message);
     return false;
   }
 }
 
 // Check for new emails in cPanel
 export async function checkCpanelEmails(): Promise<void> {
-  console.log("📧 Checking new emails in cPanel...");
+  console.log("📧 בודק מיילים חדשים בcPanel...");
 
   return new Promise(async (resolve) => {
     // Load IMAP settings from database
@@ -508,17 +508,17 @@ export async function sendCpanelEmail(
     };
 
     const result = await transporter.sendMail(mailOptions);
-    console.log("✅ Email sent successfully via cPanel:", result.messageId);
+    console.log("✅ מייל נשלח בהצלחה דרך cPanel:", result.messageId);
     return true;
   } catch (error: any) {
-    console.error("❌ Error sending email via cPanel:", error.message);
+    console.error("❌ שגיאה בשליחת מייל דרך cPanel:", error.message);
     return false;
   }
 }
 
 // Start monitoring emails from cPanel
 export function startCpanelEmailMonitoring() {
-  console.log("🚀 Launching cPanel email tracking");
+  console.log("🚀 מפעיל מעקב מיילים cPanel");
 
   // Check emails immediately
   checkCpanelEmails();
@@ -526,7 +526,7 @@ export function startCpanelEmailMonitoring() {
   // Then check every 60 seconds
   setInterval(() => {
     checkCpanelEmails().catch((err) => {
-      console.error("❌ Error in cPanel email tracking:", err);
+      console.error("❌ שגיאה במעקב מיילים cPanel:", err);
     });
   }, 60000);
 }

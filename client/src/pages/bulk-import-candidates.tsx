@@ -49,8 +49,8 @@ export default function BulkImportCandidates() {
     // Only redirect if loading is done and user is not super admin
     if (!isLoading && !isSuperAdmin) {
       toast({
-        title: "Access Denied",
-        description: "Only Super Admin can access this page",
+        title: "אין הרשאת גישה",
+        description: "רק סופר אדמין יכול לגשת לעמוד זה",
         variant: "destructive"
       });
       setLocation('/');
@@ -63,7 +63,7 @@ export default function BulkImportCandidates() {
       <div className="container mx-auto py-8">
         <Card>
           <CardContent className="py-8">
-            <p className="text-center text-muted-foreground">Loading...</p>
+            <p className="text-center text-muted-foreground">טוען...</p>
           </CardContent>
         </Card>
       </div>
@@ -78,12 +78,12 @@ export default function BulkImportCandidates() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <ShieldAlert className="h-6 w-6 text-red-500" />
-              Access Denied
+              אין הרשאת גישה
             </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-muted-foreground">
-              Only Super Admin can access this page. Redirecting to home...
+              רק סופר אדמין יכול לגשת לעמוד זה. אתה מועבר לדף הבית...
             </p>
           </CardContent>
         </Card>
@@ -102,8 +102,8 @@ export default function BulkImportCandidates() {
   const handleImport = async () => {
     if (!selectedFiles || selectedFiles.length === 0) {
       toast({
-        title: "Error",
-        description: "Please select files to import",
+        title: "שגיאה",
+        description: "אנא בחר קבצים לייבוא",
         variant: "destructive"
       });
       return;
@@ -141,7 +141,7 @@ export default function BulkImportCandidates() {
 
         if (!response.ok) {
           const errorData = await response.json();
-          throw new Error(errorData.message || 'Import error');
+          throw new Error(errorData.message || 'שגיאה בייבוא');
         }
 
         const data = await response.json();
@@ -163,15 +163,15 @@ export default function BulkImportCandidates() {
       }
 
       toast({
-        title: "Import Completed!",
-        description: `${totalSuccess} candidates created successfully out of ${totalFiles} files`,
+        title: "ייבוא הושלם!",
+        description: `${totalSuccess} מועמדים נוצרו בהצלחה מתוך ${totalFiles} קבצים`,
       });
 
     } catch (error) {
       console.error('Import error:', error);
       toast({
-        title: "Import Error",
-        description: error instanceof Error ? error.message : "An unexpected error occurred",
+        title: "שגיאה בייבוא",
+        description: error instanceof Error ? error.message : "אירעה שגיאה לא צפויה",
         variant: "destructive"
       });
     } finally {
@@ -205,11 +205,11 @@ export default function BulkImportCandidates() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'success':
-        return <Badge className="bg-green-500">Success</Badge>;
+        return <Badge className="bg-green-500">הצליח</Badge>;
       case 'duplicate':
-        return <Badge className="bg-yellow-500">Duplicate</Badge>;
+        return <Badge className="bg-yellow-500">כפול</Badge>;
       case 'failed':
-        return <Badge variant="destructive">Failed</Badge>;
+        return <Badge variant="destructive">נכשל</Badge>;
       default:
         return null;
     }
@@ -218,9 +218,9 @@ export default function BulkImportCandidates() {
   return (
     <div className="container mx-auto p-6 max-w-6xl" dir="rtl">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold">Bulk Import Candidates</h1>
+        <h1 className="text-3xl font-bold">ייבוא מרובה של מועמדים</h1>
         <p className="text-muted-foreground mt-2">
-          Upload up to 20,000 CV files (PDF, DOCX, images) - System will upload 100 files per request and process 10 in parallel for automatic data extraction
+          העלה עד 20,000 קבצי קורות חיים (PDF, DOCX, תמונות) - המערכת תעלה 100 קבצים בכל בקשה ותעבד 10 במקביל לחילוץ פרטים אוטומטי
         </p>
       </div>
 
@@ -228,9 +228,9 @@ export default function BulkImportCandidates() {
         {/* Upload Section */}
         <Card>
           <CardHeader>
-            <CardTitle>File Selection</CardTitle>
+            <CardTitle>בחירת קבצים</CardTitle>
             <CardDescription>
-              Select up to 20,000 CV files. System will upload 100 files per request and process 10 in parallel. Supported: PDF, DOC, DOCX, JPG, PNG
+              בחר עד 20,000 קבצי קורות חיים. המערכת תעלה 100 קבצים בכל בקשה ותעבד 10 במקביל. נתמכים: PDF, DOC, DOCX, JPG, PNG
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -242,7 +242,7 @@ export default function BulkImportCandidates() {
                 data-testid="button-select-files"
               >
                 <Upload className="h-4 w-4 ml-2" />
-                Select Files
+                בחר קבצים
               </Button>
               <input
                 ref={fileInputRef}
@@ -255,14 +255,14 @@ export default function BulkImportCandidates() {
               />
               {fileCount > 0 && (
                 <span className="text-sm text-muted-foreground">
-                  {fileCount.toLocaleString()} files selected
+                  {fileCount.toLocaleString()} קבצים נבחרו
                 </span>
               )}
             </div>
 
             {fileCount > 0 && fileCount <= 100 && (
               <div className="space-y-2">
-                <h3 className="font-medium">Selected Files:</h3>
+                <h3 className="font-medium">קבצים שנבחרו:</h3>
                 <div className="max-h-40 overflow-y-auto space-y-1">
                   {selectedFiles && Array.from(selectedFiles).map((file, index) => (
                     <div key={index} className="flex items-center gap-2 text-sm p-2 bg-muted rounded" data-testid={`file-item-${index}`}>
@@ -279,7 +279,7 @@ export default function BulkImportCandidates() {
             {fileCount > 100 && (
               <Alert>
                 <AlertDescription>
-                  {fileCount.toLocaleString()} files selected. System is ready to import - Click "Start Import"
+                  נבחרו {fileCount.toLocaleString()} קבצים. המערכת מוכנה לייבוא - לחץ על "התחל ייבוא"
                 </AlertDescription>
               </Alert>
             )}
@@ -290,7 +290,7 @@ export default function BulkImportCandidates() {
                 disabled={importing || fileCount === 0}
                 data-testid="button-start-import"
               >
-                {importing ? 'Importing...' : 'Start Import'}
+                {importing ? 'מייבא...' : 'התחל ייבוא'}
               </Button>
               {(fileCount > 0 || results.length > 0) && (
                 <Button
@@ -299,7 +299,7 @@ export default function BulkImportCandidates() {
                   disabled={importing}
                   data-testid="button-reset"
                 >
-                  Reset
+                  איפוס
                 </Button>
               )}
             </div>
@@ -308,7 +308,7 @@ export default function BulkImportCandidates() {
               <div className="space-y-2">
                 <Progress value={progress} className="w-full" />
                 <p className="text-sm text-muted-foreground text-center">
-                  Importing candidates... {progress}%
+                  מייבא מועמדים... {progress}%
                 </p>
               </div>
             )}
@@ -319,25 +319,25 @@ export default function BulkImportCandidates() {
         {summary && (
           <Card>
             <CardHeader>
-              <CardTitle>Import Summary</CardTitle>
+              <CardTitle>סיכום ייבוא</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-4 gap-4">
                 <div className="text-center p-4 bg-muted rounded-lg" data-testid="summary-total">
                   <div className="text-2xl font-bold">{summary.total}</div>
-                  <div className="text-sm text-muted-foreground">Total Files</div>
+                  <div className="text-sm text-muted-foreground">סה"כ קבצים</div>
                 </div>
                 <div className="text-center p-4 bg-green-50 dark:bg-green-950 rounded-lg" data-testid="summary-success">
                   <div className="text-2xl font-bold text-green-600 dark:text-green-400">{summary.success}</div>
-                  <div className="text-sm text-muted-foreground">Succeeded</div>
+                  <div className="text-sm text-muted-foreground">הצליחו</div>
                 </div>
                 <div className="text-center p-4 bg-yellow-50 dark:bg-yellow-950 rounded-lg" data-testid="summary-duplicate">
                   <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{summary.duplicate}</div>
-                  <div className="text-sm text-muted-foreground">Duplicates</div>
+                  <div className="text-sm text-muted-foreground">כפולים</div>
                 </div>
                 <div className="text-center p-4 bg-red-50 dark:bg-red-950 rounded-lg" data-testid="summary-failed">
                   <div className="text-2xl font-bold text-red-600 dark:text-red-400">{summary.failed}</div>
-                  <div className="text-sm text-muted-foreground">Failed</div>
+                  <div className="text-sm text-muted-foreground">נכשלו</div>
                 </div>
               </div>
             </CardContent>
@@ -348,9 +348,9 @@ export default function BulkImportCandidates() {
         {results.length > 0 && (
           <Card>
             <CardHeader>
-              <CardTitle>Import Results</CardTitle>
+              <CardTitle>תוצאות ייבוא</CardTitle>
               <CardDescription>
-                Details for each processed file
+                פרטים על כל קובץ שעובד
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -368,12 +368,12 @@ export default function BulkImportCandidates() {
                           <div className="font-medium">{result.filename}</div>
                           {result.status === 'success' && result.candidateName && (
                             <div className="text-sm text-green-600 dark:text-green-400">
-                              Candidate created: {result.candidateName}
+                              נוצר מועמד: {result.candidateName}
                             </div>
                           )}
                           {result.status === 'duplicate' && result.existingCandidateName && (
                             <div className="text-sm text-yellow-600 dark:text-yellow-400">
-                              Already exists: {result.existingCandidateName}
+                              כבר קיים: {result.existingCandidateName}
                             </div>
                           )}
                           {result.status === 'failed' && result.error && (
@@ -383,9 +383,9 @@ export default function BulkImportCandidates() {
                           )}
                           {result.extractedData && (
                             <div className="text-xs text-muted-foreground mt-1">
-                              {result.extractedData.name && <span>Name: {result.extractedData.name} | </span>}
-                              {result.extractedData.email && <span>Email: {result.extractedData.email} | </span>}
-                              {result.extractedData.mobile && <span>Mobile: {result.extractedData.mobile}</span>}
+                              {result.extractedData.name && <span>שם: {result.extractedData.name} | </span>}
+                              {result.extractedData.email && <span>מייל: {result.extractedData.email} | </span>}
+                              {result.extractedData.mobile && <span>נייד: {result.extractedData.mobile}</span>}
                             </div>
                           )}
                         </div>
@@ -402,12 +402,12 @@ export default function BulkImportCandidates() {
         {/* Instructions */}
         <Alert>
           <AlertDescription className="space-y-2">
-            <div className="font-medium">Usage Instructions:</div>
+            <div className="font-medium">הוראות שימוש:</div>
             <ul className="list-disc list-inside space-y-1 text-sm">
-              <li>Select up to 20,000 files - System will upload 100 files per request and process 10 in parallel</li>
-              <li>System will automatically extract: name, phone, email and profession</li>
-              <li>Files with duplicate details (identical phone/email) will not be created and will be marked as duplicates</li>
-              <li>Each created candidate will receive a "Created via bulk import" event in their timeline</li>
+              <li>בחר עד 20,000 קבצים - המערכת תעלה 100 קבצים בכל בקשה ותעבד 10 במקביל</li>
+              <li>המערכת תחלץ אוטומטית: שם, טלפון, מייל ומקצוע</li>
+              <li>קבצים עם פרטים כפולים (טלפון/מייל זהים) לא ייוצרו ויסומנו ככפולים</li>
+              <li>כל מועמד שנוצר יקבל אירוע "נוצר באמצעות ייבוא מרובה" בטיימליין שלו</li>
             </ul>
           </AlertDescription>
         </Alert>

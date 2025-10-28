@@ -128,8 +128,8 @@ export default function Candidates() {
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
       toast({
-        title: "Unauthorized",
-        description: "You are disconnected. Logging in again...",
+        title: "לא מורשה",
+        description: "אתה מנותק. מתחבר שוב...",
         variant: "destructive",
       });
       setTimeout(() => {
@@ -200,15 +200,15 @@ export default function Candidates() {
       queryClient.invalidateQueries({ queryKey: ["/api/candidates/enriched"] });
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
       toast({
-        title: "Success",
-        description: "Candidate deleted successfully",
+        title: "הצלחה",
+        description: "המועמד נמחק בהצלחה",
       });
     },
     onError: (error) => {
       if (isUnauthorizedError(error)) {
         toast({
-          title: "Unauthorized",
-          description: "You are disconnected. Logging in again...",
+          title: "לא מורשה",
+          description: "אתה מנותק. מתחבר שוב...",
           variant: "destructive",
         });
         setTimeout(() => {
@@ -218,7 +218,7 @@ export default function Candidates() {
       }
       toast({
         title: "Error",
-        description: "Error deleting candidate",
+        description: "שגיאה במחיקת המועמד",
         variant: "destructive",
       });
     },
@@ -234,15 +234,15 @@ export default function Candidates() {
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
       setSelectedCandidates([]);
       toast({
-        title: "Success",
-        description: "Candidates deleted successfully",
+        title: "הצלחה",
+        description: "המועמדים נמחקו בהצלחה",
       });
     },
     onError: (error) => {
       if (isUnauthorizedError(error)) {
         toast({
-          title: "Unauthorized",
-          description: "You are disconnected. Logging in again...",
+          title: "לא מורשה",
+          description: "אתה מנותק. מתחבר שוב...",
           variant: "destructive",
         });
         setTimeout(() => {
@@ -252,7 +252,7 @@ export default function Candidates() {
       }
       toast({
         title: "Error",
-        description: "Error deleting candidates",
+        description: "שגיאה במחיקת מועמדים",
         variant: "destructive",
       });
     },
@@ -314,7 +314,7 @@ export default function Candidates() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
-          <p className="mt-4 text-lg">Loading...</p>
+          <p className="mt-4 text-lg">טוען...</p>
         </div>
       </div>
     );
@@ -335,7 +335,7 @@ export default function Candidates() {
               <div className="relative flex-1 min-w-[200px]">
                 <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                 <Input
-                  placeholder="Search candidates..."
+                  placeholder="חיפוש מועמדים..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   className="pr-10"
@@ -444,7 +444,7 @@ export default function Candidates() {
                     onSuccess={() => {
                       // Don't close form - stays open for additional details
                       toast({
-                        title: "Success",
+                        title: "הצלחה",
                         description: "Candidate saved successfully. You can add more details",
                       });
                     }}
@@ -603,7 +603,7 @@ export default function Candidates() {
                 </div>
               ) : (
                 <div className="text-center py-12">
-                  <p className="text-gray-500 text-lg">No candidates found</p>
+                  <p className="text-gray-500 text-lg">לא נמצאו מועמדים</p>
                   <AddButton 
                     onClick={handleAddCandidate}
                     className="mt-4 btn-primary"
