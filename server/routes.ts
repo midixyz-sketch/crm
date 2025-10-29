@@ -1809,7 +1809,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           'attended_interview': 'הגיע לראיון אצל מעסיק',
           'missed_interview': 'לא הגיע לראיון',
           'passed_interview': 'עבר ראיון אצל מעסיק',
-          'rejected_by_employer': 'נפסל ע"י מעסיק',
+          'rejected': 'נפסל בראיון',
           'hired': 'התקבל לעבודה',
           'employment_ended': 'סיים העסקה'
         };
@@ -2862,7 +2862,7 @@ ${extractedData.achievements ? `הישגים ופעילות נוספת: ${cleanS
         } else if (applicationData.status === 'interview_scheduled') {
           await storage.updateCandidate(application.candidateId, { status: 'invited_to_interview' });
         } else if (applicationData.status === 'rejected') {
-          await storage.updateCandidate(application.candidateId, { status: 'rejected_by_employer' });
+          await storage.updateCandidate(application.candidateId, { status: 'rejected' });
         }
       }
       
@@ -2913,7 +2913,7 @@ ${extractedData.achievements ? `הישגים ופעילות נוספת: ${cleanS
         } else if (updates.status === 'interview_scheduled') {
           await storage.updateCandidate(application.candidateId, { status: 'invited_to_interview' });
         } else if (updates.status === 'rejected') {
-          await storage.updateCandidate(application.candidateId, { status: 'rejected_by_employer' });
+          await storage.updateCandidate(application.candidateId, { status: 'rejected' });
         } else if (updates.status === 'interview') {
           await storage.updateCandidate(application.candidateId, { status: 'invited_to_interview' });
         }

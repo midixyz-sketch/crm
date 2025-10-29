@@ -90,7 +90,7 @@ app.use((req, res, next) => {
       });
       
       // Group by userId and initialize each user's WhatsApp
-      const userIds = [...new Set(existingSessions.map(s => s.userId).filter(Boolean))];
+      const userIds = Array.from(new Set(existingSessions.map(s => s.userId).filter(Boolean)));
       
       if (userIds.length > 0) {
         console.log(`🔄 מאתחל חיבור WhatsApp אוטומטי עבור ${userIds.length} משתמשים...`);
