@@ -115,7 +115,6 @@ export default function CandidateDetail() {
       case 'attended_interview': return 'bg-blue-100 text-blue-800';
       case 'missed_interview': return 'bg-red-100 text-red-800';
       case 'passed_interview': return 'bg-green-100 text-green-800';
-      case 'rejected_by_employer': return 'bg-red-100 text-red-800';
       case 'hired': return 'bg-emerald-100 text-emerald-800';
       case 'employment_ended': return 'bg-gray-100 text-gray-800';
       default: return 'bg-gray-100 text-gray-800';
@@ -145,7 +144,6 @@ export default function CandidateDetail() {
       case 'attended_interview': return 'הגיע לראיון';
       case 'missed_interview': return 'לא הגיע לראיון';
       case 'passed_interview': return 'עבר ראיון';
-      case 'rejected_by_employer': return 'נפסל בראיון';
       case 'hired': return 'התקבל לעבודה';
       case 'employment_ended': return 'סיים העסקה';
       case 'submitted': return 'הוגש';
@@ -1084,7 +1082,7 @@ export default function CandidateDetail() {
                           <SelectItem value="attended_interview">הגיע לראיון אצל מעסיק</SelectItem>
                           <SelectItem value="missed_interview">לא הגיע לראיון</SelectItem>
                           <SelectItem value="passed_interview">עבר ראיון אצל מעסיק</SelectItem>
-                          <SelectItem value="rejected_by_employer">נפסל ע"י מעסיק</SelectItem>
+                          <SelectItem value="rejected">נפסל בראיון</SelectItem>
                           <SelectItem value="hired">התקבל לעבודה</SelectItem>
                           <SelectItem value="employment_ended">סיים העסקה</SelectItem>
                         </SelectContent>

@@ -84,7 +84,7 @@ export default function JobInterviews() {
         const eventDate = new Date(event.createdAt);
         const isRecent = eventDate >= fortyFiveDaysAgo;
         const isSameJob = event.metadata?.jobId === jobId || event.metadata?.jobTitle;
-        const isRelevantEvent = ['sent_to_employer', 'rejected_by_employer', 'rejected'].includes(event.eventType);
+        const isRelevantEvent = ['sent_to_employer', 'rejected'].includes(event.eventType);
         
         return isRecent && isSameJob && isRelevantEvent;
       });
@@ -97,7 +97,7 @@ export default function JobInterviews() {
         let eventDescription = '';
         if (latestEvent.eventType === 'sent_to_employer') {
           eventDescription = 'נשלח למעסיק';
-        } else if (latestEvent.eventType === 'rejected_by_employer' || latestEvent.eventType === 'rejected') {
+        } else if (latestEvent.eventType === 'rejected') {
           eventDescription = 'נפסל';
         }
         
@@ -317,9 +317,9 @@ export default function JobInterviews() {
         }
       });
 
-      // Update candidate status to 'rejected_by_employer'
+      // Update candidate status to 'rejected'
       await apiRequest("PATCH", `/api/candidates/${currentApplication.candidateId}`, {
-        status: 'rejected_by_employer',
+        status: 'rejected',
         lastStatusChange: new Date(),
         notes: reviewerFeedback ? `הערות פסילה: ${reviewerFeedback}` : undefined,
       });

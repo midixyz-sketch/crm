@@ -40,7 +40,6 @@ export default function Candidates() {
       case 'hired': return 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200';
       case 'rejected': return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
       case 'not_relevant': return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200';
-      case 'rejected_by_employer': return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
       case 'invited_to_interview': return 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200';
       case 'whatsapp_sent': return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
       case 'phone_contact_made': return 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900 dark:text-cyan-200';
@@ -71,9 +70,8 @@ export default function Candidates() {
         return recruitmentSource ? `נשלח ע"י ${recruitmentSource}` : 'נשלח למעסיק';
       case 'in_interview': return 'בתהליך ראיון';
       case 'hired': return 'התקבל';
-      case 'rejected': return 'נדחה';
+      case 'rejected': return 'נפסל בראיון';
       case 'not_relevant': return 'לא רלוונטי';
-      case 'rejected_by_employer': return 'נפסל בראיון';
       case 'invited_to_interview': return 'זומן לראיון';
       case 'whatsapp_sent': return 'נשלחה הודעת ווצאפ';
       case 'phone_contact_made': return 'נוצר קשר טלפוני';
