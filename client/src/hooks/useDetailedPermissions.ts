@@ -88,119 +88,119 @@ interface UserPermissions {
 export function useDetailedPermissions() {
   const { user, isAuthenticated } = useAuth();
 
-  // Get detailed permissions from server
+  // קבל הרשאות מפורטות מהשרת
   const { data: permissions, isLoading } = useQuery<UserPermissions>({
     queryKey: ['/api/permissions/detailed', (user as any)?.id],
     enabled: isAuthenticated && !!(user as any)?.id,
-    staleTime: 0, // No cache - always fetch from server
-    gcTime: 0, // No cache
+    staleTime: 0, // ללא cache - תמיד שלוף מהשרת
+    gcTime: 0, // ללא cache
   });
 
-  // Check page permission
+  // בדוק הרשאת דף
   const canAccessPage = (page: PagePermission): boolean => {
     if (!permissions) return false;
     return permissions.pages.includes(page);
   };
 
-  // Check menu/button permission
+  // בדוק הרשאת תפריט/כפתור
   const canUseMenu = (menu: MenuPermission): boolean => {
     if (!permissions) return false;
     return permissions.menus.includes(menu);
   };
 
-  // Check component permission
+  // בדוק הרשאת רכיב
   const canViewComponent = (component: ComponentPermission): boolean => {
-    if (!permissions) return true; // Default allowed
+    if (!permissions) return true; // ברירת מחדל מותר
     return permissions.components.includes(component);
   };
 
-  // Check if can view client names
+  // בדוק אם יכול לראות שמות לקוחות
   const canViewClientNames = (): boolean => {
     if (!permissions) return false;
     return permissions.canViewClientNames;
   };
 
-  // Check if can view specific job
+  // בדוק אם יכול לראות משרה מסוימת
   const canViewJob = (jobId: string): boolean => {
     if (!permissions) return false;
     
-    // If has permission to view all jobs
+    // אם יש הרשאה לראות את כל המשרות
     if (canAccessPage('view_jobs') && permissions.allowedJobIds.length === 0) {
       return true;
     }
     
-    // If limited to specific jobs
+    // אם מוגבל למשרות מסוימות
     return permissions.allowedJobIds.includes(jobId);
   };
 
-  // Get list of allowed navigation pages - top menu only
+  // קבל רשימת דפי ניווט מותרים - תפריט עליון מצומצם בלבד
   const getAllowedNavigation = () => {
     if (!permissions) return [];
 
     const navigation = [
       { 
         permission: 'view_candidates' as PagePermission, 
-        name: "Candidates", 
+        name: "מועמדים", 
         href: "/candidates", 
         icon: "Users" 
       },
       { 
         permission: 'view_recently_updated' as PagePermission, 
-        name: "Recently Updated", 
+        name: "עודכנו לאחרונה", 
         href: "/candidates/recently-updated", 
         icon: "RefreshCw" 
       },
       { 
         permission: 'view_cv_search' as PagePermission, 
-        name: "CV Search", 
+        name: "חיפוש בקורות חיים", 
         href: "/cv-search", 
         icon: "Search" 
       },
       { 
         permission: 'view_calendar' as PagePermission, 
-        name: "Calendar", 
+        name: "יומן", 
         href: "/calendar", 
         icon: "Calendar" 
       },
       { 
         permission: 'view_clients' as PagePermission, 
-        name: "Clients", 
+        name: "לקוחות", 
         href: "/clients", 
         icon: "Building2" 
       },
       { 
         permission: 'view_jobs' as PagePermission, 
-        name: "Jobs", 
+        name: "משרות", 
         href: "/jobs", 
         icon: "Briefcase" 
       },
       { 
         permission: 'view_interviews' as PagePermission, 
-        name: "Interviews", 
+        name: "ראיונות", 
         href: "/interviews", 
         icon: "UserCheck" 
       },
       { 
         permission: 'manage_external_recruiters' as PagePermission, 
-        name: "External Recruiters", 
+        name: "רכזים חיצוניים", 
         href: "/external-recruiters", 
         icon: "UserCog" 
       },
       { 
         permission: 'view_pending_approvals' as PagePermission, 
-        name: "Pending Approvals", 
+        name: "ממתינים לאישור", 
         href: "/pending-approvals", 
         icon: "Clock" 
       },
       { 
         permission: 'view_reports' as PagePermission, 
-        name: "Reports & Analytics", 
+        name: "דוחות ואנליטיקה", 
         href: "/reports", 
         icon: "BarChart3" 
       },
       { 
         permission: 'access_settings' as PagePermission, 
-        name: "Settings", 
+        name: "הגדרות", 
         href: "/settings", 
         icon: "Settings" 
       }
@@ -209,13 +209,13 @@ export function useDetailedPermissions() {
     return navigation.filter(item => canAccessPage(item.permission));
   };
 
-  // Check if user is super admin
+  // בדוק אם משתמש הוא אדמין ראשי
   const isSuperAdmin = (): boolean => {
     if (!permissions) return false;
     return permissions.roleTypes.includes('super_admin');
   };
 
-  // Check if user is admin (any type)
+  // בדוק אם משתמש הוא אדמין (כל סוג)
   const isAdmin = (): boolean => {
     if (!permissions) return false;
     return permissions.roleTypes.some(role => 
@@ -223,7 +223,7 @@ export function useDetailedPermissions() {
     );
   };
 
-  // Check if user is job viewer only
+  // בדוק אם משתמש הוא צופה משרות בלבד
   const isJobViewer = (): boolean => {
     if (!permissions) return false;
     return permissions.roleTypes.includes('job_viewer');
@@ -233,44 +233,44 @@ export function useDetailedPermissions() {
     permissions,
     isLoading,
     
-    // Permission check functions
+    // פונקציות בדיקת הרשאות
     canAccessPage,
     canUseMenu,
     canViewComponent,
     canViewClientNames,
     canViewJob,
     
-    // Helper functions
+    // פונקציות עזר
     getAllowedNavigation,
     isSuperAdmin,
     isAdmin,
     isJobViewer,
     
-    // Raw data
+    // נתונים גולמיים
     userRoleTypes: permissions?.roleTypes || [],
     allowedJobIds: permissions?.allowedJobIds || []
   };
 }
 
-// Shortcut hook for quick checks
+// Hook מקוצר לבדיקות מהירות
 export function usePermissionCheck() {
   const { canAccessPage, canUseMenu, canViewComponent } = useDetailedPermissions();
   
   return {
-    // Common page checks
+    // בדיקות דפים נפוצות
     canManageCandidates: canAccessPage('create_candidates') && canAccessPage('edit_candidates'),
     canManageJobs: canAccessPage('create_jobs') && canAccessPage('edit_jobs'),
     canManageClients: canAccessPage('create_clients') && canAccessPage('edit_clients'),
     canManageUsers: canAccessPage('manage_users'),
     canManageSettings: canAccessPage('manage_system_settings'),
     
-    // Common menu checks
+    // בדיקות תפריטים נפוצות
     canQuickAdd: canUseMenu('view_quick_actions'),
     canViewClientNames: canUseMenu('view_client_names'),
     canExportData: canUseMenu('export_data'),
     canUseAdvancedSearch: canUseMenu('use_advanced_search'),
     
-    // Common component checks
+    // בדיקות רכיבים נפוצות
     canViewSidebar: canViewComponent('view_sidebar'),
     canViewNavbar: canViewComponent('view_navbar'),
     canViewStats: canViewComponent('view_statistics')

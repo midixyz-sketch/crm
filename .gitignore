@@ -4,19 +4,3 @@ dist
 server/public
 vite.config.ts.*
 *.tar.gz
-
-# WhatsApp session files (runtime data, should not be committed)
-whatsapp_auth/
-whatsapp_auth_*/
-
-# Uploaded files (user data)
-uploads/
-
-# Log files
-*.log
-logs/
-
-# Database backups (contain sensitive data)
-*.sql
-database_backup*.sql
-database_full_backup.sql

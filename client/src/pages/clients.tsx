@@ -64,7 +64,7 @@ export default function Clients() {
         return;
       }
       toast({
-        title: "Error",
+        title: "שגיאה",
         description: "שגיאה במחיקת הלקוח",
         variant: "destructive",
       });
@@ -189,8 +189,8 @@ export default function Clients() {
                             </div>
                           </TableCell>
                           <TableCell>
-                            <Badge className={client.isפעיל ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'}>
-                              {client.isפעיל ? 'פעיל' : 'לא פעיל'}
+                            <Badge className={client.isActive ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'}>
+                              {client.isActive ? 'פעיל' : 'לא פעיל'}
                             </Badge>
                           </TableCell>
                           <TableCell data-testid={`text-client-industry-${client.id}`}>

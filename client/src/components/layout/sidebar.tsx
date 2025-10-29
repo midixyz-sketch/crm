@@ -28,8 +28,8 @@ export default function Sidebar() {
       ? [{ name: "המשרות שלי", href: "/my-jobs", icon: Briefcase }]
       : [
           { name: "מאגר מועמדים", href: "/candidates", icon: Users },
-          { name: "עודכן לאחרונה", href: "/candidates/recently-updated", icon: History },
-          { name: "חיפוש קורות חיים", href: "/cv-search", icon: Search },
+          { name: "עודכנו לאחרונה", href: "/candidates/recently-updated", icon: History },
+          { name: "חיפוש בקורות חיים", href: "/cv-search", icon: Search },
           { name: "יומן", href: "/calendar", icon: Calendar },
           { name: "מאגר לקוחות", href: "/clients", icon: Building2 },
           { name: "מאגר משרות", href: "/jobs", icon: Briefcase },
@@ -38,7 +38,7 @@ export default function Sidebar() {
           ...(isSuperAdmin 
             ? [
                 { name: "ניהול רכזים", href: "/external-recruiters", icon: UserCog },
-                { name: "ממתינים לאישור", href: "/pending-approvals", icon: Clock },
+                { name: "אישור מועמדים", href: "/pending-approvals", icon: Clock },
               ]
             : []
           ),
@@ -62,13 +62,13 @@ export default function Sidebar() {
       });
       refetchStatus();
       toast({
-        title: "WhatsApp הופעל",
+        title: "WhatsApp מאותחל",
         description: "סרוק את קוד ה-QR עם WhatsApp בטלפון שלך",
       });
     } catch (error) {
       toast({
         title: "שגיאה",
-        description: "לא ניתן להפעיל את WhatsApp",
+        description: "לא ניתן לאתחל את WhatsApp",
         variant: "destructive",
       });
     }
@@ -81,13 +81,13 @@ export default function Sidebar() {
       });
       refetchStatus();
       toast({
-        title: "התנתקת מ-WhatsApp",
-        description: "WhatsApp התנתק בהצלחה",
+        title: "התנתקת מWhatsApp",
+        description: "WhatsApp נותק בהצלחה",
       });
     } catch (error) {
       toast({
         title: "שגיאה",
-        description: "לא ניתן להתנתק מ-WhatsApp",
+        description: "לא ניתן להתנתק מWhatsApp",
         variant: "destructive",
       });
     }
@@ -129,7 +129,7 @@ export default function Sidebar() {
                   </svg>
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold text-green-600">התחבר בהצלחה!</h3>
+                  <h3 className="text-lg font-semibold text-green-600">מחובר בהצלחה!</h3>
                   <p className="text-sm text-gray-600 mt-2">
                     WhatsApp מחובר למספר: {whatsappStatus.phoneNumber || 'לא זמין'}
                   </p>
@@ -139,7 +139,7 @@ export default function Sidebar() {
                   variant="outline"
                   className="w-full"
                 >
-                  התנתק מ-WhatsApp
+                  התנתק מWhatsApp
                 </Button>
               </div>
             ) : whatsappStatus?.qrCode ? (
@@ -155,7 +155,7 @@ export default function Sidebar() {
                   />
                 </div>
                 <div className="text-xs text-gray-500 space-y-1">
-                  <p>1. פתח את WhatsApp בטלפון שלך</p>
+                  <p>1. פתח WhatsApp בטלפון שלך</p>
                   <p>2. לחץ על תפריט (⋮) או הגדרות</p>
                   <p>3. בחר "מכשירים מקושרים"</p>
                   <p>4. לחץ על "קשר מכשיר"</p>
@@ -165,7 +165,7 @@ export default function Sidebar() {
             ) : (
               <div className="text-center space-y-4">
                 <p className="text-sm text-gray-600">
-                  חבר את ה-WhatsApp שלך למערכת
+                  חבר את WhatsApp שלך למערכת
                 </p>
                 <Button
                   onClick={handleInitializeWhatsApp}

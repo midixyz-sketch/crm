@@ -79,7 +79,7 @@ app.use((req, res, next) => {
     reusePort: true,
   }, async () => {
     log(`serving on port ${port}`);
-    console.log('✅ Local server running without dependencies on external services');
+    console.log('✅ שרת מקומי פועל ללא תלות בשירותים חיצוניים');
     
     // Auto-initialize WhatsApp for all users with existing active sessions
     try {
@@ -93,24 +93,24 @@ app.use((req, res, next) => {
       const userIds = [...new Set(existingSessions.map(s => s.userId).filter(Boolean))];
       
       if (userIds.length > 0) {
-        console.log(`🔄 Auto-initializing WhatsApp connection for ${userIds.length} users...`);
+        console.log(`🔄 מאתחל חיבור WhatsApp אוטומטי עבור ${userIds.length} משתמשים...`);
         
         for (const userId of userIds) {
           try {
             const service = whatsappServiceManager.getServiceForUser(userId as string);
             await service.initialize(userId as string);
-            console.log(`✅ WhatsApp connected for user ${userId}`);
+            console.log(`✅ WhatsApp מחובר עבור משתמש ${userId}`);
           } catch (error) {
-            console.log(`⚠️ Failed to initialize WhatsApp for user ${userId}:`, error);
+            console.log(`⚠️ לא הצלחנו לאתחל WhatsApp עבור משתמש ${userId}:`, error);
           }
         }
         
-        console.log('✅ All WhatsApp sessions initialized');
+        console.log('✅ כל ה-WhatsApp sessions אותחלו');
       } else {
-        console.log('ℹ️ No active sessions to initialize');
+        console.log('ℹ️ אין sessions פעילים לאתחול');
       }
     } catch (error) {
-      console.log('ℹ️ WhatsApp not auto-initialized:', error);
+      console.log('ℹ️ WhatsApp לא אותחל אוטומטית:', error);
     }
   });
 })();
