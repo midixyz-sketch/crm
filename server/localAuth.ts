@@ -37,7 +37,7 @@ async function createDefaultAdminUser() {
     // Check if admin user already exists
     const existingAdmin = await storage.getUserByEmail(adminEmail);
     if (existingAdmin) {
-      console.log('✅ Admin user already exists');
+      console.log('✅ משתמש מנהל קיים כבר');
       return;
     }
 
@@ -47,23 +47,23 @@ async function createDefaultAdminUser() {
     // Create admin user
     await storage.createUser({
       email: adminEmail,
-      firstName: 'Admin',
-      lastName: 'System',
+      firstName: 'מנהל',
+      lastName: 'מערכת',
       password: passwordHash,
       username: 'admin',
       isActive: true
     });
 
-    console.log('✅ Created main admin user:');
-    console.log(`📧 Email: ${adminEmail}`);
-    console.log(`🔑 Password: ${adminPassword}`);
+    console.log('✅ נוצר משתמש מנהל ראשי:');
+    console.log(`📧 אימייל: ${adminEmail}`);
+    console.log(`🔑 סיסמה: ${adminPassword}`);
   } catch (error) {
-    console.error('Error creating admin user:', error);
+    console.error('שגיאה ביצירת משתמש מנהל:', error);
   }
 }
 
 export async function setupAuth(app: Express) {
-  console.log('🔐 Setting up local authentication system...');
+  console.log('🔐 מגדיר מערכת אימות מקומית...');
   
   app.set("trust proxy", 1);
   app.use(getSession());
@@ -81,17 +81,17 @@ export async function setupAuth(app: Express) {
         const user = await storage.getUserByEmail(email);
         
         if (!user || !user.isActive) {
-          return done(null, false, { message: 'User not found or inactive' });
+          return done(null, false, { message: 'משתמש לא נמצא או לא פעיל' });
         }
 
         if (!user.password) {
-          return done(null, false, { message: 'User not configured with password' });
+          return done(null, false, { message: 'משתמש לא מוגדר עם סיסמה' });
         }
 
         const isValidPassword = await bcrypt.compare(password, user.password);
         
         if (!isValidPassword) {
-          return done(null, false, { message: 'Incorrect password' });
+          return done(null, false, { message: 'סיסמה שגויה' });
         }
 
         // Update last login

@@ -64,34 +64,34 @@ export default function Candidates() {
 
   const getStatusText = (status: string, recruitmentSource?: string | null) => {
     switch (status) {
-      case 'available': return 'Available';
-      case 'pending': return 'Pending';
-      case 'pending_approval': return 'Pending Approval';
+      case 'available': return 'זמין';
+      case 'pending': return 'ממתין';
+      case 'pending_approval': return 'ממתין לאישור';
       case 'sent_to_employer': 
-        return recruitmentSource ? `Sent by ${recruitmentSource}` : 'Sent to Employer';
-      case 'in_interview': return 'In Interview';
-      case 'hired': return 'Hired';
-      case 'rejected': return 'Rejected';
-      case 'not_relevant': return 'Not Relevant';
-      case 'rejected_by_employer': return 'Rejected by Employer';
-      case 'invited_to_interview': return 'Invited to Interview';
-      case 'whatsapp_sent': return 'WhatsApp Sent';
-      case 'phone_contact_made': return 'Phone Contact Made';
-      case 'waiting_employer_response': return 'Waiting for Employer';
-      case 'attended_interview': return 'Attended Interview';
-      case 'missed_interview': return 'Missed Interview';
-      case 'passed_interview': return 'Passed Interview';
-      case 'employment_ended': return 'Employment Ended';
-      case 'employed': return 'Employed';
-      case 'inactive': return 'Inactive';
-      case 'blacklisted': return 'Blacklisted';
-      case 'submitted': return 'Submitted';
-      case 'reviewed': return 'Reviewed';
-      case 'interview': return 'Interview';
-      case 'interview_scheduled': return 'Interview Scheduled';
-      case 'accepted': return 'Accepted';
-      case 'new_application': return 'New Application';
-      default: return status || 'Not Set';
+        return recruitmentSource ? `נשלח ע"י ${recruitmentSource}` : 'נשלח למעסיק';
+      case 'in_interview': return 'בתהליך ראיון';
+      case 'hired': return 'התקבל';
+      case 'rejected': return 'נדחה';
+      case 'not_relevant': return 'לא רלוונטי';
+      case 'rejected_by_employer': return 'נפסל בראיון';
+      case 'invited_to_interview': return 'זומן לראיון';
+      case 'whatsapp_sent': return 'נשלחה הודעת ווצאפ';
+      case 'phone_contact_made': return 'נוצר קשר טלפוני';
+      case 'waiting_employer_response': return 'ממתין לתשובת מעסיק';
+      case 'attended_interview': return 'הגיע לראיון';
+      case 'missed_interview': return 'לא הגיע לראיון';
+      case 'passed_interview': return 'עבר ראיון';
+      case 'employment_ended': return 'סיים העסקה';
+      case 'employed': return 'מועסק';
+      case 'inactive': return 'לא פעיל';
+      case 'blacklisted': return 'ברשימה שחורה';
+      case 'submitted': return 'הוגש';
+      case 'reviewed': return 'נסקר';
+      case 'interview': return 'ראיון';
+      case 'interview_scheduled': return 'זומן לראיון';
+      case 'accepted': return 'התקבל';
+      case 'new_application': return 'מועמדות חדשה';
+      default: return status || 'לא הוגדר';
     }
   };
 
@@ -173,10 +173,10 @@ export default function Candidates() {
 
   // Status options
   const statusOptions = [
-    { label: "Sent to Employer", value: "sent_to_employer" },
-    { label: "Rejected", value: "rejected" },
-    { label: "Not Suitable", value: "not_relevant" },
-    { label: "Pending", value: "pending" },
+    { label: "נשלח למעסיק", value: "sent_to_employer" },
+    { label: "נדחה", value: "rejected" },
+    { label: "לא מתאים", value: "not_relevant" },
+    { label: "ממתין", value: "pending" },
   ];
 
   // Job options
@@ -217,7 +217,7 @@ export default function Candidates() {
         return;
       }
       toast({
-        title: "Error",
+        title: "שגיאה",
         description: "שגיאה במחיקת המועמד",
         variant: "destructive",
       });
@@ -251,8 +251,8 @@ export default function Candidates() {
         return;
       }
       toast({
-        title: "Error",
-        description: "שגיאה במחיקת מועמדים",
+        title: "שגיאה",
+        description: "שגיאה במחיקת המועמדים",
         variant: "destructive",
       });
     },
@@ -290,7 +290,7 @@ export default function Candidates() {
   const handleBulkDelete = () => {
     if (selectedCandidates.length === 0) return;
     
-    if (confirm(`Are you sure you want to delete ${selectedCandidates.length} candidates?`)) {
+    if (confirm(`האם אתה בטוח שברצונך למחוק ${selectedCandidates.length} מועמדים?`)) {
       bulkDeleteCandidates.mutate(selectedCandidates);
     }
   };
@@ -328,7 +328,7 @@ export default function Candidates() {
     <div dir="rtl" className="min-h-screen w-full max-w-full space-y-6 p-6">
       <div className="flex items-center gap-2 mb-6">
         <Users className="h-6 w-6" />
-        <h1 className="text-2xl font-bold">Candidates</h1>
+        <h1 className="text-2xl font-bold">מועמדים</h1>
       </div>
           <div className="mb-6 flex flex-col gap-4">
             <div className="flex flex-col sm:flex-row gap-4 flex-wrap">
@@ -348,7 +348,7 @@ export default function Candidates() {
                   options={statusOptions}
                   selected={selectedStatuses}
                   onChange={setSelectedStatuses}
-                  placeholder="Status"
+                  placeholder="סטטוס"
                   data-testid="select-status-filter"
                 />
               </div>
@@ -358,7 +358,7 @@ export default function Candidates() {
                   options={jobOptions}
                   selected={selectedJobs}
                   onChange={setSelectedJobs}
-                  placeholder="Job Title"
+                  placeholder="שם המשרה"
                   data-testid="select-job-filter"
                 />
               </div>
@@ -368,7 +368,7 @@ export default function Candidates() {
                   options={userOptions}
                   selected={selectedUsers}
                   onChange={setSelectedUsers}
-                  placeholder="Recruiter"
+                  placeholder="רכז"
                   data-testid="select-user-filter"
                 />
               </div>
@@ -378,7 +378,7 @@ export default function Candidates() {
                   type="date"
                   value={dateFrom}
                   onChange={(e) => setDateFrom(e.target.value)}
-                  placeholder="From Date"
+                  placeholder="מתאריך"
                   className="text-sm"
                   data-testid="input-date-from"
                 />
@@ -387,7 +387,7 @@ export default function Candidates() {
                   type="date"
                   value={dateTo}
                   onChange={(e) => setDateTo(e.target.value)}
-                  placeholder="To Date"
+                  placeholder="עד תאריך"
                   className="text-sm"
                   data-testid="input-date-to"
                 />
@@ -400,9 +400,9 @@ export default function Candidates() {
                   {candidatesData?.candidates && candidatesData?.total ? (
                     <>
                       {candidatesData.candidates.length > 0 ? (
-                        `Showing ${offset + 1}-${offset + candidatesData.candidates.length} of ${candidatesData.total} candidates`
+                        `מציג ${offset + 1}-${offset + candidatesData.candidates.length} מתוך ${candidatesData.total} מועמדים`
                       ) : (
-                        `0 candidates`
+                        `0 מועמדים`
                       )}
                     </>
                   ) : ""}
@@ -414,7 +414,7 @@ export default function Candidates() {
                     data-testid="button-bulk-delete"
                   >
                     <Trash2 className="h-4 w-4 ml-2" />
-                    Delete {selectedCandidates.length} selected
+                    מחק {selectedCandidates.length} נבחרים
                   </DeleteButton>
                 )}
               </div>
@@ -427,25 +427,25 @@ export default function Candidates() {
                     data-testid="button-add-candidate"
                   >
                     <Plus className="h-4 w-4 ml-2" />
-                    Add Candidate
+                    הוסף מועמד
                   </AddButton>
                 </DialogTrigger>
                 <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
                   <DialogHeader className="sr-only">
                     <DialogTitle>
-                      {selectedCandidate ? "Edit Candidate" : "Add New Candidate"}
+                      {selectedCandidate ? "עריכת מועמד" : "הוספת מועמד חדש"}
                     </DialogTitle>
                     <DialogDescription>
-                      {selectedCandidate ? "Edit candidate details" : "Add new candidate to database"}
+                      {selectedCandidate ? "ערוך פרטי המועמד" : "הוסף מועמד חדש למאגר"}
                     </DialogDescription>
                   </DialogHeader>
                   <CandidateForm 
                     candidate={selectedCandidate || undefined}
                     onSuccess={() => {
-                      // Don't close form - stays open for additional details
+                      // לא סוגר את הטופס - נשאר פתוח לפרטים נוספים
                       toast({
                         title: "הצלחה",
-                        description: "Candidate saved successfully. You can add more details",
+                        description: "המועמד נשמר בהצלחה. תוכל להוסיף פרטים נוספים",
                       });
                     }}
                   />
@@ -481,12 +481,12 @@ export default function Candidates() {
                               />
                             </TableHead>
                           )}
-                          <TableHead className="text-right font-medium text-gray-700 dark:text-gray-300 sticky right-0 bg-gray-50 dark:bg-gray-900 z-10">Candidate Name</TableHead>
-                          <TableHead className="text-right font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">City</TableHead>
-                          <TableHead className="text-right font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">Mobile</TableHead>
-                          <TableHead className="text-right font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">Status</TableHead>
-                          <TableHead className="text-right font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">Candidate #</TableHead>
-                          <TableHead className="text-right font-medium text-gray-700 dark:text-gray-300 sticky left-0 bg-gray-50 dark:bg-gray-900 z-10">Actions</TableHead>
+                          <TableHead className="text-right font-medium text-gray-700 dark:text-gray-300 sticky right-0 bg-gray-50 dark:bg-gray-900 z-10">שם המועמד</TableHead>
+                          <TableHead className="text-right font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">עיר</TableHead>
+                          <TableHead className="text-right font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">נייד</TableHead>
+                          <TableHead className="text-right font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">סטטוס</TableHead>
+                          <TableHead className="text-right font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">מס' מועמד</TableHead>
+                          <TableHead className="text-right font-medium text-gray-700 dark:text-gray-300 sticky left-0 bg-gray-50 dark:bg-gray-900 z-10">פעולות</TableHead>
                         </TableRow>
                       </TableHeader>
                     <TableBody>
@@ -543,7 +543,7 @@ export default function Candidates() {
                                 }}
                                 className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200"
                                 data-testid={`button-email-profile-${candidate.id}`}
-                                title="Send profile by email"
+                                title="שלח פרופיל במייל"
                               >
                                 <Mail className="h-4 w-4" />
                               </Button>
@@ -561,7 +561,7 @@ export default function Candidates() {
                                 }}
                                 className="text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-200"
                                 data-testid={`button-interview-invite-${candidate.id}`}
-                                title="Send interview invitation"
+                                title="שלח הזמנה לראיון"
                               >
                                 <Send className="h-4 w-4" />
                               </Button>
@@ -610,7 +610,7 @@ export default function Candidates() {
                     data-testid="button-add-first-candidate"
                     hideWhenNoAccess={true}
                   >
-                    Add First Candidate
+                    הוסף מועמד ראשון
                   </AddButton>
                 </div>
               )}
@@ -626,10 +626,10 @@ export default function Candidates() {
                 disabled={page === 0 || candidatesLoading}
                 data-testid="button-previous-page"
               >
-                Previous
+                הקודם
               </Button>
               <span className="text-sm text-gray-600 dark:text-gray-400">
-                Page {page + 1} of {Math.ceil(candidatesData.total / PAGE_SIZE)}
+                עמוד {page + 1} מתוך {Math.ceil(candidatesData.total / PAGE_SIZE)}
               </span>
               <Button
                 variant="outline"
@@ -637,7 +637,7 @@ export default function Candidates() {
                 disabled={offset + PAGE_SIZE >= candidatesData.total || candidatesLoading}
                 data-testid="button-next-page"
               >
-                Next
+                הבא
               </Button>
             </div>
           )}
@@ -646,9 +646,9 @@ export default function Candidates() {
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent className="sm:max-w-md" dir="rtl">
           <DialogHeader>
-            <DialogTitle className="text-red-600">Delete Candidate</DialogTitle>
+            <DialogTitle className="text-red-600">מחיקת מועמד</DialogTitle>
             <DialogDescription className="text-gray-600">
-              Delete candidate permanently?
+              האם למחוק מועמד לצמיתות?
             </DialogDescription>
           </DialogHeader>
           <div className="flex gap-3 justify-end mt-6">
@@ -657,14 +657,14 @@ export default function Candidates() {
               onClick={cancelDeleteCandidate}
               className="px-6"
             >
-              No
+              לא
             </Button>
             <Button
               onClick={confirmDeleteCandidate}
               className="bg-red-600 hover:bg-red-700 text-white px-6"
               disabled={deleteCandidate.isPending}
             >
-              {deleteCandidate.isPending ? "Deleting..." : "Yes"}
+              {deleteCandidate.isPending ? "מוחק..." : "כן"}
             </Button>
           </div>
         </DialogContent>

@@ -14,8 +14,8 @@ export default function Dashboard() {
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
       toast({
-        title: "Unauthorized",
-        description: "You are disconnected. Logging in again...",
+        title: "לא מורשה",
+        description: "אתה מנותק. מתחבר שוב...",
         variant: "destructive",
       });
       setTimeout(() => {
@@ -30,7 +30,7 @@ export default function Dashboard() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
-          <p className="mt-4 text-lg">Loading...</p>
+          <p className="mt-4 text-lg">טוען...</p>
         </div>
       </div>
     );

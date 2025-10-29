@@ -22,7 +22,7 @@ export default function FileUpload({
   const validateFile = (file: File): boolean => {
     // Check file size
     if (file.size > maxSize) {
-      setError(`File too large. Maximum ${Math.round(maxSize / 1024 / 1024)}MB`);
+      setError(`הקובץ גדול מדי. מקסימום ${Math.round(maxSize / 1024 / 1024)}MB`);
       return false;
     }
 
@@ -31,7 +31,7 @@ export default function FileUpload({
     const fileExtension = '.' + file.name.split('.').pop()?.toLowerCase();
     
     if (!allowedTypes.includes(fileExtension)) {
-      setError(`Unsupported file type. Allowed files: ${accept}`);
+      setError(`סוג קובץ לא נתמך. קבצים מורשים: ${accept}`);
       return false;
     }
 
@@ -129,14 +129,14 @@ export default function FileUpload({
             <Upload className="h-12 w-12 text-gray-400 mx-auto" />
             <div>
               <p className="text-gray-600 dark:text-gray-300 mb-2">
-                Drag and drop files here or
+                גרור וזרוק קבצים כאן או
               </p>
               <Button 
                 variant="outline" 
                 onClick={() => document.getElementById('file-input')?.click()}
                 data-testid="button-select-file"
               >
-                Select Files
+                בחר קבצים
               </Button>
               <input
                 id="file-input"
@@ -149,7 +149,7 @@ export default function FileUpload({
               />
             </div>
             <p className="text-xs text-gray-500 dark:text-gray-400">
-              {accept.replace(/\./g, '').toUpperCase()} up to {Math.round(maxSize / 1024 / 1024)}MB
+              {accept.replace(/\./g, '').toUpperCase()} עד {Math.round(maxSize / 1024 / 1024)}MB
             </p>
           </div>
         )}

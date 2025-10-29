@@ -114,8 +114,8 @@ export default function JobInterviews() {
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
       toast({
-        title: "Authentication Required",
-        description: "Redirecting to system...",
+        title: "נדרשת הזדהות",
+        description: "מועבר למערכת...",
         variant: "destructive",
       });
       setTimeout(() => {
@@ -184,8 +184,8 @@ export default function JobInterviews() {
     onError: (error: any) => {
       if (isUnauthorizedError(error)) {
         toast({
-          title: "Re-authentication Required",
-          description: "Redirecting to login page...",
+          title: "נדרשת הזדהות מחדש",
+          description: "מועבר לדף התחברות...",
           variant: "destructive",
         });
         setTimeout(() => {
@@ -194,8 +194,8 @@ export default function JobInterviews() {
         return;
       }
       toast({
-        title: "Error",
-        description: error.message || "Operation failed",
+        title: "שגיאה",
+        description: error.message || "פעולה נכשלה",
         variant: "destructive",
       });
     },
@@ -257,25 +257,25 @@ export default function JobInterviews() {
       // Show accurate success/error message
       if (emailsSent > 0 && emailsFailed === 0) {
         toast({
-          title: "Candidate Sent to Employer! ✅",
-          description: `Candidate sent successfully to ${emailsSent} contacts`,
+          title: "מועמד נשלח למעסיק! ✅",
+          description: `המועמד נשלח בהצלחה ל-${emailsSent} אנשי קשר`,
         });
       } else if (emailsSent > 0 && emailsFailed > 0) {
         toast({
-          title: "Candidate Partially Sent ⚠️",
-          description: `Sent to ${emailsSent} contacts, ${emailsFailed} failed`,
+          title: "מועמד נשלח חלקית ⚠️",
+          description: `נשלח ל-${emailsSent} אנשי קשר, ${emailsFailed} נכשלו`,
           variant: "destructive",
         });
       } else if (emailsFailed > 0) {
         toast({
-          title: "Candidate Approved But Emails Failed! ⚠️",
-          description: "Candidate approved in system but could not send emails to employer. Please contact manually.",
+          title: "מועמד אושר אבל המיילים נכשלו! ⚠️",
+          description: "המועמד אושר במערכת אבל לא ניתן לשלוח מיילים למעסיק. אנא צור קשר ידני.",
           variant: "destructive",
         });
       } else {
         toast({
-          title: "Candidate Approved Successfully! ✅",
-          description: selectedContacts.length === 0 ? "No contact persons selected for this job" : "Candidate approved and added to approved candidates list",
+          title: "מועמד אושר בהצלחה! ✅",
+          description: selectedContacts.length === 0 ? "לא נבחרו אנשי קשר למשרה זו" : "המועמד אושר והתווסף לרשימת המועמדים המאושרים",
         });
       }
 
@@ -288,16 +288,16 @@ export default function JobInterviews() {
           setWarningMessage("");
         } else {
           toast({
-            title: "You've Reviewed All Candidates! 🎉",
-            description: "All applications for this job have been reviewed",
+            title: "סיימת לבדוק את כל המועמדים! 🎉",
+            description: "כל המועמדויות למשרה זו נבדקו",
           });
         }
       }, 1500);
     } catch (error) {
       console.error('Error approving candidate:', error);
       toast({
-        title: "Error",
-        description: "Error sending candidate to employer",
+        title: "שגיאה",
+        description: "שגיאה בשליחת המועמד למעסיק",
         variant: "destructive",
       });
     }
@@ -325,8 +325,8 @@ export default function JobInterviews() {
       });
       
       toast({
-        title: "Candidate Rejected ❌",
-        description: "Candidate marked as rejected and your notes were saved",
+        title: "מועמד נפסל ❌",
+        description: "המועמד סומן כנפסל והערותיך נשמרו",
       });
 
       // Move to next candidate automatically
@@ -338,16 +338,16 @@ export default function JobInterviews() {
           setWarningMessage("");
         } else {
           toast({
-            title: "You've Reviewed All Candidates! 🎉",
-            description: "All applications for this job have been reviewed",
+            title: "סיימת לבדוק את כל המועמדים! 🎉",
+            description: "כל המועמדויות למשרה זו נבדקו",
           });
         }
       }, 1500);
     } catch (error) {
       console.error('Error rejecting candidate:', error);
       toast({
-        title: "Error",
-        description: "Error updating candidate status",
+        title: "שגיאה",
+        description: "שגיאה בעדכון סטטוס המועמד",
         variant: "destructive",
       });
     }
@@ -366,8 +366,8 @@ export default function JobInterviews() {
     });
     
     toast({
-      title: "Additional Interview Needed 🔄",
-      description: "Candidate marked for further review",
+      title: "נדרש ראיון נוסף 🔄",
+      description: "המועמד סומן לבדיקה נוספת",
     });
   };
 
