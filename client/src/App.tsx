@@ -104,14 +104,26 @@ function Router() {
     );
   }
 
+  // הצג מסך טעינה כל עוד נתוני המשתמש עדיין נטענים
+  if (isUserLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <div className="text-gray-600 dark:text-gray-400">טוען...</div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <RouteGuard>
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
         <Navbar />
         {/* הצג רק אחרי שיודעים בוודאות שהמשתמש אינו רכז חיצוני */}
-        {currentUser && !isUserLoading && !isExternalRecruiter ? <ReminderPopup /> : null}
-        {currentUser && !isUserLoading && !isExternalRecruiter ? <WhatsAppWidget /> : null}
-        {currentUser && !isUserLoading && !isExternalRecruiter ? <WhatsAppNotificationContainer /> : null}
+        {currentUser && !isExternalRecruiter ? <ReminderPopup /> : null}
+        {currentUser && !isExternalRecruiter ? <WhatsAppWidget /> : null}
+        {currentUser && !isExternalRecruiter ? <WhatsAppNotificationContainer /> : null}
         <main className="w-full px-4 sm:px-6 lg:px-8 py-6">
           <Switch>
           <Route path="/" component={HomePage} />
