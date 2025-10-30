@@ -1400,7 +1400,7 @@ export class DatabaseStorage implements IStorage {
                 
                 // Update candidate status
                 await this.updateCandidate(application.candidateId, {
-                  status: "נשלח למעסיק",
+                  status: "sent_to_employer",
                 });
               } else {
                 console.error(`❌ שגיאה בשליחת מועמד למייל ${contactPerson.email}:`, result.error);
@@ -1719,7 +1719,7 @@ export class DatabaseStorage implements IStorage {
             
             // Update candidate status
             await this.updateCandidate(application.candidateId, {
-              status: "נשלח למעסיק",
+              status: "sent_to_employer",
             });
           } else {
             console.error(`❌ שגיאה בשליחת מועמד למייל ${contactPerson.email}:`, result.error);
