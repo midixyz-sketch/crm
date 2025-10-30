@@ -77,7 +77,7 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
   const { data: status } = useQuery<{ isConnected: boolean }>({
     queryKey: ['/api/whatsapp/status'],
     enabled: isOpen,
-    refetchInterval: 3000,
+    refetchInterval: 10000, // Reduced from 3s to 10s
   });
 
   // Close panel immediately when disconnected
@@ -91,7 +91,7 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
   const { data: chats = [], isLoading: chatsLoading } = useQuery<Chat[]>({
     queryKey: ['/api/whatsapp/chats', activeTab],
     enabled: isOpen,
-    refetchInterval: 5000,
+    refetchInterval: 15000, // Reduced from 5s to 15s
     queryFn: async () => {
       const response = await fetch(`/api/whatsapp/chats?tab=${activeTab}&limit=100`);
       if (!response.ok) throw new Error('Failed to fetch chats');
@@ -103,7 +103,7 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
   const { data: messages = [], isLoading: messagesLoading } = useQuery<Message[]>({
     queryKey: ['/api/whatsapp/messages', selectedChat?.remoteJid],
     enabled: !!selectedChat,
-    refetchInterval: 3000,
+    refetchInterval: 8000, // Reduced from 3s to 8s
     queryFn: async () => {
       if (!selectedChat?.remoteJid) return [];
       const response = await fetch(`/api/whatsapp/messages/${encodeURIComponent(selectedChat.remoteJid)}`);
@@ -174,10 +174,7 @@ export function WhatsAppChatPanel({ isOpen, onClose }: WhatsAppChatPanelProps) {
         // חיפוש בתוויות
         const tagMatch = (chat.tags || []).some(tag => tag.toLowerCase().includes(query));
         
-        // חיפוש בתוכן ההודעה האחרונה
-        const messageMatch = (chat.lastMessage || '').toLowerCase().includes(query);
-        
-        return nameMatch || phoneMatch || tagMatch || messageMatch;
+        return nameMatch || phoneMatch || tagMatch;
       });
     }
 

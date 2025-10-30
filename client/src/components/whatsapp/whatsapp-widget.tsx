@@ -21,20 +21,21 @@ export function WhatsAppWidget() {
   } | null>(null);
   const { toast } = useToast();
 
-  // Get WhatsApp status
+  // Get WhatsApp status (only poll when panel is open)
   const { data: status } = useQuery<{
     isConnected: boolean;
     phoneNumber: string | null;
     qrCode: string | null;
   }>({
     queryKey: ['/api/whatsapp/status'],
-    refetchInterval: 5000, // Check status every 5 seconds
+    refetchInterval: isPanelOpen ? 15000 : false, // Only poll when panel open, reduced from 5s to 15s
   });
 
-  // Get unread count (only fetch 100 chats for performance)
+  // Get unread count (only fetch when panel is open)
   const { data: chats = [] } = useQuery<Array<{ unreadCount: number }>>({
     queryKey: ['/api/whatsapp/chats', 'widget'],
-    refetchInterval: 5000,
+    refetchInterval: isPanelOpen ? 20000 : false, // Only poll when panel open, reduced from 5s to 20s
+    enabled: isPanelOpen,
     queryFn: async () => {
       const response = await fetch('/api/whatsapp/chats?tab=individual&limit=100');
       if (!response.ok) throw new Error('Failed to fetch chats');

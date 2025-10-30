@@ -50,7 +50,7 @@ export default function Sidebar() {
   // WhatsApp status query - always enabled when dialog is open
   const { data: whatsappStatus, refetch: refetchStatus, isLoading } = useQuery<any>({
     queryKey: ['/api/whatsapp/status'],
-    refetchInterval: whatsappDialogOpen ? 3000 : false,
+    refetchInterval: whatsappDialogOpen ? 10000 : false, // Reduced from 3s to 10s
     enabled: whatsappDialogOpen,
     staleTime: 0,
   });
