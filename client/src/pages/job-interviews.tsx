@@ -433,7 +433,13 @@ export default function JobInterviews() {
     if (!currentApplication || !interviewDate || !interviewTime) return;
     
     try {
-      const interviewDateTime = new Date(`${interviewDate}T${interviewTime}`);
+      // Create proper ISO datetime string
+      const interviewDateTime = new Date(`${interviewDate}T${interviewTime}:00`);
+      
+      // Validate the date is valid
+      if (isNaN(interviewDateTime.getTime())) {
+        throw new Error('Invalid date/time combination');
+      }
       
       // Update application status
       await updateApplicationMutation.mutateAsync({
@@ -451,12 +457,13 @@ export default function JobInterviews() {
         lastStatusChange: new Date(),
       });
 
-      // Create reminder event
+      // Create reminder event with link to interviews page
+      const interviewLink = `/interviews/${currentApplication.jobId}`;
       await apiRequest("POST", "/api/reminders", {
         title: `ראיון נוסף - ${currentApplication.candidate.firstName} ${currentApplication.candidate.lastName}`,
-        description: `ראיון נוסף למועמד ${currentApplication.candidate.firstName} ${currentApplication.candidate.lastName} למשרה ${jobData?.title}`,
-        dueDate: interviewDateTime,
-        type: 'interview',
+        description: `ראיון נוסף למועמד ${currentApplication.candidate.firstName} ${currentApplication.candidate.lastName} למשרה ${jobData?.title}\n\nלחץ כאן לעבור לעמוד הראיונות: ${window.location.origin}${interviewLink}`,
+        reminderDate: interviewDateTime,
+        priority: 'high',
         candidateId: currentApplication.candidateId,
         jobId: currentApplication.jobId,
       });
@@ -797,7 +804,7 @@ export default function JobInterviews() {
               </CardHeader>
               <CardContent className="space-y-4">
                 {/* Quick Status Buttons */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   <Button
                     onClick={handleApprove}
                     disabled={updateApplicationMutation.isPending}
@@ -871,6 +878,16 @@ export default function JobInterviews() {
                       </div>
                     </DialogContent>
                   </Dialog>
+                  <Button
+                    onClick={handleReject}
+                    disabled={updateApplicationMutation.isPending}
+                    className="bg-gray-700 hover:bg-gray-800 dark:bg-gray-600 dark:hover:bg-gray-700 text-white font-semibold shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-1"
+                    style={{ fontSize: '0.68rem', width: '110px', height: '110px' }}
+                    data-testid="button-disqualify"
+                  >
+                    <XCircle className="h-3 w-3 flex-shrink-0" />
+                    <span>דחה</span>
+                  </Button>
                 </div>
 
                 {/* Internal Notes */}
