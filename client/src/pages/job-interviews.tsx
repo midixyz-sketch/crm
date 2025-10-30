@@ -875,9 +875,6 @@ export default function JobInterviews() {
 
                 {/* Internal Notes */}
                 <div>
-                  <label className="block text-sm font-medium mb-2">
-                    הערות פנימיות (אופציונלי)
-                  </label>
                   <Textarea
                     value={reviewerFeedback}
                     onChange={(e) => setReviewerFeedback(e.target.value)}
