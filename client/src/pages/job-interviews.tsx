@@ -1065,8 +1065,9 @@ export default function JobInterviews() {
                       );
                     }
                     
-                    // For PDF - use object tag (most reliable)
+                    // For PDF - use iframe with unique key
                     if (isPdf) {
+                      const pdfUrl = `/api/candidates/${currentApplication.candidate.id}/cv?t=${Date.now()}`;
                       return (
                         <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden bg-white dark:bg-gray-800">
                           <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border-b flex items-center justify-between">
@@ -1086,24 +1087,16 @@ export default function JobInterviews() {
                             </div>
                           </div>
                           <div 
-                            className="bg-gray-100 dark:bg-gray-900"
+                            className="bg-gray-100 dark:bg-gray-900 w-full"
                             style={{ height: 'calc(100vh - 250px)', minHeight: '700px' }}
                           >
-                            <object
-                              data={`/api/candidates/${currentApplication.candidate.id}/cv`}
-                              type="application/pdf"
-                              width="100%"
-                              height="100%"
+                            <iframe
+                              key={currentApplication.candidate.id}
+                              src={pdfUrl}
+                              className="w-full h-full border-0"
+                              title="PDF Viewer"
                               style={{ minHeight: '700px' }}
-                            >
-                              <div className="flex flex-col items-center justify-center h-full gap-4 p-8">
-                                <FileText className="h-16 w-16 text-gray-400" />
-                                <div className="text-gray-500 dark:text-gray-400 text-center">
-                                  <div className="text-lg font-semibold mb-2">הדפדפן לא תומך בתצוגת PDF</div>
-                                  <div className="text-sm mb-4">לחץ על "הצג במסך מלא" לצפייה</div>
-                                </div>
-                              </div>
-                            </object>
+                            />
                           </div>
                         </div>
                       );
