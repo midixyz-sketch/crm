@@ -801,35 +801,35 @@ export default function JobInterviews() {
                   <Button
                     onClick={handleApprove}
                     disabled={updateApplicationMutation.isPending}
-                    className="bg-green-600 hover:bg-green-700 text-white font-semibold shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-1"
-                    style={{ fontSize: '0.68rem', padding: '1.29rem 1.03rem' }}
+                    className="bg-green-600 hover:bg-green-700 text-white font-semibold shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-1.5 min-w-[120px]"
+                    style={{ fontSize: '0.7rem', padding: '1.5rem 1.2rem' }}
                     data-testid="button-approve"
                   >
-                    <CheckCircle className="h-3 w-3 flex-shrink-0" />
+                    <CheckCircle className="h-3.5 w-3.5 flex-shrink-0" />
                     <span>מתאים</span>
                   </Button>
                   <Button
                     onClick={handleReject}
                     disabled={updateApplicationMutation.isPending}
-                    className="bg-red-600 hover:bg-red-700 text-white font-semibold shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-1"
-                    style={{ fontSize: '0.68rem', padding: '1.29rem 1.03rem' }}
+                    className="bg-red-600 hover:bg-red-700 text-white font-semibold shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-1.5 min-w-[120px]"
+                    style={{ fontSize: '0.7rem', padding: '1.5rem 1.2rem' }}
                     data-testid="button-reject"
                   >
-                    <XCircle className="h-3 w-3 flex-shrink-0" />
+                    <XCircle className="h-3.5 w-3.5 flex-shrink-0" />
                     <span>לא מתאים</span>
                   </Button>
                   <Dialog open={interviewDialog} onOpenChange={setInterviewDialog}>
                     <DialogTrigger asChild>
                       <Button
                         disabled={updateApplicationMutation.isPending}
-                        className="bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-md hover:shadow-lg transition-all flex flex-col items-center justify-center gap-1"
-                        style={{ fontSize: '0.68rem', padding: '0.77rem 1.03rem' }}
+                        className="bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-md hover:shadow-lg transition-all flex flex-col items-center justify-center gap-1 min-w-[120px]"
+                        style={{ fontSize: '0.7rem', padding: '1rem 1.2rem', lineHeight: '1.3' }}
                         data-testid="button-more-review"
                       >
-                        <Calendar className="h-3 w-3 flex-shrink-0" />
-                        <div className="flex flex-col items-center leading-tight">
-                          <span>נדרש ראיון</span>
-                          <span>נוסף</span>
+                        <Calendar className="h-3.5 w-3.5 flex-shrink-0 mb-0.5" />
+                        <div className="flex flex-col items-center" style={{ lineHeight: '1.2' }}>
+                          <span>נדרש</span>
+                          <span>ראיון נוסף</span>
                         </div>
                       </Button>
                     </DialogTrigger>
