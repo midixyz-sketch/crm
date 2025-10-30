@@ -801,30 +801,30 @@ export default function JobInterviews() {
                   <Button
                     onClick={handleApprove}
                     disabled={updateApplicationMutation.isPending}
-                    className="bg-green-600 hover:bg-green-700 text-white font-semibold py-5 text-sm sm:text-base shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-1.5 sm:gap-2"
+                    className="bg-green-600 hover:bg-green-700 text-white font-semibold py-4 text-xs sm:text-sm shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-1"
                     data-testid="button-approve"
                   >
-                    <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
-                    <span className="truncate">מתאים</span>
+                    <CheckCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
+                    <span>מתאים</span>
                   </Button>
                   <Button
                     onClick={handleReject}
                     disabled={updateApplicationMutation.isPending}
-                    className="bg-red-600 hover:bg-red-700 text-white font-semibold py-5 text-sm sm:text-base shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-1.5 sm:gap-2"
+                    className="bg-red-600 hover:bg-red-700 text-white font-semibold py-4 text-xs sm:text-sm shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-1"
                     data-testid="button-reject"
                   >
-                    <XCircle className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
-                    <span className="truncate">לא מתאים</span>
+                    <XCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
+                    <span>לא מתאים</span>
                   </Button>
                   <Dialog open={interviewDialog} onOpenChange={setInterviewDialog}>
                     <DialogTrigger asChild>
                       <Button
                         disabled={updateApplicationMutation.isPending}
-                        className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-5 text-sm sm:text-base shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-1.5 sm:gap-2"
+                        className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-4 text-xs sm:text-sm shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-1"
                         data-testid="button-more-review"
                       >
-                        <Calendar className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
-                        <span className="truncate">נדרש ראיון נוסף</span>
+                        <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
+                        <span>נדרש ראיון נוסף</span>
                       </Button>
                     </DialogTrigger>
                     <DialogContent>
