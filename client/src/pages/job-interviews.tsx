@@ -65,6 +65,7 @@ export default function JobInterviews() {
   const [fileViewerOpen, setFileViewerOpen] = useState(false);
   const [docxHtml, setDocxHtml] = useState<string>("");
   const [docxLoading, setDocxLoading] = useState(false);
+  const [pdfDataUrl, setPdfDataUrl] = useState<string>("");
 
   const whatsappMessages = [
     "שלום, זה מחברת גיוס H-Group. ניסיתי להתקשר אליך לגבי משרה שתואמת לך. אנא צור איתי קשר בחזרה",
@@ -233,6 +234,42 @@ export default function JobInterviews() {
     };
 
     loadDocx();
+  }, [currentApplication?.candidate?.id, currentApplication?.candidate?.cvPath]);
+
+  // Load PDF as base64 data URL
+  useEffect(() => {
+    const loadPdf = async () => {
+      if (!currentApplication?.candidate?.cvPath) {
+        setPdfDataUrl("");
+        return;
+      }
+
+      const cvPath = currentApplication.candidate.cvPath;
+      const isPdf = cvPath.toLowerCase().endsWith('.pdf');
+      
+      if (!isPdf) {
+        setPdfDataUrl("");
+        return;
+      }
+
+      try {
+        const response = await fetch(`/api/candidates/${currentApplication.candidate.id}/cv`);
+        const blob = await response.blob();
+        
+        // Convert to base64
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setPdfDataUrl(reader.result as string);
+          console.log('✅ PDF converted to base64 data URL');
+        };
+        reader.readAsDataURL(blob);
+      } catch (error) {
+        console.error('❌ Error loading PDF:', error);
+        setPdfDataUrl("");
+      }
+    };
+
+    loadPdf();
   }, [currentApplication?.candidate?.id, currentApplication?.candidate?.cvPath]);
 
 
@@ -1063,12 +1100,8 @@ export default function JobInterviews() {
                       );
                     }
                     
-                    // For PDF - use Google Docs Viewer with public token
+                    // For PDF - use base64 data URL in iframe
                     if (isPdf) {
-                      // Generate temporary public token
-                      const token = btoa(`${currentApplication.candidate.id}:${Date.now()}`);
-                      const fullUrl = `${window.location.origin}/api/public/cv/${token}`;
-                      const googleViewerUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(fullUrl)}&embedded=true`;
                       return (
                         <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden bg-white dark:bg-gray-800">
                           <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border-b flex items-center justify-between">
@@ -1079,11 +1112,11 @@ export default function JobInterviews() {
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => window.open(fullUrl, '_blank')}
-                                data-testid="button-view-cv-new-tab"
+                                onClick={() => setFileViewerOpen(true)}
+                                data-testid="button-view-cv-fullscreen"
                               >
                                 <Eye className="h-4 w-4 mr-2" />
-                                פתח בטאב חדש
+                                הצג במסך מלא
                               </Button>
                             </div>
                           </div>
@@ -1091,13 +1124,22 @@ export default function JobInterviews() {
                             className="bg-gray-100 dark:bg-gray-900 w-full"
                             style={{ height: 'calc(100vh - 250px)', minHeight: '700px' }}
                           >
-                            <iframe
-                              key={currentApplication.candidate.id}
-                              src={googleViewerUrl}
-                              className="w-full h-full border-0"
-                              title="PDF Viewer"
-                              style={{ minHeight: '700px' }}
-                            />
+                            {pdfDataUrl ? (
+                              <iframe
+                                key={currentApplication.candidate.id}
+                                src={pdfDataUrl}
+                                className="w-full h-full border-0"
+                                title="PDF Viewer"
+                                style={{ minHeight: '700px' }}
+                              />
+                            ) : (
+                              <div className="flex items-center justify-center h-full">
+                                <div className="text-center">
+                                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+                                  <div className="text-gray-600 dark:text-gray-400">טוען PDF...</div>
+                                </div>
+                              </div>
+                            )}
                           </div>
                         </div>
                       );
