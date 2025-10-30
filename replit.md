@@ -57,7 +57,11 @@ Preferred communication style: Simple, everyday language.
 -   **Optimized Candidate Table**: Streamlined table view focusing on essential information to avoid horizontal scrolling.
 -   **Candidate Detail Page**: Comprehensive profile with inline editing, CV display, and an expandable event history panel.
 -   **In-Browser File Preview** (October 2025): Integrated `FileViewer` component supporting PDF (PDF.js with zoom/navigation), Word documents (Mammoth.js HTML conversion), and images. Files display in modal dialog **without triggering automatic downloads**. All pages (candidate detail, job interviews) use the FileViewer for viewing files inline. Backend serves files with `Content-Disposition: inline` header to prevent automatic downloads. FileViewer includes dedicated download button when users explicitly want to save files locally.
--   **Job Interviews Page UI** (Updated October 2025): Candidate evaluation buttons optimized for RTL Hebrew - removed emoji clutter, proper icon alignment (ml-2 for RTL), whitespace-nowrap to prevent text overflow, centered content for clean appearance.
+-   **Job Interviews Page UI** (Updated October 2025): 
+    -   Candidate evaluation buttons optimized for RTL Hebrew - removed emoji clutter, proper icon alignment (ml-2 for RTL), whitespace-nowrap to prevent text overflow, centered content for clean appearance
+    -   **4-Button Layout**: Grid with "מתאים" (green), "לא מתאים" (red), "נדרש ראיון נוסף" (blue), and "דחה" (gray) buttons
+    -   **Interview Scheduling**: Fixed date/time bug - properly combines date and time fields, validates ISO datetime, creates reminder with `reminderDate` (not `dueDate`)
+    -   **Calendar Integration**: When scheduling interview, creates high-priority reminder in calendar with candidate name, job title, and direct clickable link to interviews page (format: `${window.location.origin}/interviews/${jobId}`)
 -   **WhatsApp Web Integration**: Embedded WhatsApp functionality within the CRM via `@whiskeysockets/baileys`.
     -   **PERSONAL PER-USER WHATSAPP**: Each user has their own independent WhatsApp connection. Users must scan QR code from their personal device.
     -   **Multi-User Architecture** (October 2025):
