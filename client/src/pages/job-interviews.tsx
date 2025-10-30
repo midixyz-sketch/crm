@@ -46,15 +46,7 @@ import {
 import type { JobApplicationWithDetails, JobApplication, JobWithClient } from "@shared/schema";
 import { FileViewer } from "@/components/file-viewer";
 import * as mammoth from 'mammoth';
-import { Document, Page, pdfjs } from 'react-pdf';
-import 'react-pdf/dist/Page/AnnotationLayer.css';
-import 'react-pdf/dist/Page/TextLayer.css';
-
-// Configure PDF.js worker - use local worker to avoid CDN issues
-pdfjs.GlobalWorkerOptions.workerSrc = new URL(
-  'pdfjs-dist/build/pdf.worker.min.mjs',
-  import.meta.url,
-).toString();
+// PDF.js removed temporarily - causing runtime errors
 
 export default function JobInterviews() {
   const { toast } = useToast();
@@ -74,8 +66,6 @@ export default function JobInterviews() {
   const [fileViewerOpen, setFileViewerOpen] = useState(false);
   const [docxHtml, setDocxHtml] = useState<string>("");
   const [docxLoading, setDocxLoading] = useState(false);
-  const [pdfDataUrl, setPdfDataUrl] = useState<string>("");
-  const [numPages, setNumPages] = useState<number | null>(null);
 
   const whatsappMessages = [
     "שלום, זה מחברת גיוס H-Group. ניסיתי להתקשר אליך לגבי משרה שתואמת לך. אנא צור איתי קשר בחזרה",
@@ -244,42 +234,6 @@ export default function JobInterviews() {
     };
 
     loadDocx();
-  }, [currentApplication?.candidate?.id, currentApplication?.candidate?.cvPath]);
-
-  // Load PDF as base64 data URL
-  useEffect(() => {
-    const loadPdf = async () => {
-      if (!currentApplication?.candidate?.cvPath) {
-        setPdfDataUrl("");
-        return;
-      }
-
-      const cvPath = currentApplication.candidate.cvPath;
-      const isPdf = cvPath.toLowerCase().endsWith('.pdf');
-      
-      if (!isPdf) {
-        setPdfDataUrl("");
-        return;
-      }
-
-      try {
-        const response = await fetch(`/api/candidates/${currentApplication.candidate.id}/cv`);
-        const blob = await response.blob();
-        
-        // Convert to base64
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          setPdfDataUrl(reader.result as string);
-          console.log('✅ PDF converted to base64 data URL');
-        };
-        reader.readAsDataURL(blob);
-      } catch (error) {
-        console.error('❌ Error loading PDF:', error);
-        setPdfDataUrl("");
-      }
-    };
-
-    loadPdf();
   }, [currentApplication?.candidate?.id, currentApplication?.candidate?.cvPath]);
 
 
@@ -1110,7 +1064,7 @@ export default function JobInterviews() {
                       );
                     }
                     
-                    // For PDF - use PDF.js (react-pdf)
+                    // For PDF - use simple iframe (most compatible)
                     if (isPdf) {
                       const pdfUrl = `/api/candidates/${currentApplication.candidate.id}/cv`;
                       return (
@@ -1118,55 +1072,29 @@ export default function JobInterviews() {
                           <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border-b flex items-center justify-between">
                             <p className="text-sm text-blue-700 dark:text-blue-300">
                               קובץ PDF - {currentApplication.candidate.firstName} {currentApplication.candidate.lastName}
-                              {numPages && ` (${numPages} עמודים)`}
                             </p>
                             <div className="flex gap-2">
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => setFileViewerOpen(true)}
-                                data-testid="button-view-cv-fullscreen"
+                                onClick={() => window.open(pdfUrl, '_blank')}
+                                data-testid="button-open-cv-new-tab"
                               >
                                 <Eye className="h-4 w-4 mr-2" />
-                                הצג במסך מלא
+                                פתח בטאב חדש
                               </Button>
                             </div>
                           </div>
                           <div 
-                            className="bg-gray-100 dark:bg-gray-900 w-full overflow-auto"
+                            className="bg-gray-100 dark:bg-gray-900 w-full"
                             style={{ height: 'calc(100vh - 250px)', minHeight: '700px' }}
                           >
-                            <div className="flex justify-center p-4">
-                              <Document
-                                file={pdfUrl}
-                                onLoadSuccess={({ numPages }) => {
-                                  setNumPages(numPages);
-                                  console.log('✅ PDF loaded with', numPages, 'pages');
-                                }}
-                                onLoadError={(error) => {
-                                  console.error('❌ Error loading PDF:', error);
-                                }}
-                                loading={
-                                  <div className="flex items-center justify-center" style={{ minHeight: '700px' }}>
-                                    <div className="text-center">
-                                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-                                      <div className="text-gray-600 dark:text-gray-400">טוען PDF...</div>
-                                    </div>
-                                  </div>
-                                }
-                              >
-                                {Array.from(new Array(numPages || 0), (el, index) => (
-                                  <Page
-                                    key={`page_${index + 1}`}
-                                    pageNumber={index + 1}
-                                    renderTextLayer={true}
-                                    renderAnnotationLayer={true}
-                                    className="mb-4"
-                                    width={800}
-                                  />
-                                ))}
-                              </Document>
-                            </div>
+                            <embed
+                              src={pdfUrl}
+                              type="application/pdf"
+                              className="w-full h-full"
+                              style={{ minHeight: '700px' }}
+                            />
                           </div>
                         </div>
                       );
