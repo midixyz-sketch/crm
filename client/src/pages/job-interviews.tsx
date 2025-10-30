@@ -926,7 +926,7 @@ export default function JobInterviews() {
               </CardHeader>
               <CardContent className="space-y-4">
                 {/* Quick Status Buttons */}
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                <div className="flex justify-end gap-2">
                   <Button
                     onClick={handleApprove}
                     disabled={updateApplicationMutation.isPending}
