@@ -802,7 +802,7 @@ export default function JobInterviews() {
                     onClick={handleApprove}
                     disabled={updateApplicationMutation.isPending}
                     className="bg-green-600 hover:bg-green-700 text-white font-semibold py-5 px-4 shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-1"
-                    style={{ fontSize: '0.66rem' }}
+                    style={{ fontSize: '0.68rem' }}
                     data-testid="button-approve"
                   >
                     <CheckCircle className="h-3 w-3 flex-shrink-0" />
@@ -812,7 +812,7 @@ export default function JobInterviews() {
                     onClick={handleReject}
                     disabled={updateApplicationMutation.isPending}
                     className="bg-red-600 hover:bg-red-700 text-white font-semibold py-5 px-4 shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-1"
-                    style={{ fontSize: '0.66rem' }}
+                    style={{ fontSize: '0.68rem' }}
                     data-testid="button-reject"
                   >
                     <XCircle className="h-3 w-3 flex-shrink-0" />
@@ -823,7 +823,7 @@ export default function JobInterviews() {
                       <Button
                         disabled={updateApplicationMutation.isPending}
                         className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-5 px-4 shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-1"
-                        style={{ fontSize: '0.66rem' }}
+                        style={{ fontSize: '0.68rem' }}
                         data-testid="button-more-review"
                       >
                         <Calendar className="h-3 w-3 flex-shrink-0" />
