@@ -186,7 +186,28 @@ export default function JobInterviews() {
         setDocxLoading(true);
         const response = await fetch(`/api/candidates/${currentApplication.candidate.id}/cv`);
         const arrayBuffer = await response.arrayBuffer();
-        const result = await mammoth.convertToHtml({ arrayBuffer });
+        
+        // Configure mammoth to properly extract images and content
+        const options = {
+          convertImage: mammoth.images.imgElement((image: any) => {
+            return image.read("base64").then((imageBuffer: string) => {
+              return {
+                src: `data:${image.contentType};base64,${imageBuffer}`
+              };
+            });
+          }),
+          styleMap: [
+            "p[style-name='Heading 1'] => h1:fresh",
+            "p[style-name='Heading 2'] => h2:fresh",
+            "p[style-name='Heading 3'] => h3:fresh",
+          ],
+          includeDefaultStyleMap: true,
+          ignoreEmptyParagraphs: false
+        };
+        
+        const result = await mammoth.convertToHtml({ arrayBuffer }, options);
+        console.log('Mammoth conversion result:', result.value.substring(0, 500));
+        console.log('Mammoth messages:', result.messages);
         setDocxHtml(result.value);
       } catch (error) {
         console.error('Error loading DOCX:', error);
