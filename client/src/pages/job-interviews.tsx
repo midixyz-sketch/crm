@@ -1065,7 +1065,7 @@ export default function JobInterviews() {
                       );
                     }
                     
-                    // For PDF and Images - use embed tag
+                    // For PDF - use object tag (most reliable)
                     if (isPdf) {
                       return (
                         <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden bg-white dark:bg-gray-800">
@@ -1077,24 +1077,33 @@ export default function JobInterviews() {
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => window.open(`/api/candidates/${currentApplication.candidate.id}/cv`, '_blank')}
-                                data-testid="button-open-cv-new-tab"
+                                onClick={() => setFileViewerOpen(true)}
+                                data-testid="button-view-cv-fullscreen"
                               >
                                 <Eye className="h-4 w-4 mr-2" />
-                                פתח בטאב חדש
+                                הצג במסך מלא
                               </Button>
                             </div>
                           </div>
                           <div 
-                            className="overflow-auto bg-gray-100 dark:bg-gray-900"
+                            className="bg-gray-100 dark:bg-gray-900"
                             style={{ height: 'calc(100vh - 250px)', minHeight: '700px' }}
                           >
-                            <embed
-                              src={`/api/candidates/${currentApplication.candidate.id}/cv#toolbar=1&navpanes=1&scrollbar=1`}
+                            <object
+                              data={`/api/candidates/${currentApplication.candidate.id}/cv`}
                               type="application/pdf"
-                              className="w-full h-full"
+                              width="100%"
+                              height="100%"
                               style={{ minHeight: '700px' }}
-                            />
+                            >
+                              <div className="flex flex-col items-center justify-center h-full gap-4 p-8">
+                                <FileText className="h-16 w-16 text-gray-400" />
+                                <div className="text-gray-500 dark:text-gray-400 text-center">
+                                  <div className="text-lg font-semibold mb-2">הדפדפן לא תומך בתצוגת PDF</div>
+                                  <div className="text-sm mb-4">לחץ על "הצג במסך מלא" לצפייה</div>
+                                </div>
+                              </div>
+                            </object>
                           </div>
                         </div>
                       );
