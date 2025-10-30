@@ -840,7 +840,7 @@ export default function JobInterviews() {
               </CardHeader>
               <CardContent className="space-y-4">
                 {/* Quick Status Buttons */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                   <Button
                     onClick={handleApprove}
                     disabled={updateApplicationMutation.isPending}
@@ -914,16 +914,6 @@ export default function JobInterviews() {
                       </div>
                     </DialogContent>
                   </Dialog>
-                  <Button
-                    onClick={handleReject}
-                    disabled={updateApplicationMutation.isPending}
-                    className="bg-gray-700 hover:bg-gray-800 dark:bg-gray-600 dark:hover:bg-gray-700 text-white font-semibold shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-1"
-                    style={{ fontSize: '0.68rem', width: '110px', height: '110px' }}
-                    data-testid="button-disqualify"
-                  >
-                    <XCircle className="h-3 w-3 flex-shrink-0" />
-                    <span>דחה</span>
-                  </Button>
                 </div>
 
                 {/* Internal Notes */}

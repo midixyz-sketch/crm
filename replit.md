@@ -25,7 +25,7 @@ Preferred communication style: Simple, everyday language.
 -   **Calendar & Reminders**: Full-featured system for managing reminders and interviews with candidate linking, user tracking, priority levels, and alerts.
 -   **Candidate Event History**: Comprehensive audit trail of all candidate interactions with user tracking.
 -   **In-Browser File Preview**: Integrated `FileViewer` component for PDF (PDF.js), Word documents (Mammoth.js HTML conversion), and images, displayed in a modal without automatic downloads. **Job Interviews Page**: DOCX files are automatically converted to HTML using Mammoth.js and displayed inline (no download, no iframe). PDF and images shown via iframe for immediate preview.
--   **Job Interviews Page UI**: Optimized for RTL Hebrew, features a 4-button layout for candidate evaluation, and integrated calendar scheduling for interviews with reminder creation and clickable links.
+-   **Job Interviews Page UI**: Optimized for RTL Hebrew, features a 3-button layout for candidate evaluation (מתאים, לא מתאים, נדרש ראיון נוסף), and integrated calendar scheduling for interviews with reminder creation and clickable links.
 -   **External Recruiters Module**: Role-based system (`external_recruiter`) with restricted permissions and job assignment functionality. Supports optional approval workflow for candidates and automatic emailing to employers. All actions are logged, and access is strictly controlled.
 -   **Reports & Analytics Module**: Permission-protected module with three sections: Candidates by Time/Source (line chart), Recruiter Activity Tracking (table), and Individual Recruiter Performance (bar charts).
 
