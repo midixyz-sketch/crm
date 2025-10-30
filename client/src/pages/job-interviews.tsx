@@ -338,20 +338,15 @@ export default function JobInterviews() {
         });
       }
 
-      // Move to next candidate automatically
-      setTimeout(() => {
-        if (currentIndex < applications.length - 1) {
-          setCurrentIndex(currentIndex + 1);
-          setReviewerFeedback("");
-          setWarningAlert(false);
-          setWarningMessage("");
-        } else {
-          toast({
-            title: "סיימת לבדוק את כל המועמדים! 🎉",
-            description: "כל המועמדויות למשרה זו נבדקו",
-          });
-        }
-      }, 1500);
+      // Refresh data and move to next candidate automatically
+      setTimeout(async () => {
+        await queryClient.invalidateQueries({ queryKey: ["/api/job-applications"] });
+        
+        // Stay at current index, the component will re-render with updated data
+        setReviewerFeedback("");
+        setWarningAlert(false);
+        setWarningMessage("");
+      }, 800);
     } catch (error) {
       console.error('Error approving candidate:', error);
       toast({
@@ -388,20 +383,15 @@ export default function JobInterviews() {
         description: "המועמד סומן כנפסל והערותיך נשמרו",
       });
 
-      // Move to next candidate automatically
-      setTimeout(() => {
-        if (currentIndex < applications.length - 1) {
-          setCurrentIndex(currentIndex + 1);
-          setReviewerFeedback("");
-          setWarningAlert(false);
-          setWarningMessage("");
-        } else {
-          toast({
-            title: "סיימת לבדוק את כל המועמדים! 🎉",
-            description: "כל המועמדויות למשרה זו נבדקו",
-          });
-        }
-      }, 1500);
+      // Refresh data and move to next candidate automatically
+      setTimeout(async () => {
+        await queryClient.invalidateQueries({ queryKey: ["/api/job-applications"] });
+        
+        // Stay at current index, the component will re-render with updated data
+        setReviewerFeedback("");
+        setWarningAlert(false);
+        setWarningMessage("");
+      }, 800);
     } catch (error) {
       console.error('Error rejecting candidate:', error);
       toast({
@@ -462,20 +452,15 @@ export default function JobInterviews() {
         description: "המועמד הועבר לסוף הרשימה והסטטוס עודכן",
       });
 
-      // Move to next candidate automatically
-      setTimeout(() => {
-        if (currentIndex < applications.length - 1) {
-          setCurrentIndex(currentIndex + 1);
-          setReviewerFeedback("");
-          setWarningAlert(false);
-          setWarningMessage("");
-        } else {
-          toast({
-            title: "סיימת לבדוק את כל המועמדים! 🎉",
-            description: "כל המועמדויות למשרה זו נבדקו",
-          });
-        }
-      }, 1500);
+      // Refresh data and move to next candidate automatically
+      setTimeout(async () => {
+        await queryClient.invalidateQueries({ queryKey: ["/api/job-applications"] });
+        
+        // Stay at current index, the component will re-render with updated data
+        setReviewerFeedback("");
+        setWarningAlert(false);
+        setWarningMessage("");
+      }, 800);
     } catch (error) {
       console.error('Error sending WhatsApp:', error);
       toast({
@@ -534,20 +519,15 @@ export default function JobInterviews() {
         description: `ראיון נקבע ל-${interviewDateTime.toLocaleDateString('he-IL')} בשעה ${interviewTime}`,
       });
 
-      // Move to next candidate automatically
-      setTimeout(() => {
-        if (currentIndex < applications.length - 1) {
-          setCurrentIndex(currentIndex + 1);
-          setReviewerFeedback("");
-          setWarningAlert(false);
-          setWarningMessage("");
-        } else {
-          toast({
-            title: "סיימת לבדוק את כל המועמדים! 🎉",
-            description: "כל המועמדויות למשרה זו נבדקו",
-          });
-        }
-      }, 1500);
+      // Refresh data and move to next candidate automatically
+      setTimeout(async () => {
+        await queryClient.invalidateQueries({ queryKey: ["/api/job-applications"] });
+        
+        // Stay at current index, the component will re-render with updated data
+        setReviewerFeedback("");
+        setWarningAlert(false);
+        setWarningMessage("");
+      }, 800);
     } catch (error) {
       console.error('Error scheduling interview:', error);
       toast({
@@ -584,7 +564,7 @@ export default function JobInterviews() {
             משרה לא נמצאה
           </h2>
           <Link href="/interviews">
-            <Button>חזור לרשימת משרות</Button>
+            <Button>חזור לדף ראיונות</Button>
           </Link>
         </div>
       </div>
@@ -614,7 +594,7 @@ export default function JobInterviews() {
             כל המועמדויות למשרה זו כבר נבדקו ואושרו/נפסלו. אין מועמדים נוספים לבדיקה.
           </p>
           <Link href="/interviews">
-            <Button>חזור לרשימת משרות</Button>
+            <Button>חזור לדף ראיונות</Button>
           </Link>
         </div>
       </div>
@@ -629,7 +609,7 @@ export default function JobInterviews() {
             מועמד לא נמצא
           </h2>
           <Link href="/interviews">
-            <Button>חזור לרשימת משרות</Button>
+            <Button>חזור לדף ראיונות</Button>
           </Link>
         </div>
       </div>
