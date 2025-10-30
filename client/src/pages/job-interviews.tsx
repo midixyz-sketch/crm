@@ -46,6 +46,12 @@ import {
 import type { JobApplicationWithDetails, JobApplication, JobWithClient } from "@shared/schema";
 import { FileViewer } from "@/components/file-viewer";
 import * as mammoth from 'mammoth';
+import { Document, Page, pdfjs } from 'react-pdf';
+import 'react-pdf/dist/Page/AnnotationLayer.css';
+import 'react-pdf/dist/Page/TextLayer.css';
+
+// Configure PDF.js worker
+pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 
 export default function JobInterviews() {
   const { toast } = useToast();
@@ -65,6 +71,9 @@ export default function JobInterviews() {
   const [fileViewerOpen, setFileViewerOpen] = useState(false);
   const [docxHtml, setDocxHtml] = useState<string>("");
   const [docxLoading, setDocxLoading] = useState(false);
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const [numPages, setNumPages] = useState<number>(0);
+  const [pdfLoading, setPdfLoading] = useState(false);
 
   const whatsappMessages = [
     "שלום, זה מחברת גיוס H-Group. ניסיתי להתקשר אליך לגבי משרה שתואמת לך. אנא צור איתי קשר בחזרה",
@@ -233,6 +242,46 @@ export default function JobInterviews() {
     };
 
     loadDocx();
+  }, [currentApplication?.candidate?.id, currentApplication?.candidate?.cvPath]);
+
+  // Load PDF files automatically
+  useEffect(() => {
+    const loadPdf = async () => {
+      if (!currentApplication?.candidate?.cvPath) {
+        setPdfUrl(null);
+        return;
+      }
+
+      const cvPath = currentApplication.candidate.cvPath;
+      const isPdf = cvPath.toLowerCase().endsWith('.pdf');
+      
+      if (!isPdf) {
+        setPdfUrl(null);
+        return;
+      }
+
+      try {
+        setPdfLoading(true);
+        const response = await fetch(`/api/candidates/${currentApplication.candidate.id}/cv`);
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        setPdfUrl(url);
+      } catch (error) {
+        console.error('Error loading PDF:', error);
+        setPdfUrl(null);
+      } finally {
+        setPdfLoading(false);
+      }
+    };
+
+    loadPdf();
+
+    // Cleanup on unmount or when candidate changes
+    return () => {
+      if (pdfUrl) {
+        URL.revokeObjectURL(pdfUrl);
+      }
+    };
   }, [currentApplication?.candidate?.id, currentApplication?.candidate?.cvPath]);
 
   // Mutations for application actions
@@ -1064,32 +1113,82 @@ export default function JobInterviews() {
                       );
                     }
                     
-                    // For PDF and images, show iframe preview
+                    // For PDF - use react-pdf
+                    if (isPdf) {
+                      return (
+                        <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden bg-white dark:bg-gray-800">
+                          <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border-b flex items-center justify-between">
+                            <p className="text-sm text-blue-700 dark:text-blue-300">
+                              קובץ PDF - {currentApplication.candidate.firstName} {currentApplication.candidate.lastName}
+                            </p>
+                            <div className="flex gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setFileViewerOpen(true)}
+                                data-testid="button-view-cv-fullscreen"
+                              >
+                                <Eye className="h-4 w-4 mr-2" />
+                                הצג במסך מלא
+                              </Button>
+                            </div>
+                          </div>
+                          <div 
+                            className="overflow-auto bg-gray-100 dark:bg-gray-900"
+                            style={{ height: 'calc(100vh - 250px)', minHeight: '700px' }}
+                          >
+                            {pdfLoading ? (
+                              <div className="flex items-center justify-center h-full">
+                                <div className="text-center">
+                                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+                                  <div className="text-gray-600 dark:text-gray-400">טוען PDF...</div>
+                                </div>
+                              </div>
+                            ) : pdfUrl ? (
+                              <Document
+                                file={pdfUrl}
+                                onLoadSuccess={({ numPages }) => setNumPages(numPages)}
+                                onLoadError={(error) => console.error('PDF load error:', error)}
+                                className="flex flex-col items-center gap-4 p-4"
+                              >
+                                {Array.from(new Array(numPages), (el, index) => (
+                                  <Page
+                                    key={`page_${index + 1}`}
+                                    pageNumber={index + 1}
+                                    width={Math.min(window.innerWidth * 0.6, 800)}
+                                    className="shadow-lg"
+                                  />
+                                ))}
+                              </Document>
+                            ) : (
+                              <div className="flex flex-col items-center justify-center h-full gap-4 p-8">
+                                <FileText className="h-16 w-16 text-gray-400" />
+                                <div className="text-gray-500 dark:text-gray-400 text-center">
+                                  <div className="text-lg font-semibold mb-2">לא ניתן להציג את הקובץ</div>
+                                  <div className="text-sm">לחץ על "הצג במסך מלא" לצפייה</div>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    }
+                    
+                    // For images - use iframe
                     return (
                       <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden bg-white dark:bg-gray-800">
                         <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border-b flex items-center justify-between">
                           <p className="text-sm text-blue-700 dark:text-blue-300">
-                            קורות חיים - {currentApplication.candidate.firstName} {currentApplication.candidate.lastName}
+                            תמונה - {currentApplication.candidate.firstName} {currentApplication.candidate.lastName}
                           </p>
-                          <div className="flex gap-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => setFileViewerOpen(true)}
-                              data-testid="button-view-cv-inline"
-                            >
-                              <Eye className="h-4 w-4 mr-2" />
-                              הצג במסך מלא
-                            </Button>
-                          </div>
                         </div>
-                        <iframe
-                          src={`/api/candidates/${currentApplication.candidate.id}/cv`}
-                          className="w-full border-0 bg-white dark:bg-gray-800"
-                          title={`קורות חיים - ${currentApplication.candidate.firstName} ${currentApplication.candidate.lastName}`}
-                          style={{ height: 'calc(100vh - 250px)', minHeight: '700px' }}
-                          allow="fullscreen"
-                        />
+                        <div className="p-4 flex justify-center" style={{ minHeight: '700px' }}>
+                          <img
+                            src={`/api/candidates/${currentApplication.candidate.id}/cv`}
+                            alt={`קורות חיים - ${currentApplication.candidate.firstName} ${currentApplication.candidate.lastName}`}
+                            className="max-w-full h-auto"
+                          />
+                        </div>
                       </div>
                     );
                   })()
