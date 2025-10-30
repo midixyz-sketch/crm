@@ -35,7 +35,13 @@ Preferred communication style: Simple, everyday language.
     -   Job form includes automatic validation: invalid contact person IDs are cleaned when client changes or contact list updates
     -   UI displays checkboxes for multi-select with visual feedback (name, title, email, mobile)
     -   Client form invalidates `/api/clients` query which triggers job form refresh via React Query
--   Job management includes `isUrgent` flag and `autoSendToClient` for automated candidate emails.
+-   **Automatic Candidate Sending** (October 2025):
+    -   `autoSendToClient` flag per job - when enabled, candidates are automatically emailed to selected contact persons
+    -   Triggers on: (1) job application creation, (2) enabling flag on existing job with applications, (3) landing page applications
+    -   All candidates in job's interviews page get sent when flag is enabled (server/storage.ts lines 1338-1418)
+    -   Sends CV attachment, candidate details, and custom notes to all selected contact persons
+    -   Automatically updates candidate status to `sent_to_employer` with event logging
+-   Job management includes `isUrgent` flag for priority display.
 
 ## Key Features & Implementations
 -   **Advanced CV Data Extraction**: Supports multiple formats (PDF, DOCX, images) with OCR for Hebrew/English/Arabic, and intelligent extraction of names, phone numbers, and emails.
