@@ -523,12 +523,12 @@ export function startCpanelEmailMonitoring() {
   // Check emails immediately
   checkCpanelEmails();
 
-  // Then check every 60 seconds
+  // Then check every 10 minutes (600 seconds) to reduce load
   setInterval(() => {
     checkCpanelEmails().catch((err) => {
       console.error("❌ שגיאה במעקב מיילים cPanel:", err);
     });
-  }, 60000);
+  }, 600000); // Changed from 60000 (1 min) to 600000 (10 min)
 }
 
 // Test all cPanel email functionality - simplified to avoid Replit connection limits
