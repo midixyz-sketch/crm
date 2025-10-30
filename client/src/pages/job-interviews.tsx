@@ -46,6 +46,12 @@ import {
 import type { JobApplicationWithDetails, JobApplication, JobWithClient } from "@shared/schema";
 import { FileViewer } from "@/components/file-viewer";
 import * as mammoth from 'mammoth';
+import { Document, Page, pdfjs } from 'react-pdf';
+import 'react-pdf/dist/Page/AnnotationLayer.css';
+import 'react-pdf/dist/Page/TextLayer.css';
+
+// Configure PDF.js worker
+pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 
 export default function JobInterviews() {
   const { toast } = useToast();
@@ -66,6 +72,7 @@ export default function JobInterviews() {
   const [docxHtml, setDocxHtml] = useState<string>("");
   const [docxLoading, setDocxLoading] = useState(false);
   const [pdfDataUrl, setPdfDataUrl] = useState<string>("");
+  const [numPages, setNumPages] = useState<number | null>(null);
 
   const whatsappMessages = [
     "שלום, זה מחברת גיוס H-Group. ניסיתי להתקשר אליך לגבי משרה שתואמת לך. אנא צור איתי קשר בחזרה",
@@ -1100,13 +1107,15 @@ export default function JobInterviews() {
                       );
                     }
                     
-                    // For PDF - use base64 data URL in iframe
+                    // For PDF - use PDF.js (react-pdf)
                     if (isPdf) {
+                      const pdfUrl = `/api/candidates/${currentApplication.candidate.id}/cv`;
                       return (
                         <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden bg-white dark:bg-gray-800">
                           <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border-b flex items-center justify-between">
                             <p className="text-sm text-blue-700 dark:text-blue-300">
                               קובץ PDF - {currentApplication.candidate.firstName} {currentApplication.candidate.lastName}
+                              {numPages && ` (${numPages} עמודים)`}
                             </p>
                             <div className="flex gap-2">
                               <Button
@@ -1121,25 +1130,40 @@ export default function JobInterviews() {
                             </div>
                           </div>
                           <div 
-                            className="bg-gray-100 dark:bg-gray-900 w-full"
+                            className="bg-gray-100 dark:bg-gray-900 w-full overflow-auto"
                             style={{ height: 'calc(100vh - 250px)', minHeight: '700px' }}
                           >
-                            {pdfDataUrl ? (
-                              <iframe
-                                key={currentApplication.candidate.id}
-                                src={pdfDataUrl}
-                                className="w-full h-full border-0"
-                                title="PDF Viewer"
-                                style={{ minHeight: '700px' }}
-                              />
-                            ) : (
-                              <div className="flex items-center justify-center h-full">
-                                <div className="text-center">
-                                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-                                  <div className="text-gray-600 dark:text-gray-400">טוען PDF...</div>
-                                </div>
-                              </div>
-                            )}
+                            <div className="flex justify-center p-4">
+                              <Document
+                                file={pdfUrl}
+                                onLoadSuccess={({ numPages }) => {
+                                  setNumPages(numPages);
+                                  console.log('✅ PDF loaded with', numPages, 'pages');
+                                }}
+                                onLoadError={(error) => {
+                                  console.error('❌ Error loading PDF:', error);
+                                }}
+                                loading={
+                                  <div className="flex items-center justify-center" style={{ minHeight: '700px' }}>
+                                    <div className="text-center">
+                                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+                                      <div className="text-gray-600 dark:text-gray-400">טוען PDF...</div>
+                                    </div>
+                                  </div>
+                                }
+                              >
+                                {Array.from(new Array(numPages || 0), (el, index) => (
+                                  <Page
+                                    key={`page_${index + 1}`}
+                                    pageNumber={index + 1}
+                                    renderTextLayer={true}
+                                    renderAnnotationLayer={true}
+                                    className="mb-4"
+                                    width={800}
+                                  />
+                                ))}
+                              </Document>
+                            </div>
                           </div>
                         </div>
                       );
