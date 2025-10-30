@@ -656,10 +656,21 @@ export default function JobInterviews() {
               <div className="flex items-center gap-3">
                 <User className="h-10 w-10 p-2 bg-blue-100 dark:bg-blue-900 text-blue-600 rounded-full" />
                 <div>
-                  <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                    {currentApplication.candidate.firstName} {currentApplication.candidate.lastName}
-                  </h1>
+                  <Link 
+                    href={`/candidates/${currentApplication.candidate.id}`}
+                    className="hover:underline"
+                  >
+                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white hover:text-blue-600 transition-colors cursor-pointer">
+                      {currentApplication.candidate.firstName} {currentApplication.candidate.lastName}
+                    </h1>
+                  </Link>
                   <div className="flex items-center gap-4 mt-1">
+                    {currentApplication.candidate.city && (
+                      <div className="flex items-center gap-1 text-sm text-gray-600 dark:text-gray-400">
+                        <MapPin className="h-4 w-4" />
+                        {currentApplication.candidate.city}
+                      </div>
+                    )}
                     {currentApplication.candidate.phone && (
                       <a
                         href={`tel:${currentApplication.candidate.phone}`}
