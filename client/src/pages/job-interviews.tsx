@@ -45,6 +45,7 @@ import {
 } from "lucide-react";
 import type { JobApplicationWithDetails, JobApplication, JobWithClient } from "@shared/schema";
 import { FileViewer } from "@/components/file-viewer";
+import * as mammoth from 'mammoth';
 
 export default function JobInterviews() {
   const { toast } = useToast();
@@ -62,6 +63,8 @@ export default function JobInterviews() {
   const [warningAlert, setWarningAlert] = useState(false);
   const [warningMessage, setWarningMessage] = useState("");
   const [fileViewerOpen, setFileViewerOpen] = useState(false);
+  const [docxHtml, setDocxHtml] = useState<string>("");
+  const [docxLoading, setDocxLoading] = useState(false);
 
   const whatsappMessages = [
     "שלום, זה מחברת גיוס H-Group. ניסיתי להתקשר אליך לגבי משרה שתואמת לך. אנא צור איתי קשר בחזרה",
@@ -162,6 +165,39 @@ export default function JobInterviews() {
       checkPreviousEvents(currentApplication.candidateId, jobId);
     }
   }, [currentApplication?.candidateId, jobId]);
+
+  // Load DOCX files automatically
+  useEffect(() => {
+    const loadDocx = async () => {
+      if (!currentApplication?.candidate?.cvPath) {
+        setDocxHtml("");
+        return;
+      }
+
+      const cvPath = currentApplication.candidate.cvPath;
+      const isDocx = cvPath.toLowerCase().endsWith('.docx') || cvPath.toLowerCase().endsWith('.doc');
+      
+      if (!isDocx) {
+        setDocxHtml("");
+        return;
+      }
+
+      try {
+        setDocxLoading(true);
+        const response = await fetch(`/api/candidates/${currentApplication.candidate.id}/cv`);
+        const arrayBuffer = await response.arrayBuffer();
+        const result = await mammoth.convertToHtml({ arrayBuffer });
+        setDocxHtml(result.value);
+      } catch (error) {
+        console.error('Error loading DOCX:', error);
+        setDocxHtml("");
+      } finally {
+        setDocxLoading(false);
+      }
+    };
+
+    loadDocx();
+  }, [currentApplication?.candidate?.id, currentApplication?.candidate?.cvPath]);
 
   // Mutations for application actions
   const updateApplicationMutation = useMutation({
@@ -937,29 +973,67 @@ export default function JobInterviews() {
                     const isPdf = cvPath.toLowerCase().endsWith('.pdf');
                     const isImage = /\.(jpg|jpeg|png|gif|webp|bmp)$/i.test(cvPath);
                     
-                    // For DOCX files, show only the button (no iframe to prevent auto-download)
+                    // For DOCX files, show converted HTML automatically
                     if (isDocx) {
                       return (
-                        <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden bg-gradient-to-b from-blue-50 to-white dark:from-blue-900/20 dark:to-gray-800 p-8">
-                          <div className="text-center space-y-4">
-                            <FileText className="h-16 w-16 mx-auto text-blue-600 dark:text-blue-400" />
-                            <div>
-                              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
-                                קובץ Word - {currentApplication.candidate.firstName} {currentApplication.candidate.lastName}
-                              </h3>
-                              <p className="text-sm text-gray-600 dark:text-gray-300">
-                                לחץ על הכפתור למטה לצפייה במסמך
-                              </p>
+                        <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden bg-white dark:bg-gray-800">
+                          <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border-b flex items-center justify-between">
+                            <p className="text-sm text-blue-700 dark:text-blue-300">
+                              קובץ Word - {currentApplication.candidate.firstName} {currentApplication.candidate.lastName}
+                            </p>
+                            <div className="flex gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setFileViewerOpen(true)}
+                                data-testid="button-view-cv-fullscreen"
+                              >
+                                <Eye className="h-4 w-4 mr-2" />
+                                הצג במסך מלא
+                              </Button>
                             </div>
-                            <Button
-                              size="lg"
-                              onClick={() => setFileViewerOpen(true)}
-                              className="mt-4"
-                              data-testid="button-view-docx"
-                            >
-                              <Eye className="h-5 w-5 mr-2" />
-                              הצג קורות חיים
-                            </Button>
+                          </div>
+                          <div 
+                            className="overflow-auto bg-white dark:bg-gray-800"
+                            style={{ height: 'calc(100vh - 250px)', minHeight: '700px' }}
+                          >
+                            {docxLoading ? (
+                              <div className="flex items-center justify-center h-full">
+                                <div className="text-center">
+                                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+                                  <div className="text-gray-600 dark:text-gray-400">טוען קובץ Word...</div>
+                                </div>
+                              </div>
+                            ) : docxHtml ? (
+                              <div className="p-8">
+                                <div 
+                                  className="prose prose-lg dark:prose-invert max-w-none"
+                                  dangerouslySetInnerHTML={{ __html: docxHtml }}
+                                  dir="rtl"
+                                  style={{
+                                    fontFamily: 'Arial, sans-serif',
+                                    lineHeight: '1.8',
+                                    textAlign: 'right'
+                                  }}
+                                />
+                              </div>
+                            ) : (
+                              <div className="flex flex-col items-center justify-center h-full gap-4 p-8">
+                                <FileText className="h-16 w-16 text-gray-400" />
+                                <div className="text-gray-500 dark:text-gray-400 text-center">
+                                  <div className="text-lg font-semibold mb-2">לא ניתן להציג את הקובץ</div>
+                                  <div className="text-sm">לחץ על "הצג במסך מלא" לצפייה</div>
+                                </div>
+                                <Button
+                                  onClick={() => setFileViewerOpen(true)}
+                                  variant="default"
+                                  data-testid="button-view-docx"
+                                >
+                                  <Eye className="h-5 w-5 mr-2" />
+                                  הצג במסך מלא
+                                </Button>
+                              </div>
+                            )}
                           </div>
                         </div>
                       );
