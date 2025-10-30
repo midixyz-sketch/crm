@@ -1063,9 +1063,12 @@ export default function JobInterviews() {
                       );
                     }
                     
-                    // For PDF - use iframe with unique key
+                    // For PDF - use Google Docs Viewer with public token
                     if (isPdf) {
-                      const pdfUrl = `/api/candidates/${currentApplication.candidate.id}/cv?t=${Date.now()}`;
+                      // Generate temporary public token
+                      const token = btoa(`${currentApplication.candidate.id}:${Date.now()}`);
+                      const fullUrl = `${window.location.origin}/api/public/cv/${token}`;
+                      const googleViewerUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(fullUrl)}&embedded=true`;
                       return (
                         <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden bg-white dark:bg-gray-800">
                           <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border-b flex items-center justify-between">
@@ -1076,11 +1079,11 @@ export default function JobInterviews() {
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => setFileViewerOpen(true)}
-                                data-testid="button-view-cv-fullscreen"
+                                onClick={() => window.open(fullUrl, '_blank')}
+                                data-testid="button-view-cv-new-tab"
                               >
                                 <Eye className="h-4 w-4 mr-2" />
-                                הצג במסך מלא
+                                פתח בטאב חדש
                               </Button>
                             </div>
                           </div>
@@ -1090,7 +1093,7 @@ export default function JobInterviews() {
                           >
                             <iframe
                               key={currentApplication.candidate.id}
-                              src={pdfUrl}
+                              src={googleViewerUrl}
                               className="w-full h-full border-0"
                               title="PDF Viewer"
                               style={{ minHeight: '700px' }}

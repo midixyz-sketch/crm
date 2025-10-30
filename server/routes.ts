@@ -1918,6 +1918,86 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Public CV file serving endpoint with token
+  app.get('/api/public/cv/:token', async (req, res) => {
+    try {
+      // Decode token (format: candidateId:timestamp)
+      const decoded = Buffer.from(req.params.token, 'base64').toString();
+      const [candidateId, timestamp] = decoded.split(':');
+      
+      // Check if token is still valid (1 hour)
+      const now = Date.now();
+      const tokenTime = parseInt(timestamp);
+      if (now - tokenTime > 60 * 60 * 1000) {
+        return res.status(401).json({ message: "Token expired" });
+      }
+      
+      const candidate = await storage.getCandidate(candidateId);
+      
+      if (!candidate) {
+        return res.status(404).json({ message: "Candidate not found" });
+      }
+      
+      if (!candidate.cvPath) {
+        return res.status(404).json({ message: "CV file not found" });
+      }
+      
+      // Handle both full paths and filename-only paths
+      let filePath = candidate.cvPath;
+      if (!filePath.startsWith('uploads/')) {
+        filePath = `uploads/${filePath}`;
+      }
+      
+      if (!fs.existsSync(filePath)) {
+        return res.status(404).json({ message: "CV file not found on disk" });
+      }
+      
+      const buffer = fs.readFileSync(filePath);
+      let mimeType = 'application/octet-stream';
+      
+      // Get file extension for image detection
+      const ext = path.extname(filePath).toLowerCase();
+      
+      // Check for image types first (by extension)
+      if (ext === '.jpg' || ext === '.jpeg') {
+        mimeType = 'image/jpeg';
+      } else if (ext === '.png') {
+        mimeType = 'image/png';
+      } else if (ext === '.gif') {
+        mimeType = 'image/gif';
+      } else if (ext === '.bmp') {
+        mimeType = 'image/bmp';
+      } else if (ext === '.tiff' || ext === '.tif') {
+        mimeType = 'image/tiff';
+      } else if (ext === '.webp') {
+        mimeType = 'image/webp';
+      }
+      // Check for PDF signature
+      else if (buffer.length >= 4 && buffer.toString('ascii', 0, 4) === '%PDF') {
+        mimeType = 'application/pdf';
+      }
+      // Check for ZIP/Office document signatures (DOCX, etc.)
+      else if (buffer.length >= 2 && buffer.toString('ascii', 0, 2) === 'PK') {
+        mimeType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+      }
+      // Check for old DOC signature
+      else if (buffer.length >= 8 && buffer.readUInt32LE(0) === 0xE011CFD0) {
+        mimeType = 'application/msword';
+      }
+      
+      // Force fresh response - no caching to avoid 304 issues
+      res.setHeader('Cache-Control', 'public, max-age=3600');
+      res.setHeader('Content-Type', mimeType);
+      res.setHeader('Content-Disposition', 'inline');
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.status(200).send(buffer);
+      
+    } catch (error) {
+      console.error('Error serving public CV file:', error);
+      res.status(500).json({ message: "Error serving CV file" });
+    }
+  });
+
   // CV file serving endpoint
   app.get('/api/candidates/:id/cv', isAuthenticated, async (req, res) => {
     try {
