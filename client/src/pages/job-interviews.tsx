@@ -1065,7 +1065,7 @@ export default function JobInterviews() {
                       );
                     }
                     
-                    // For PDF - use iframe with direct API endpoint
+                    // For PDF and Images - use embed tag
                     if (isPdf) {
                       return (
                         <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden bg-white dark:bg-gray-800">
@@ -1077,11 +1077,11 @@ export default function JobInterviews() {
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => setFileViewerOpen(true)}
-                                data-testid="button-view-cv-fullscreen"
+                                onClick={() => window.open(`/api/candidates/${currentApplication.candidate.id}/cv`, '_blank')}
+                                data-testid="button-open-cv-new-tab"
                               >
                                 <Eye className="h-4 w-4 mr-2" />
-                                הצג במסך מלא
+                                פתח בטאב חדש
                               </Button>
                             </div>
                           </div>
@@ -1089,10 +1089,10 @@ export default function JobInterviews() {
                             className="overflow-auto bg-gray-100 dark:bg-gray-900"
                             style={{ height: 'calc(100vh - 250px)', minHeight: '700px' }}
                           >
-                            <iframe
-                              src={`/api/candidates/${currentApplication.candidate.id}/cv`}
-                              className="w-full h-full border-0"
-                              title={`קורות חיים - ${currentApplication.candidate.firstName} ${currentApplication.candidate.lastName}`}
+                            <embed
+                              src={`/api/candidates/${currentApplication.candidate.id}/cv#toolbar=1&navpanes=1&scrollbar=1`}
+                              type="application/pdf"
+                              className="w-full h-full"
                               style={{ minHeight: '700px' }}
                             />
                           </div>
@@ -1100,19 +1100,31 @@ export default function JobInterviews() {
                       );
                     }
                     
-                    // For images - use iframe
+                    // For images - use img tag directly
                     return (
                       <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden bg-white dark:bg-gray-800">
                         <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border-b flex items-center justify-between">
                           <p className="text-sm text-blue-700 dark:text-blue-300">
                             תמונה - {currentApplication.candidate.firstName} {currentApplication.candidate.lastName}
                           </p>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => window.open(`/api/candidates/${currentApplication.candidate.id}/cv`, '_blank')}
+                              data-testid="button-open-cv-new-tab"
+                            >
+                              <Eye className="h-4 w-4 mr-2" />
+                              פתח בטאב חדש
+                            </Button>
+                          </div>
                         </div>
-                        <div className="p-4 flex justify-center" style={{ minHeight: '700px' }}>
+                        <div className="p-4 bg-gray-100 dark:bg-gray-900 flex justify-center items-center" style={{ minHeight: '700px', maxHeight: 'calc(100vh - 250px)', overflow: 'auto' }}>
                           <img
                             src={`/api/candidates/${currentApplication.candidate.id}/cv`}
                             alt={`קורות חיים - ${currentApplication.candidate.firstName} ${currentApplication.candidate.lastName}`}
-                            className="max-w-full h-auto"
+                            className="max-w-full h-auto shadow-lg"
+                            style={{ maxHeight: '100%', objectFit: 'contain' }}
                           />
                         </div>
                       </div>
