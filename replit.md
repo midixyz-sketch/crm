@@ -1,6 +1,6 @@
 # Overview
 
-This Recruitment Management System (RMS) is a full-stack web application for recruitment agencies. It manages candidates, clients, jobs, applications, and tasks, aiming to streamline talent acquisition. Key features include robust authentication, advanced CV data extraction, real-time data management, and comprehensive WhatsApp integration. The project's vision is to provide an efficient and scalable platform to enhance productivity in recruitment operations.
+This Recruitment Management System (RMS) is a full-stack web application designed for recruitment agencies. Its primary purpose is to streamline talent acquisition by managing candidates, clients, jobs, applications, and tasks. Key capabilities include robust authentication, advanced CV data extraction, real-time data management, and comprehensive WhatsApp integration. The project aims to provide an efficient and scalable platform to enhance productivity in recruitment operations.
 
 # User Preferences
 
@@ -8,123 +8,36 @@ Preferred communication style: Simple, everyday language.
 
 # System Architecture
 
-## Frontend
--   **React 18** with TypeScript, **Vite**, **Wouter** for routing, and **TanStack Query** for server state.
--   **shadcn/ui** and **Tailwind CSS** for UI, with full RTL support for Hebrew.
--   **React Hook Form** with Zod for form management.
--   Navigation uses a sidebar/navbar, with settings accessed via a dedicated page.
+## UI/UX
+-   Frontend built with **React 18** (TypeScript, Vite, Wouter, TanStack Query).
+-   UI uses **shadcn/ui** and **Tailwind CSS**, with full RTL support for Hebrew.
+-   Navigation includes a sidebar/navbar, with settings on a dedicated page.
+-   WhatsApp chat interface is a full-screen overlay with RTL layout.
 
-## Backend
--   **Express.js** with TypeScript, implementing a RESTful API.
--   Modular structure with middleware for authentication and processing.
--   Multer for file uploads.
-
-## Authentication & Authorization
--   **Local authentication** using Passport.js and bcrypt with session-based PostgreSQL storage.
--   **Role-Based Access Control (RBAC)** with three layers: role-based, direct grants, and direct revocations.
--   Admin-controlled user creation; self-registration is disabled.
-
-## Database
--   **PostgreSQL** with **Drizzle ORM** for type-safe operations.
--   Core entities: Users, Candidates, Clients, Jobs, Applications, Tasks.
--   Automatic unique numbering for candidates and clients.
--   Dynamic `candidate_statuses` managed via UI, including 8 system-defined protected statuses.
--   **Contact Persons Management** (October 2025):
-    -   Stored as JSONB array in clients table (max 20 per client, each with id, name, title, email, mobile)
-    -   Jobs reference via `selectedContactPersonIds` text array field
-    -   Job form includes automatic validation: invalid contact person IDs are cleaned when client changes or contact list updates
-    -   UI displays checkboxes for multi-select with visual feedback (name, title, email, mobile)
-    -   Client form invalidates `/api/clients` query which triggers job form refresh via React Query
--   **Automatic Candidate Sending** (October 2025):
-    -   `autoSendToClient` flag per job - when enabled, candidates are automatically emailed to selected contact persons
-    -   Triggers on: (1) job application creation, (2) enabling flag on existing job with applications, (3) landing page applications
-    -   All candidates in job's interviews page get sent when flag is enabled (server/storage.ts lines 1338-1418)
-    -   Sends CV attachment, candidate details, and custom notes to all selected contact persons
-    -   Automatically updates candidate status to `sent_to_employer` with event logging
--   Job management includes `isUrgent` flag for priority display.
-
-## Key Features & Implementations
--   **Advanced CV Data Extraction**: Supports multiple formats (PDF, DOCX, images) with OCR for Hebrew/English/Arabic, and intelligent extraction of names, phone numbers, and emails.
--   **Bulk CV Import**: Super admin feature for stable, sequential processing of large volumes of CVs with duplicate detection.
+## Technical Implementations
+-   **Backend**: **Express.js** (TypeScript) with a RESTful API, modular structure, and Multer for file uploads.
+-   **Authentication & Authorization**: Local authentication using Passport.js and bcrypt with session-based PostgreSQL storage. Features a multi-layered Role-Based Access Control (RBAC) system. Admin-controlled user creation.
+-   **Database**: **PostgreSQL** with **Drizzle ORM**. Core entities include Users, Candidates, Clients, Jobs, Applications, Tasks. Features automatic unique numbering for candidates/clients, dynamic candidate statuses, and contact person management for clients.
+-   **Advanced CV Data Extraction**: Supports multiple formats (PDF, DOCX, images) with OCR for Hebrew/English/Arabic, and intelligent data extraction.
+-   **Bulk CV Import**: Super admin feature for stable, sequential processing of CVs with duplicate detection.
 -   **User Management**: Admin-only user creation and role assignment with automated welcome emails.
+-   **WhatsApp Integration**: Embedded functionality via `@whiskeysockets/baileys`. Each user has their own independent WhatsApp connection and session. Features include QR code connection, full chat page with RTL support, rich media support, message delivery statuses, and emoji picker.
+-   **Calendar & Reminders**: Full-featured system for managing reminders and interviews with candidate linking, user tracking, priority levels, and alerts.
+-   **Candidate Event History**: Comprehensive audit trail of all candidate interactions with user tracking.
+-   **In-Browser File Preview**: Integrated `FileViewer` component for PDF (PDF.js), Word documents (Mammoth.js HTML conversion), and images, displayed in a modal without automatic downloads.
+-   **Job Interviews Page UI**: Optimized for RTL Hebrew, features a 4-button layout for candidate evaluation, and integrated calendar scheduling for interviews with reminder creation and clickable links.
+-   **External Recruiters Module**: Role-based system (`external_recruiter`) with restricted permissions and job assignment functionality. Supports optional approval workflow for candidates and automatic emailing to employers. All actions are logged, and access is strictly controlled.
+-   **Reports & Analytics Module**: Permission-protected module with three sections: Candidates by Time/Source (line chart), Recruiter Activity Tracking (table), and Individual Recruiter Performance (bar charts).
+
+## Feature Specifications
+-   **Form Handling**: React Hook Form with Zod for validation.
 -   **Duplicate Send Prevention**: 30-day warning system for sending candidates to employers.
 -   **Bulk Candidate Operations**: Super admin function for deleting multiple candidates.
--   **Recently Updated Candidates Page** (Updated October 2025): Tracks candidates with "sent_to_employer" and "rejected" statuses. Displays recruiter who performed the status change (not the candidate creator), clear status labels ("נשלח למעסיק", "נפסל בראיון"), and filters for status, job, recruiter, and date range. Includes dedicated API endpoint `/api/candidates/status-updaters` for efficient recruiter list retrieval.
--   **Dashboard Statistics**: Displays "Hired This Month" and a "Revenue" card.
--   **WhatsApp Message Templates**: Database-driven templates with CRUD operations via UI, supporting placeholders and accessible from candidate detail pages.
--   **Calendar & Reminders System**: Full-featured calendar for managing reminders and interviews, including candidate linking, creator tracking, priority levels, status management, and due reminder alerts.
--   **Candidate Event History with User Tracking**: Comprehensive audit trail of all candidate interactions, displaying the creating user for each event.
--   **Optimized Candidate Table**: Streamlined table view focusing on essential information to avoid horizontal scrolling.
--   **Candidate Detail Page**: Comprehensive profile with inline editing, CV display, and an expandable event history panel.
--   **In-Browser File Preview** (October 2025): Integrated `FileViewer` component supporting PDF (PDF.js with zoom/navigation), Word documents (Mammoth.js HTML conversion), and images. Files display in modal dialog **without triggering automatic downloads**. All pages (candidate detail, job interviews) use the FileViewer for viewing files inline. Backend serves files with `Content-Disposition: inline` header to prevent automatic downloads. FileViewer includes dedicated download button when users explicitly want to save files locally.
--   **Job Interviews Page UI** (Updated October 2025): 
-    -   Candidate evaluation buttons optimized for RTL Hebrew - removed emoji clutter, proper icon alignment (ml-2 for RTL), whitespace-nowrap to prevent text overflow, centered content for clean appearance
-    -   **4-Button Layout**: Grid with "מתאים" (green), "לא מתאים" (red), "נדרש ראיון נוסף" (blue), and "דחה" (gray) buttons
-    -   **Interview Scheduling**: Fixed date/time bug - properly combines date and time fields, validates ISO datetime, creates reminder with `reminderDate` (not `dueDate`)
-    -   **Calendar Integration**: When scheduling interview, creates high-priority reminder in calendar with candidate name, job title, and direct clickable link to interviews page (format: `${window.location.origin}/interviews/${jobId}`)
--   **WhatsApp Web Integration**: Embedded WhatsApp functionality within the CRM via `@whiskeysockets/baileys`.
-    -   **PERSONAL PER-USER WHATSAPP**: Each user has their own independent WhatsApp connection. Users must scan QR code from their personal device.
-    -   **Multi-User Architecture** (October 2025):
-        -   `WhatsAppServiceManager` singleton manages Map of `WhatsAppService` instances keyed by userId
-        -   Each user gets separate session directory: `whatsapp_auth/session_${userId}`
-        -   **API Isolation**: All endpoints use `getUserWhatsAppService(userId)` with `isAuthenticated` middleware to ensure users only access their own WhatsApp
-        -   **Event Isolation**: WhatsApp events emit with userId payload (`{userId, qrCode/phoneNumber}`) to prevent cross-user data leakage
-        -   **Session Persistence**: Database updates use `sessionId` to correctly handle new session creation during QR flow
-        -   **Auto-Initialization**: Server startup initializes WhatsApp for all users with active sessions (via `whatsapp_user_sessions` table)
-        -   **Security**: No SSE/EventSource consumers currently exist; future implementations must filter events by userId
-    -   Features include QR code connection, full chat page with individual/group/archived tabs, profile pictures, pin/unpin chats, tagging, search/filters, message bubbles, real-time updates, and full RTL support.
-    -   **RTL Layout**: Chat list positioned on the right side, active chat on the left side (proper Hebrew RTL layout using flexbox without flex-row-reverse).
-    -   **Full-Screen Chat Interface**: Full-screen overlay (z-40) with prominent minimize button (64x64px, green, top-center) positioned below main navbar.
-    -   **Chat Header**: Displays avatar, contact name, WhatsApp number, and three action buttons (Pin-amber, Tags-blue, Archive-slate) when chat is selected.
-    -   **Message Delivery Status**: WhatsApp-style delivery indicators - single check (sent), double gray check (delivered), double blue check (read).
-    -   **Rich Media Support**: Automatic download and display of images, documents, videos, audio messages, and stickers with preview, playback, and download capabilities.
-    -   **Emoji Picker**: Full emoji selector with search functionality for easy emoji insertion in messages.
-    -   Each user's WhatsApp data stored separately in database with userId foreign key. Auto-initialization on server start for all users with active sessions.
-    -   Message sending from candidate pages, automatic status updates, event logging, and chat linking based on phone numbers.
-    -   Supports auto-detection of CV attachments and phone number normalization.
-    -   Robust reconnection logic and comprehensive error handling prioritize stability.
-    -   Interface positioned with padding-top to avoid navbar overlap, ensuring all UI elements are visible.
-
-## External Recruiters Module (COMPLETE - UI + Backend)
--   **Role-Based System**: `external_recruiter` role with restricted permissions.
--   **Job Assignments**: Admins assign specific jobs to external recruiters via `job_assignments` table with optional commission per job.
--   **Limited Access**: External recruiters can only upload new candidates to assigned jobs, cannot view client names or candidate history.
--   **Approval Workflow**: 
-    -   Optional `requiresApproval` flag per user
-    -   When `requiresApproval=true`: candidates get "pending_approval" status, await admin review
-    -   When `requiresApproval=false`: candidates get "sent_to_employer" status immediately AND are **automatically emailed to employer** (like autoSendToClient feature)
-    -   **CRITICAL**: External recruiter candidates **DO NOT** create job_applications - they bypass interviews page entirely and go straight to employer or approval (enforced in server/routes.ts lines 1429+)
-    -   **Status Tracking**: `lastStatusUpdate` field (added October 2025) automatically updates when candidate status changes, ensuring approved candidates appear in "Recently Updated" page
-    -   **Auto-Send to Employer** (October 2025): When external recruiter with `requiresApproval=false` uploads candidate to job, system automatically sends candidate to all selected contact persons via email (server/routes.ts lines 1361-1427)
--   **Activity Logging**: All external recruiter actions tracked in `external_activity_log` table.
--   **Security**: API routes enforce user can only view own assignments; job assignment lists filtered by `isActive=true` and user ID.
--   **Permissions**: 
-    -   `allowedJobIds` array dynamically populated from job assignments
-    -   Cannot access dashboard, candidates list, clients, calendar, emails, settings, or analytics
-    -   Automatically sets recruitment source to recruiter's name
-    -   No visibility into candidate event history
--   **UI Pages**:
-    -   `/external-recruiters` - Admin management page for assigning jobs to recruiters, viewing assignments, setting commissions
-    -   `/my-jobs` - Recruiter work page showing assigned jobs with commission, upload candidate functionality
-    -   `/pending-approvals` - Admin page for approving/rejecting candidates from recruiters with requiresApproval flag; approved candidates receive "sent_to_employer" status, `lastStatusUpdate` is refreshed, and they appear in "Recently Updated" page
-    -   Dynamic sidebar navigation: shows different menus based on user role (admin sees management pages, recruiter sees only "My Jobs")
--   **Workflow Isolation**: External recruiter candidates skip interviews page - only regular staff uploads go to `/interviews/:jobId` for review
--   **Implementation Details** (October 2025):
-    -   `storage.updateCandidate()` automatically sets `lastStatusUpdate = new Date()` whenever status field is updated
-    -   Candidates table includes `lastStatusUpdate` timestamp field (default NOW())
-    -   "Recently Updated" page sorts by `lastStatusUpdate DESC` instead of `createdAt`
-
-## Reports & Analytics Module (October 2025)
--   **Permission-Protected**: Access controlled by `view_reports` permission on both client (PermissionWrapper) and server (requirePermission middleware)
--   **Three Analytics Sections**:
-    -   **Candidates by Time/Source**: Line chart showing candidate growth over time with filters for date range and recruitment source
-    -   **Recruiter Activity Tracking**: Table showing all recruiter actions (upload, approve, reject) with date/action filters
-    -   **Individual Recruiter Performance**: Bar charts displaying daily candidate uploads per recruiter with 7/30-day views
--   **API Endpoints** (all protected with requirePermission):
-    -   `/api/reports/candidates-by-time` - Aggregates candidates by date and recruitment source
-    -   `/api/reports/recruiter-activity` - Fetches external recruiter activity logs with filters
-    -   `/api/reports/recruiter-activity/:userId` - Daily performance metrics for specific recruiter
--   **Cache Invalidation**: Pending approvals page properly invalidates both `/api/candidates` and `/api/candidates/enriched` for consistent UI refresh
+-   **Dashboard Statistics**: Displays "Hired This Month" and "Revenue."
+-   **WhatsApp Message Templates**: Database-driven templates with CRUD operations and placeholders.
+-   **Optimized Candidate Table**: Streamlined view focusing on essential information.
+-   **Candidate Detail Page**: Comprehensive profile with inline editing, CV display, and expandable event history.
+-   **Recently Updated Candidates Page**: Tracks candidates with "sent_to_employer" and "rejected" statuses, displaying recruiter who performed the status change, clear status labels, and filtering options.
 
 # External Dependencies
 

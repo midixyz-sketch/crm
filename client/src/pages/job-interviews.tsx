@@ -931,31 +931,69 @@ export default function JobInterviews() {
               </CardHeader>
               <CardContent>
                 {currentApplication.candidate.cvPath ? (
-                  <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden bg-white dark:bg-gray-800">
-                    <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border-b flex items-center justify-between">
-                      <p className="text-sm text-blue-700 dark:text-blue-300">
-                        קורות חיים - {currentApplication.candidate.firstName} {currentApplication.candidate.lastName}
-                      </p>
-                      <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setFileViewerOpen(true)}
-                          data-testid="button-view-cv-inline"
-                        >
-                          <Eye className="h-4 w-4 mr-2" />
-                          הצג במסך מלא
-                        </Button>
+                  (() => {
+                    const cvPath = currentApplication.candidate.cvPath;
+                    const isDocx = cvPath.toLowerCase().endsWith('.docx') || cvPath.toLowerCase().endsWith('.doc');
+                    const isPdf = cvPath.toLowerCase().endsWith('.pdf');
+                    const isImage = /\.(jpg|jpeg|png|gif|webp|bmp)$/i.test(cvPath);
+                    
+                    // For DOCX files, show only the button (no iframe to prevent auto-download)
+                    if (isDocx) {
+                      return (
+                        <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden bg-gradient-to-b from-blue-50 to-white dark:from-blue-900/20 dark:to-gray-800 p-8">
+                          <div className="text-center space-y-4">
+                            <FileText className="h-16 w-16 mx-auto text-blue-600 dark:text-blue-400" />
+                            <div>
+                              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
+                                קובץ Word - {currentApplication.candidate.firstName} {currentApplication.candidate.lastName}
+                              </h3>
+                              <p className="text-sm text-gray-600 dark:text-gray-300">
+                                לחץ על הכפתור למטה לצפייה במסמך
+                              </p>
+                            </div>
+                            <Button
+                              size="lg"
+                              onClick={() => setFileViewerOpen(true)}
+                              className="mt-4"
+                              data-testid="button-view-docx"
+                            >
+                              <Eye className="h-5 w-5 mr-2" />
+                              הצג קורות חיים
+                            </Button>
+                          </div>
+                        </div>
+                      );
+                    }
+                    
+                    // For PDF and images, show iframe preview
+                    return (
+                      <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden bg-white dark:bg-gray-800">
+                        <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border-b flex items-center justify-between">
+                          <p className="text-sm text-blue-700 dark:text-blue-300">
+                            קורות חיים - {currentApplication.candidate.firstName} {currentApplication.candidate.lastName}
+                          </p>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setFileViewerOpen(true)}
+                              data-testid="button-view-cv-inline"
+                            >
+                              <Eye className="h-4 w-4 mr-2" />
+                              הצג במסך מלא
+                            </Button>
+                          </div>
+                        </div>
+                        <iframe
+                          src={`/api/candidates/${currentApplication.candidate.id}/cv`}
+                          className="w-full border-0 bg-white dark:bg-gray-800"
+                          title={`קורות חיים - ${currentApplication.candidate.firstName} ${currentApplication.candidate.lastName}`}
+                          style={{ height: 'calc(100vh - 250px)', minHeight: '700px' }}
+                          allow="fullscreen"
+                        />
                       </div>
-                    </div>
-                    <iframe
-                      src={`/api/candidates/${currentApplication.candidate.id}/cv`}
-                      className="w-full border-0 bg-white dark:bg-gray-800"
-                      title={`קורות חיים - ${currentApplication.candidate.firstName} ${currentApplication.candidate.lastName}`}
-                      style={{ height: 'calc(100vh - 250px)', minHeight: '700px' }}
-                      allow="fullscreen"
-                    />
-                  </div>
+                    );
+                  })()
                 ) : (
                   <div className="text-center py-8">
                     <FileText className="h-12 w-12 mx-auto text-gray-400 mb-2" />
