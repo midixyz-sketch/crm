@@ -65,7 +65,6 @@ export default function JobInterviews() {
   const [fileViewerOpen, setFileViewerOpen] = useState(false);
   const [docxHtml, setDocxHtml] = useState<string>("");
   const [docxLoading, setDocxLoading] = useState(false);
-  const [pdfBlobUrl, setPdfBlobUrl] = useState<string | null>(null);
 
   const whatsappMessages = [
     "שלום, זה מחברת גיוס H-Group. ניסיתי להתקשר אליך לגבי משרה שתואמת לך. אנא צור איתי קשר בחזרה",
@@ -236,48 +235,6 @@ export default function JobInterviews() {
     loadDocx();
   }, [currentApplication?.candidate?.id, currentApplication?.candidate?.cvPath]);
 
-  // Load PDF files automatically
-  useEffect(() => {
-    const loadPdf = async () => {
-      if (!currentApplication?.candidate?.cvPath) {
-        setPdfBlobUrl(null);
-        return;
-      }
-
-      const cvPath = currentApplication.candidate.cvPath;
-      const isPdf = cvPath.toLowerCase().endsWith('.pdf');
-      
-      if (!isPdf) {
-        setPdfBlobUrl(null);
-        return;
-      }
-
-      try {
-        const response = await fetch(`/api/candidates/${currentApplication.candidate.id}/cv`);
-        if (!response.ok) {
-          console.error('PDF fetch failed:', response.status);
-          setPdfBlobUrl(null);
-          return;
-        }
-        const blob = await response.blob();
-        const url = URL.createObjectURL(blob);
-        setPdfBlobUrl(url);
-        console.log('✅ PDF blob URL created:', url);
-      } catch (error) {
-        console.error('❌ Error loading PDF:', error);
-        setPdfBlobUrl(null);
-      }
-    };
-
-    loadPdf();
-
-    // Cleanup on unmount or when candidate changes
-    return () => {
-      if (pdfBlobUrl) {
-        URL.revokeObjectURL(pdfBlobUrl);
-      }
-    };
-  }, [currentApplication?.candidate?.id, currentApplication?.candidate?.cvPath]);
 
   // Mutations for application actions
   const updateApplicationMutation = useMutation({
@@ -1108,7 +1065,7 @@ export default function JobInterviews() {
                       );
                     }
                     
-                    // For PDF - use simple iframe with blob URL
+                    // For PDF - use iframe with direct API endpoint
                     if (isPdf) {
                       return (
                         <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden bg-white dark:bg-gray-800">
@@ -1132,19 +1089,12 @@ export default function JobInterviews() {
                             className="overflow-auto bg-gray-100 dark:bg-gray-900"
                             style={{ height: 'calc(100vh - 250px)', minHeight: '700px' }}
                           >
-                            {pdfBlobUrl ? (
-                              <iframe
-                                src={pdfBlobUrl}
-                                className="w-full h-full border-0"
-                                title={`קורות חיים - ${currentApplication.candidate.firstName} ${currentApplication.candidate.lastName}`}
-                                style={{ minHeight: '700px' }}
-                              />
-                            ) : (
-                              <div className="flex flex-col items-center justify-center h-full gap-4 p-8">
-                                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4"></div>
-                                <div className="text-gray-600 dark:text-gray-400">טוען PDF...</div>
-                              </div>
-                            )}
+                            <iframe
+                              src={`/api/candidates/${currentApplication.candidate.id}/cv`}
+                              className="w-full h-full border-0"
+                              title={`קורות חיים - ${currentApplication.candidate.firstName} ${currentApplication.candidate.lastName}`}
+                              style={{ minHeight: '700px' }}
+                            />
                           </div>
                         </div>
                       );
