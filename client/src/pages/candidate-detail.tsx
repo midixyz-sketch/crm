@@ -1605,14 +1605,14 @@ export default function CandidateDetail() {
                             <div className="text-center">
                               <FileText className="w-16 h-16 text-blue-500 mx-auto mb-4" />
                               <p className="text-gray-700 font-medium mb-2">קובץ Microsoft Office</p>
-                              <p className="text-sm text-gray-600 mb-4">תצוגה מקדימה לא זמינה במצב עצמאי</p>
+                              <p className="text-sm text-gray-600 mb-4">לחץ להצגת הקובץ במסך מלא</p>
                               <Button 
                                 variant="outline" 
                                 size="sm"
-                                onClick={() => window.open(`/api/candidates/${candidate.id}/cv`, '_blank')}
+                                onClick={() => setFileViewerOpen(true)}
                               >
-                                <Download className="w-4 h-4 mr-2" />
-                                הורד קובץ
+                                <Eye className="w-4 h-4 mr-2" />
+                                הצג קובץ
                               </Button>
                             </div>
                           </div>

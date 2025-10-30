@@ -44,6 +44,7 @@ import {
   Plus
 } from "lucide-react";
 import type { JobApplicationWithDetails, JobApplication, JobWithClient } from "@shared/schema";
+import { FileViewer } from "@/components/file-viewer";
 
 export default function JobInterviews() {
   const { toast } = useToast();
@@ -60,6 +61,7 @@ export default function JobInterviews() {
   const [interviewTime, setInterviewTime] = useState("");
   const [warningAlert, setWarningAlert] = useState(false);
   const [warningMessage, setWarningMessage] = useState("");
+  const [fileViewerOpen, setFileViewerOpen] = useState(false);
 
   const whatsappMessages = [
     "שלום, זה מחברת גיוס H-Group. ניסיתי להתקשר אליך לגבי משרה שתואמת לך. אנא צור איתי קשר בחזרה",
@@ -900,15 +902,11 @@ export default function JobInterviews() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => {
-                        if (currentApplication.candidate.cvPath) {
-                          window.open(`/api/candidates/${currentApplication.candidate.id}/cv`, '_blank');
-                        }
-                      }}
-                      data-testid="button-download-cv"
+                      onClick={() => setFileViewerOpen(true)}
+                      data-testid="button-view-cv"
                     >
-                      <Download className="h-4 w-4 mr-2" />
-                      הורד קובץ
+                      <Eye className="h-4 w-4 mr-2" />
+                      הצג קורות חיים
                     </Button>
                   )}
                 </CardTitle>
@@ -924,25 +922,11 @@ export default function JobInterviews() {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => window.open(`/api/candidates/${currentApplication.candidate.id}/cv`, '_blank')}
-                          data-testid="button-view-cv"
+                          onClick={() => setFileViewerOpen(true)}
+                          data-testid="button-view-cv-inline"
                         >
-                          <FileText className="h-4 w-4 mr-2" />
-                          פתח בחלון חדש
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            const link = document.createElement('a');
-                            link.href = `/api/candidates/${currentApplication.candidate.id}/cv`;
-                            link.download = `CV-${currentApplication.candidate.firstName}-${currentApplication.candidate.lastName}.pdf`;
-                            link.click();
-                          }}
-                          data-testid="button-download-cv"
-                        >
-                          <Download className="h-4 w-4 mr-2" />
-                          הורד
+                          <Eye className="h-4 w-4 mr-2" />
+                          הצג במסך מלא
                         </Button>
                       </div>
                     </div>
@@ -1008,6 +992,22 @@ export default function JobInterviews() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* File Viewer for CV */}
+      {currentApplication?.candidate?.cvPath && (
+        <FileViewer
+          isOpen={fileViewerOpen}
+          onClose={() => setFileViewerOpen(false)}
+          fileUrl={`/api/candidates/${currentApplication.candidate.id}/cv`}
+          fileName={currentApplication.candidate.cvPath.split('/').pop() || 'CV.pdf'}
+          mimeType={
+            currentApplication.candidate.cvPath.toLowerCase().endsWith('.pdf') ? 'application/pdf' :
+            currentApplication.candidate.cvPath.toLowerCase().endsWith('.docx') ? 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' :
+            currentApplication.candidate.cvPath.toLowerCase().match(/\.(jpg|jpeg|png|gif|webp|bmp)$/i) ? 'image/' + currentApplication.candidate.cvPath.split('.').pop() :
+            undefined
+          }
+        />
+      )}
     </div>
   );
 }
