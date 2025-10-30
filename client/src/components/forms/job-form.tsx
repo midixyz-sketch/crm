@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { X } from "lucide-react";
 
 interface JobFormProps {
@@ -50,6 +50,21 @@ export default function JobForm({ job, onSuccess }: JobFormProps) {
   const selectedClientId = form.watch("clientId");
   const selectedClient = clientsData?.clients.find(c => c.id === selectedClientId);
   const contactPersons = selectedClient?.contactPersons || [];
+
+  // כשמשנים לקוח, נקה את אנשי הקשר הנבחרים אם הם לא רלוונטיים
+  useEffect(() => {
+    const currentSelectedIds = form.getValues("selectedContactPersonIds") || [];
+    const validContactPersonIds = contactPersons.map(cp => cp.id);
+    
+    // בדוק אם יש אנשי קשר שנבחרו שלא קיימים יותר בלקוח הנוכחי
+    const invalidIds = currentSelectedIds.filter(id => !validContactPersonIds.includes(id));
+    
+    if (invalidIds.length > 0) {
+      // הסר אנשי קשר לא תקפים
+      const validSelectedIds = currentSelectedIds.filter(id => validContactPersonIds.includes(id));
+      form.setValue("selectedContactPersonIds", validSelectedIds);
+    }
+  }, [selectedClientId, contactPersons, form]);
 
   const createJob = useMutation({
     mutationFn: async (data: InsertJob) => {
