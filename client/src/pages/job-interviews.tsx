@@ -657,17 +657,15 @@ export default function JobInterviews() {
           {/* Candidate Header */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-6">
-              <div className="flex items-center gap-3">
+              <Link 
+                href={`/candidates/${currentApplication.candidate.id}`}
+                className="flex items-center gap-3 hover:opacity-80 transition-opacity cursor-pointer"
+              >
                 <User className="h-10 w-10 p-2 bg-blue-100 dark:bg-blue-900 text-blue-600 rounded-full" />
                 <div>
-                  <Link 
-                    href={`/candidates/${currentApplication.candidate.id}`}
-                    className="hover:underline"
-                  >
-                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white hover:text-blue-600 transition-colors cursor-pointer">
-                      {currentApplication.candidate.firstName} {currentApplication.candidate.lastName}
-                    </h1>
-                  </Link>
+                  <h1 className="text-2xl font-bold text-gray-900 dark:text-white hover:text-blue-600 transition-colors">
+                    {currentApplication.candidate.firstName} {currentApplication.candidate.lastName}
+                  </h1>
                   <div className="flex items-center gap-4 mt-1">
                     {currentApplication.candidate.city && (
                       <div className="flex items-center gap-1 text-sm text-gray-600 dark:text-gray-400">
@@ -755,7 +753,7 @@ export default function JobInterviews() {
                     )}
                   </div>
                 </div>
-              </div>
+              </Link>
             </div>
 
             {/* Navigation */}
