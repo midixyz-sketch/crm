@@ -215,7 +215,7 @@ export default function Interviews() {
                   <div className="text-2xl font-bold text-purple-600">
                     {applications.filter(app => app.status === 'submitted').length}
                   </div>
-                  <div className="text-sm text-gray-600">ממתינים לסקירה</div>
+                  <div className="text-sm text-gray-600">ממתינים לראיון</div>
                 </div>
               </CardContent>
             </Card>
