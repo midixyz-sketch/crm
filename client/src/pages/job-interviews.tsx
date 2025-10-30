@@ -822,12 +822,15 @@ export default function JobInterviews() {
                     <DialogTrigger asChild>
                       <Button
                         disabled={updateApplicationMutation.isPending}
-                        className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-5 px-4 shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-1"
+                        className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 shadow-md hover:shadow-lg transition-all flex flex-col items-center justify-center gap-1"
                         style={{ fontSize: '0.68rem' }}
                         data-testid="button-more-review"
                       >
                         <Calendar className="h-3 w-3 flex-shrink-0" />
-                        <span>נדרש ראיון נוסף</span>
+                        <div className="flex flex-col items-center leading-tight">
+                          <span>נדרש ראיון</span>
+                          <span>נוסף</span>
+                        </div>
                       </Button>
                     </DialogTrigger>
                     <DialogContent>
