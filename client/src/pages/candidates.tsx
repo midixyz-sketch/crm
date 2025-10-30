@@ -19,7 +19,8 @@ import CandidateForm from "@/components/forms/candidate-form";
 import SearchFilter from "@/components/search-filter";
 import { EmailDialog } from "@/components/email-dialog";
 import { MultiSelect } from "@/components/ui/multi-select";
-import { Plus, Search, Phone, Mail, FileText, Edit, Trash2, Send, Users, Calendar } from "lucide-react";
+import { FileViewer } from "@/components/file-viewer";
+import { Plus, Search, Phone, Mail, FileText, Edit, Trash2, Send, Users, Calendar, Eye } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import type { Candidate, EnrichedCandidate } from "@shared/schema";
 
@@ -122,6 +123,8 @@ export default function Candidates() {
   const [selectedCandidates, setSelectedCandidates] = useState<string[]>([]);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [candidateToDelete, setCandidateToDelete] = useState<string | null>(null);
+  const [fileViewerOpen, setFileViewerOpen] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<{ url: string; name: string; mimeType?: string } | null>(null);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -563,6 +566,32 @@ export default function Candidates() {
                               >
                                 <Send className="h-4 w-4" />
                               </Button>
+                              {candidate.cvPath && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (!candidate.cvPath) return;
+                                    const cvPath = candidate.cvPath;
+                                    const mimeType = cvPath.toLowerCase().endsWith('.pdf') ? 'application/pdf' :
+                                      cvPath.toLowerCase().endsWith('.docx') ? 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' :
+                                      cvPath.toLowerCase().match(/\.(jpg|jpeg|png|gif|webp|bmp)$/i) ? 'image/' + cvPath.split('.').pop() :
+                                      undefined;
+                                    setSelectedFile({
+                                      url: `/api/candidates/${candidate.id}/cv`,
+                                      name: cvPath.split('/').pop() || 'CV.pdf',
+                                      mimeType
+                                    });
+                                    setFileViewerOpen(true);
+                                  }}
+                                  className="text-purple-600 hover:text-purple-800 dark:text-purple-400 dark:hover:text-purple-200"
+                                  data-testid={`button-view-cv-${candidate.id}`}
+                                  title="צפה בקורות חיים"
+                                >
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                              )}
                               <EditButton
                                 permission="edit_candidates"
                                 variant="ghost"
@@ -676,6 +705,20 @@ export default function Candidates() {
         candidateIds={emailDialog.candidateIds}
         candidateName={emailDialog.candidateName}
       />
+
+      {/* File Viewer for CV */}
+      {selectedFile && (
+        <FileViewer
+          isOpen={fileViewerOpen}
+          onClose={() => {
+            setFileViewerOpen(false);
+            setSelectedFile(null);
+          }}
+          fileUrl={selectedFile.url}
+          fileName={selectedFile.name}
+          mimeType={selectedFile.mimeType}
+        />
+      )}
     </div>
   );
 }
