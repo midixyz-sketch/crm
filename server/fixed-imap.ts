@@ -173,19 +173,22 @@ async function tryConnection(config: any): Promise<boolean> {
 
 // Start email monitoring with intervals
 export async function startSimpleEmailMonitoring() {
-  console.log('🚀 מפעיל מעקב מיילים פשוט');
+  console.log('🚀 מעקב מיילים מבוטל זמנית (בעיות timeout)');
+  
+  // Disabled due to timeout issues causing server slowdown
+  // Can be re-enabled when cPanel connection is stable
   
   // Check immediately
-  try {
-    await checkEmailsSimple();
-  } catch (err) {
-    console.error('שגיאה בבדיקה ראשונית של מיילים:', err);
-  }
+  // try {
+  //   await checkEmailsSimple();
+  // } catch (err) {
+  //   console.error('שגיאה בבדיקה ראשונית של מיילים:', err);
+  // }
   
-  // Then check every 60 seconds
-  setInterval(() => {
-    checkEmailsSimple().catch(err => {
-      console.error('שגיאה במעקב מיילים:', err);
-    });
-  }, 60000);
+  // Then check every 5 minutes instead of 60 seconds
+  // setInterval(() => {
+  //   checkEmailsSimple().catch(err => {
+  //     console.error('שגיאה במעקב מיילים:', err);
+  //   });
+  // }, 300000); // 5 minutes
 }

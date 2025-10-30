@@ -73,7 +73,7 @@ export default function WhatsAppChats() {
 
   const { data: whatsappStatus, isLoading: isStatusLoading, isError: isStatusError } = useQuery<WhatsAppStatus>({
     queryKey: ["/api/whatsapp/status"],
-    refetchInterval: 3000,
+    refetchInterval: 10000, // Reduced from 3s to 10s
   });
 
   // Generate QR code image from data
@@ -87,7 +87,7 @@ export default function WhatsAppChats() {
 
   const { data: chats = [], isLoading: isChatsLoading } = useQuery<WhatsAppChat[]>({
     queryKey: ["/api/whatsapp/chats"],
-    refetchInterval: 5000,
+    refetchInterval: 15000, // Reduced from 5s to 15s
     enabled: whatsappStatus?.isConnected === true,
   });
 
@@ -99,7 +99,7 @@ export default function WhatsAppChats() {
   const { data: selectedMessages = [] } = useQuery<WhatsAppMessage[]>({
     queryKey: ["/api/whatsapp/messages", selectedRemoteJid],
     enabled: !!selectedRemoteJid && whatsappStatus?.isConnected === true,
-    refetchInterval: 3000,
+    refetchInterval: 8000, // Reduced from 3s to 8s
   });
 
   // Get candidate data for tag management
