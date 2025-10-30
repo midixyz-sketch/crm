@@ -507,6 +507,9 @@ export class DatabaseStorage implements IStorage {
     // Delete emails sent by this user
     await db.delete(emails).where(eq(emails.sentBy, id));
     
+    // Delete reminders created by this user
+    await db.delete(reminders).where(eq(reminders.createdBy, id));
+    
     // Finally, delete the user
     await db.delete(users).where(eq(users.id, id));
   }
