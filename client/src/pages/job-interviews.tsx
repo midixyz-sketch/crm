@@ -801,8 +801,8 @@ export default function JobInterviews() {
                   <Button
                     onClick={handleApprove}
                     disabled={updateApplicationMutation.isPending}
-                    className="bg-green-600 hover:bg-green-700 text-white font-semibold py-5 px-4 shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-1"
-                    style={{ fontSize: '0.68rem' }}
+                    className="bg-green-600 hover:bg-green-700 text-white font-semibold shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-1"
+                    style={{ fontSize: '0.68rem', padding: '1.29rem 1.03rem' }}
                     data-testid="button-approve"
                   >
                     <CheckCircle className="h-3 w-3 flex-shrink-0" />
@@ -811,8 +811,8 @@ export default function JobInterviews() {
                   <Button
                     onClick={handleReject}
                     disabled={updateApplicationMutation.isPending}
-                    className="bg-red-600 hover:bg-red-700 text-white font-semibold py-5 px-4 shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-1"
-                    style={{ fontSize: '0.68rem' }}
+                    className="bg-red-600 hover:bg-red-700 text-white font-semibold shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-1"
+                    style={{ fontSize: '0.68rem', padding: '1.29rem 1.03rem' }}
                     data-testid="button-reject"
                   >
                     <XCircle className="h-3 w-3 flex-shrink-0" />
@@ -822,8 +822,8 @@ export default function JobInterviews() {
                     <DialogTrigger asChild>
                       <Button
                         disabled={updateApplicationMutation.isPending}
-                        className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 shadow-md hover:shadow-lg transition-all flex flex-col items-center justify-center gap-1"
-                        style={{ fontSize: '0.68rem' }}
+                        className="bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-md hover:shadow-lg transition-all flex flex-col items-center justify-center gap-1"
+                        style={{ fontSize: '0.68rem', padding: '0.77rem 1.03rem' }}
                         data-testid="button-more-review"
                       >
                         <Calendar className="h-3 w-3 flex-shrink-0" />
