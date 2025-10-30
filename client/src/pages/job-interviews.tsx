@@ -801,29 +801,32 @@ export default function JobInterviews() {
                   <Button
                     onClick={handleApprove}
                     disabled={updateApplicationMutation.isPending}
-                    className="bg-green-600 hover:bg-green-700 text-white font-semibold py-4 text-xs sm:text-sm shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-1"
+                    className="bg-green-600 hover:bg-green-700 text-white font-semibold py-5 px-4 shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-1"
+                    style={{ fontSize: '0.66rem' }}
                     data-testid="button-approve"
                   >
-                    <CheckCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
+                    <CheckCircle className="h-3 w-3 flex-shrink-0" />
                     <span>מתאים</span>
                   </Button>
                   <Button
                     onClick={handleReject}
                     disabled={updateApplicationMutation.isPending}
-                    className="bg-red-600 hover:bg-red-700 text-white font-semibold py-4 text-xs sm:text-sm shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-1"
+                    className="bg-red-600 hover:bg-red-700 text-white font-semibold py-5 px-4 shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-1"
+                    style={{ fontSize: '0.66rem' }}
                     data-testid="button-reject"
                   >
-                    <XCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
+                    <XCircle className="h-3 w-3 flex-shrink-0" />
                     <span>לא מתאים</span>
                   </Button>
                   <Dialog open={interviewDialog} onOpenChange={setInterviewDialog}>
                     <DialogTrigger asChild>
                       <Button
                         disabled={updateApplicationMutation.isPending}
-                        className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-4 text-xs sm:text-sm shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-1"
+                        className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-5 px-4 shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-1"
+                        style={{ fontSize: '0.66rem' }}
                         data-testid="button-more-review"
                       >
-                        <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
+                        <Calendar className="h-3 w-3 flex-shrink-0" />
                         <span>נדרש ראיון נוסף</span>
                       </Button>
                     </DialogTrigger>
