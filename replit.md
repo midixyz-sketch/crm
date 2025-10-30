@@ -29,7 +29,12 @@ Preferred communication style: Simple, everyday language.
 -   Core entities: Users, Candidates, Clients, Jobs, Applications, Tasks.
 -   Automatic unique numbering for candidates and clients.
 -   Dynamic `candidate_statuses` managed via UI, including 8 system-defined protected statuses.
--   Contact persons are managed at the client level (up to 20 per client in JSONB), referenced by jobs.
+-   **Contact Persons Management** (October 2025):
+    -   Stored as JSONB array in clients table (max 20 per client, each with id, name, title, email, mobile)
+    -   Jobs reference via `selectedContactPersonIds` text array field
+    -   Job form includes automatic validation: invalid contact person IDs are cleaned when client changes or contact list updates
+    -   UI displays checkboxes for multi-select with visual feedback (name, title, email, mobile)
+    -   Client form invalidates `/api/clients` query which triggers job form refresh via React Query
 -   Job management includes `isUrgent` flag and `autoSendToClient` for automated candidate emails.
 
 ## Key Features & Implementations
