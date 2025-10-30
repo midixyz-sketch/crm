@@ -435,6 +435,14 @@ export default function JobInterviews() {
     });
   };
 
+  const handleOpenWhatsappChat = () => {
+    if (!currentApplication) return;
+    
+    // Navigate to WhatsApp page with this candidate's phone number
+    const phoneNumber = currentApplication.candidate.phone?.replace(/^0/, '972');
+    window.location.href = `/whatsapp?phone=${phoneNumber}`;
+  };
+
   const handleWhatsappSend = async () => {
     if (!currentApplication || !selectedWhatsappMessage) return;
     
@@ -727,6 +735,14 @@ export default function JobInterviews() {
                             <div className="flex gap-2">
                               <Button onClick={handleWhatsappSend} disabled={!selectedWhatsappMessage}>
                                 שלח הודעה
+                              </Button>
+                              <Button 
+                                variant="default" 
+                                onClick={handleOpenWhatsappChat}
+                                className="bg-green-600 hover:bg-green-700"
+                              >
+                                <MessageSquare className="h-4 w-4 mr-2" />
+                                פתח צ'אט
                               </Button>
                               <Button variant="outline" onClick={() => setWhatsappDialog(false)}>
                                 ביטול
