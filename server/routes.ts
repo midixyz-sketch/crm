@@ -1974,14 +1974,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         mimeType = 'application/msword';
       }
       
+      // Force fresh response - no caching to avoid 304 issues
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
       res.setHeader('Content-Type', mimeType);
       res.setHeader('Content-Disposition', 'inline');
-      res.setHeader('Access-Control-Allow-Origin', '*');
-      res.setHeader('Access-Control-Allow-Methods', 'GET');
-      res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
-      res.setHeader('X-Frame-Options', 'SAMEORIGIN');
-      res.setHeader('X-Content-Type-Options', 'nosniff');
-      res.send(buffer);
+      res.status(200).send(buffer);
       
     } catch (error) {
       console.error('Error serving CV file:', error);
