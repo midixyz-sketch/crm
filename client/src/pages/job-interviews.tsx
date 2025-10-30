@@ -169,7 +169,12 @@ export default function JobInterviews() {
   // Load DOCX files automatically
   useEffect(() => {
     const loadDocx = async () => {
+      console.log('=== DOCX Load useEffect triggered ===');
+      console.log('Current application:', currentApplication?.candidate?.id);
+      console.log('CV Path:', currentApplication?.candidate?.cvPath);
+      
       if (!currentApplication?.candidate?.cvPath) {
+        console.log('No CV path, clearing DOCX HTML');
         setDocxHtml("");
         return;
       }
@@ -177,15 +182,22 @@ export default function JobInterviews() {
       const cvPath = currentApplication.candidate.cvPath;
       const isDocx = cvPath.toLowerCase().endsWith('.docx') || cvPath.toLowerCase().endsWith('.doc');
       
+      console.log('Is DOCX file?', isDocx);
+      
       if (!isDocx) {
+        console.log('Not a DOCX file, clearing DOCX HTML');
         setDocxHtml("");
         return;
       }
 
       try {
+        console.log('Starting DOCX load...');
         setDocxLoading(true);
         const response = await fetch(`/api/candidates/${currentApplication.candidate.id}/cv`);
+        console.log('Fetch response status:', response.status);
+        
         const arrayBuffer = await response.arrayBuffer();
+        console.log('ArrayBuffer size:', arrayBuffer.byteLength);
         
         // Configure mammoth to properly extract images and content
         const options = {
@@ -205,12 +217,15 @@ export default function JobInterviews() {
           ignoreEmptyParagraphs: false
         };
         
+        console.log('Converting with Mammoth...');
         const result = await mammoth.convertToHtml({ arrayBuffer }, options);
-        console.log('Mammoth conversion result:', result.value.substring(0, 500));
+        console.log('Mammoth conversion SUCCESS!');
+        console.log('Result length:', result.value.length);
+        console.log('First 500 chars:', result.value.substring(0, 500));
         console.log('Mammoth messages:', result.messages);
         setDocxHtml(result.value);
       } catch (error) {
-        console.error('Error loading DOCX:', error);
+        console.error('!!! Error loading DOCX:', error);
         setDocxHtml("");
       } finally {
         setDocxLoading(false);
@@ -961,6 +976,11 @@ export default function JobInterviews() {
                     const isDocx = cvPath.toLowerCase().endsWith('.docx') || cvPath.toLowerCase().endsWith('.doc');
                     const isPdf = cvPath.toLowerCase().endsWith('.pdf');
                     const isImage = /\.(jpg|jpeg|png|gif|webp|bmp)$/i.test(cvPath);
+                    
+                    console.log('CV Path:', cvPath);
+                    console.log('Is DOCX:', isDocx, 'Is PDF:', isPdf, 'Is Image:', isImage);
+                    console.log('DOCX HTML length:', docxHtml?.length || 0);
+                    console.log('DOCX Loading:', docxLoading);
                     
                     // For DOCX files, show converted HTML automatically
                     if (isDocx) {
