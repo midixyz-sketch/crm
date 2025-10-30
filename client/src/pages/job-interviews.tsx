@@ -947,22 +947,9 @@ export default function JobInterviews() {
           <div className="col-span-7">
             <Card className="h-fit">
               <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  <span className="flex items-center gap-2">
-                    <FileText className="h-5 w-5" />
-                    קורות החיים
-                  </span>
-                  {currentApplication.candidate.cvPath && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setFileViewerOpen(true)}
-                      data-testid="button-view-cv"
-                    >
-                      <Eye className="h-4 w-4 mr-2" />
-                      הצג קורות חיים
-                    </Button>
-                  )}
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="h-5 w-5" />
+                  קורות החיים
                 </CardTitle>
               </CardHeader>
               <CardContent>
