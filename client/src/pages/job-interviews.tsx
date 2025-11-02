@@ -222,8 +222,16 @@ export default function JobInterviews() {
         const result = await mammoth.convertToHtml({ arrayBuffer }, options);
         console.log('Mammoth conversion SUCCESS!');
         console.log('Result length:', result.value.length);
-        console.log('First 500 chars:', result.value.substring(0, 500));
+        console.log('First 1000 chars:', result.value.substring(0, 1000));
+        console.log('Full HTML:', result.value);
         console.log('Mammoth messages:', result.messages);
+        
+        // בדיקה: האם יש טקסט או רק תמונה?
+        const hasText = result.value.replace(/<img[^>]*>/g, '').replace(/<[^>]*>/g, '').trim().length > 0;
+        const hasImages = result.value.includes('<img');
+        console.log('🔍 יש טקסט:', hasText);
+        console.log('🔍 יש תמונות:', hasImages);
+        
         setDocxHtml(result.value);
       } catch (error) {
         console.error('!!! Error loading DOCX:', error);
