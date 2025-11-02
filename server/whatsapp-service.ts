@@ -684,9 +684,12 @@ class WhatsAppService {
         isRead: fromMe ? false : false,
       });
 
-      // Update or create chat
+      // Update or create chat (must filter by sessionId to avoid updating old session chats)
       const existingChat = await db.query.whatsappChats.findFirst({
-        where: eq(whatsappChats.remoteJid, remoteJid)
+        where: (whatsappChats, { and, eq }) => and(
+          eq(whatsappChats.remoteJid, remoteJid),
+          eq(whatsappChats.sessionId, session?.id || null)
+        )
       });
 
       if (existingChat) {
