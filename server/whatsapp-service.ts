@@ -1097,7 +1097,7 @@ class WhatsAppService {
   getStatus() {
     return {
       isConnected: this.state.isConnected,
-      qrCode: this.state.qrCode,
+      qrCode: this.currentQR, // Use currentQR instead of state.qrCode
       phoneNumber: this.state.phoneNumber,
       sessionId: this.state.sessionId,
     };
