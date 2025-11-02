@@ -6189,11 +6189,26 @@ ${recommendation}
   // GET /api/whatsapp/messages/:remoteJid - Get messages for a specific chat
   app.get('/api/whatsapp/messages/:remoteJid', isAuthenticated, async (req, res) => {
     try {
+      const user = req.user as any;
       const { remoteJid } = req.params;
       const limit = parseInt(req.query.limit as string) || 50;
 
+      // Get user's session ID
+      const userSession = await db.query.whatsappSessions.findFirst({
+        where: eq(whatsappSessions.userId, user.id),
+      });
+
+      if (!userSession) {
+        console.log('❌ No WhatsApp session found for user');
+        return res.json([]);
+      }
+
+      // SECURITY: Filter by BOTH sessionId AND remoteJid
       const messages = await db.query.whatsappMessages.findMany({
-        where: eq(whatsappMessages.remoteJid, remoteJid),
+        where: and(
+          eq(whatsappMessages.sessionId, userSession.id),
+          eq(whatsappMessages.remoteJid, remoteJid)
+        ),
         orderBy: [desc(whatsappMessages.timestamp)],
         limit,
       });
@@ -6208,36 +6223,52 @@ ${recommendation}
   // GET /api/whatsapp/chats - Get all chats
   app.get('/api/whatsapp/chats', isAuthenticated, async (req, res) => {
     try {
+      const user = req.user as any;
       const limit = parseInt(req.query.limit as string) || 100;
       const tab = req.query.tab as string || 'individual';
 
-      console.log(`📋 Fetching chats - tab: "${tab}", limit: ${limit}`);
+      console.log(`📋 Fetching chats for user ${user.id} - tab: "${tab}", limit: ${limit}`);
 
-      // Build where conditions based on tab
+      // Get user's session ID
+      const userSession = await db.query.whatsappSessions.findFirst({
+        where: eq(whatsappSessions.userId, user.id),
+      });
+
+      if (!userSession) {
+        console.log('❌ No WhatsApp session found for user');
+        return res.json([]);
+      }
+
+      console.log(`✅ Found session ${userSession.id} for user ${user.id}`);
+
+      // Build where conditions based on tab, ALWAYS filter by sessionId
       let whereConditions;
       if (tab === 'group') {
         // Groups only (not archived, not status)
         whereConditions = and(
+          eq(whatsappChats.sessionId, userSession.id),
           eq(whatsappChats.isGroup, true),
           eq(whatsappChats.isArchived, false),
           not(eq(whatsappChats.remoteJid, 'status@broadcast'))
         );
-        console.log('🔍 Filtering: isGroup=true, isArchived=false, not status');
+        console.log('🔍 Filtering: sessionId, isGroup=true, isArchived=false, not status');
       } else if (tab === 'archived') {
         // Archived chats (both groups and individuals, not status)
         whereConditions = and(
+          eq(whatsappChats.sessionId, userSession.id),
           eq(whatsappChats.isArchived, true),
           not(eq(whatsappChats.remoteJid, 'status@broadcast'))
         );
-        console.log('🔍 Filtering: isArchived=true, not status');
+        console.log('🔍 Filtering: sessionId, isArchived=true, not status');
       } else {
         // Individual chats (not groups, not archived, not status)
         whereConditions = and(
+          eq(whatsappChats.sessionId, userSession.id),
           eq(whatsappChats.isGroup, false),
           eq(whatsappChats.isArchived, false),
           not(eq(whatsappChats.remoteJid, 'status@broadcast'))
         );
-        console.log('🔍 Filtering: isGroup=false, isArchived=false, not status');
+        console.log('🔍 Filtering: sessionId, isGroup=false, isArchived=false, not status');
       }
 
       const chats = await db.query.whatsappChats.findMany({
@@ -6246,7 +6277,7 @@ ${recommendation}
         limit,
       });
 
-      console.log(`✅ Returned ${chats.length} chats for tab "${tab}"`);
+      console.log(`✅ Returned ${chats.length} chats for user ${user.id}, tab "${tab}"`);
       if (chats.length > 0) {
         console.log(`📊 First chat: ${chats[0].name}, isGroup: ${chats[0].isGroup}`);
       }
@@ -6261,15 +6292,29 @@ ${recommendation}
   // PATCH /api/whatsapp/chats/:id - Update a chat
   app.patch('/api/whatsapp/chats/:id', isAuthenticated, async (req, res) => {
     try {
+      const user = req.user as any;
       const { id } = req.params;
       const updates = req.body;
 
+      // Get user's session ID
+      const userSession = await db.query.whatsappSessions.findFirst({
+        where: eq(whatsappSessions.userId, user.id),
+      });
+
+      if (!userSession) {
+        return res.status(403).json({ message: 'אין לך הרשאה לעדכן צ\'אט זה' });
+      }
+
+      // SECURITY: Only update chat if it belongs to this user's session
       const [updatedChat] = await db.update(whatsappChats)
         .set({
           ...updates,
           updatedAt: new Date(),
         })
-        .where(eq(whatsappChats.id, id))
+        .where(and(
+          eq(whatsappChats.id, id),
+          eq(whatsappChats.sessionId, userSession.id)
+        ))
         .returning();
 
       if (!updatedChat) {
@@ -6286,7 +6331,21 @@ ${recommendation}
   // POST /api/whatsapp/sync-groups - Sync WhatsApp groups to candidates
   app.post('/api/whatsapp/sync-groups', isAuthenticated, async (req, res) => {
     try {
-      const allChats = await db.query.whatsappChats.findMany();
+      const user = req.user as any;
+
+      // Get user's session ID
+      const userSession = await db.query.whatsappSessions.findFirst({
+        where: eq(whatsappSessions.userId, user.id),
+      });
+
+      if (!userSession) {
+        return res.status(403).json({ message: 'אין לך session של WhatsApp' });
+      }
+
+      // SECURITY: Only get THIS user's chats
+      const allChats = await db.query.whatsappChats.findMany({
+        where: eq(whatsappChats.sessionId, userSession.id),
+      });
       const groupChats = allChats.filter(chat => chat.remoteJid.includes('@g.us'));
 
       let syncedCount = 0;
