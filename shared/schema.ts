@@ -2,6 +2,7 @@ import { sql } from 'drizzle-orm';
 import { relations } from 'drizzle-orm';
 import {
   index,
+  uniqueIndex,
   jsonb,
   pgTable,
   timestamp,
@@ -757,7 +758,7 @@ export const whatsappChats = pgTable("whatsapp_chats", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   sessionId: varchar("session_id").references(() => whatsappSessions.id),
   candidateId: varchar("candidate_id").references(() => candidates.id), // linked candidate
-  remoteJid: varchar("remote_jid").notNull().unique(), // WhatsApp JID
+  remoteJid: varchar("remote_jid").notNull(), // WhatsApp JID - unique per session
   name: varchar("name"), // chat name (contact name or group name)
   profilePicUrl: varchar("profile_pic_url"), // profile picture URL
   isGroup: boolean("is_group").default(false), // is this a group chat
@@ -772,6 +773,7 @@ export const whatsappChats = pgTable("whatsapp_chats", {
 }, (table) => [
   index("whatsapp_chats_candidate_idx").on(table.candidateId),
   index("whatsapp_chats_remote_jid_idx").on(table.remoteJid),
+  uniqueIndex("whatsapp_chats_session_remote_jid_idx").on(table.sessionId, table.remoteJid),
 ]);
 
 // Relations for WhatsApp tables
