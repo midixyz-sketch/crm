@@ -37,70 +37,20 @@ async function loadEmailConfig() {
           tls: {
             rejectUnauthorized: false
           },
-          connectionTimeout: 10000,
-          greetingTimeout: 5000,
-          socketTimeout: 10000
+          connectionTimeout: 30000,
+          greetingTimeout: 30000,
+          socketTimeout: 30000
         });
         
-        // Verify email connection
-        try {
-          await transporter.verify();
-          console.log("📧 Email configured with cPanel SMTP from database");
-          emailConfigLoaded = true;
-          return;
-        } catch (verifyError) {
-          console.error("❌ שגיאה באימות הגדרות SMTP:", verifyError);
-          console.log("🔄 ינסה הגדרות cPanel חלופיות...");
-          transporter = null;
-        }
+        // Don't verify on startup - just configure and try when needed
+        console.log(`📧 Email transporter configured: ${smtpHost.value}:${smtpPortNum} (secure: ${shouldUseSSL})`);
+        emailConfigLoaded = true;
+        return;
       } catch (transportError) {
         console.warn("❌ שגיאה ביצירת transporter עם הגדרות cPanel:", transportError);
       }
     } else {
       console.warn("❌ הגדרות cPanel לא תקינות - יש להגדיר סיסמה תקינה בהגדרות המערכת");
-    }
-
-    // Try alternative cPanel configurations if main config failed
-    if (smtpHost?.value && emailUser?.value && emailPass?.value) {
-      console.log("🔄 מנסה הגדרות cPanel חלופיות...");
-      
-      // Try different port and security combinations
-      const alternativeConfigs = [
-        { port: 587, secure: false, description: "Port 587 without SSL" },
-        { port: 25, secure: false, description: "Port 25 standard" },
-        { port: 2525, secure: false, description: "Port 2525 alternative" },
-        { port: 465, secure: true, description: "Port 465 with SSL" }
-      ];
-      
-      for (const config of alternativeConfigs) {
-        try {
-          console.log(`🔧 מנסה ${config.description}...`);
-          const altTransporter = nodemailer.createTransport({
-            host: smtpHost.value,
-            port: config.port,
-            secure: config.secure,
-            auth: {
-              user: emailUser.value,
-              pass: emailPass.value,
-            },
-            tls: {
-              rejectUnauthorized: false,
-              ciphers: 'SSLv3'
-            },
-            connectionTimeout: 5000,
-            greetingTimeout: 3000,
-            socketTimeout: 5000
-          });
-          
-          await altTransporter.verify();
-          transporter = altTransporter;
-          console.log(`✅ הצלחה עם ${config.description}!`);
-          emailConfigLoaded = true;
-          return;
-        } catch (altError) {
-          console.log(`❌ ${config.description} לא עובד:`, altError.message);
-        }
-      }
     }
 
     console.warn("❌ לא ניתן להגדיר מערכת מייל - יש להגדיר פרטי SMTP תקינים בהגדרות המערכת.");
