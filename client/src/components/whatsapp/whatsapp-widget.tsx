@@ -21,14 +21,14 @@ export function WhatsAppWidget() {
   } | null>(null);
   const { toast } = useToast();
 
-  // Get WhatsApp status (only poll when panel is open)
+  // Get WhatsApp status (poll when panel or connection dialog is open)
   const { data: status } = useQuery<{
     isConnected: boolean;
     phoneNumber: string | null;
     qrCode: string | null;
   }>({
     queryKey: ['/api/whatsapp/status'],
-    refetchInterval: isPanelOpen ? 15000 : false, // Only poll when panel open, reduced from 5s to 15s
+    refetchInterval: (isPanelOpen || connectionDialogOpen) ? 3000 : false, // Poll every 3s when active
   });
 
   // Get unread count (only fetch when panel is open)
