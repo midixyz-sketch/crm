@@ -262,40 +262,13 @@ class WhatsAppService {
           // Wait for chats to sync naturally, then fallback to manual fetch if needed
           setTimeout(async () => {
             try {
-              logger.info('Checking if chats were synced...');
+              logger.info('🔄 Resetting all chats and messages for fresh import...');
               
-              // Check if we have any chats in DB for this session
-              const existingChats = await db.query.whatsappChats.findMany({
-                where: eq(whatsappChats.sessionId, currentSession.id)
-              });
-
-              if (existingChats.length > 0) {
-                logger.info(`Found ${existingChats.length} existing chats, no need to import`);
-                
-                // Load profile pictures for chats that don't have them (limit to 50 at a time to avoid rate limiting)
-                logger.info('Checking for chats without profile pictures...');
-                const chatsWithoutProfilePics = existingChats.filter(chat => !chat.profilePicUrl).slice(0, 50);
-                
-                if (chatsWithoutProfilePics.length > 0) {
-                  logger.info(`Fetching profile pictures for ${chatsWithoutProfilePics.length} chats (out of ${existingChats.filter(c => !c.profilePicUrl).length} total without pics)...`);
-                  
-                  // Process in batches with delay to avoid rate limiting
-                  for (let i = 0; i < chatsWithoutProfilePics.length; i++) {
-                    const chat = chatsWithoutProfilePics[i];
-                    // Add small delay between each request
-                    setTimeout(() => {
-                      this.updateChatProfilePicture(chat.remoteJid).catch(err => 
-                        logger.error(`Failed to fetch profile pic for ${chat.remoteJid}: ${err}`)
-                      );
-                    }, i * 200); // 200ms delay between each request
-                  }
-                }
-                
-                return;
-              }
-
-              // No chats found - manually fetch from WhatsApp
-              logger.info('No chats found, manually fetching from WhatsApp...');
+              // Delete all existing chats and messages for this session
+              await db.delete(whatsappMessages).where(eq(whatsappMessages.sessionId, currentSession.id));
+              await db.delete(whatsappChats).where(eq(whatsappChats.sessionId, currentSession.id));
+              
+              logger.info('✅ Old chats and messages deleted, fetching fresh data from WhatsApp...');
               
               // Fetch all group chats
               try {
