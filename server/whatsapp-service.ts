@@ -259,54 +259,8 @@ class WhatsAppService {
             currentSession = newSession;
           }
 
-          // Wait for chats to sync naturally, then fallback to manual fetch if needed
-          setTimeout(async () => {
-            try {
-              logger.info('🔄 Resetting all chats and messages for fresh import...');
-              
-              // Delete all existing chats and messages for this session
-              await db.delete(whatsappMessages).where(eq(whatsappMessages.sessionId, currentSession.id));
-              await db.delete(whatsappChats).where(eq(whatsappChats.sessionId, currentSession.id));
-              
-              logger.info('✅ Old chats and messages deleted, fetching fresh data from WhatsApp...');
-              
-              // Fetch all group chats
-              try {
-                const groups = await socket.groupFetchAllParticipating();
-                const groupIds = Object.keys(groups);
-                logger.info(`Found ${groupIds.length} group chats`);
-
-                for (const id of groupIds) {
-                  try {
-                    const group = groups[id];
-                    await db.insert(whatsappChats).values({
-                      sessionId: currentSession.id,
-                      candidateId: null,
-                      remoteJid: id,
-                      name: group.subject || id.split('@')[0],
-                      isGroup: id.endsWith('@g.us'),
-                      lastMessageAt: new Date(group.creation * 1000),
-                      lastMessagePreview: '',
-                      unreadCount: 0,
-                    });
-                    
-                    // Fetch profile picture in background (don't await)
-                    this.updateChatProfilePicture(id).catch(err => 
-                      logger.error(`Failed to fetch profile pic for ${id}: ${err}`)
-                    );
-                  } catch (err) {
-                    logger.error(`Error importing group ${id}: ${err}`);
-                  }
-                }
-              } catch (err) {
-                logger.error(`Error fetching groups: ${err}`);
-              }
-
-              logger.info('Manual chat import completed');
-            } catch (error) {
-              logger.error(`Error in chat sync fallback: ${error}`);
-            }
-          }, 5000); // Wait 5 seconds to let natural sync happen first
+          // Don't delete chats on every connection - let natural sync handle updates
+          logger.info('✅ WhatsApp connected - waiting for chats.set event to sync chats');
         }
       });
 
@@ -354,9 +308,12 @@ class WhatsAppService {
                 where: eq(candidates.mobile, phoneNumber)
               });
 
-              // Check if chat already exists
+              // Check if chat already exists (filter by sessionId to avoid conflicts with old sessions)
               const existingChat = await db.query.whatsappChats.findFirst({
-                where: eq(whatsappChats.remoteJid, remoteJid)
+                where: (whatsappChats, { and, eq }) => and(
+                  eq(whatsappChats.remoteJid, remoteJid),
+                  eq(whatsappChats.sessionId, session.id)
+                )
               });
 
               const lastMessageAt = chat.conversationTimestamp 
@@ -442,7 +399,10 @@ class WhatsAppService {
             });
 
             const existingChat = await db.query.whatsappChats.findFirst({
-              where: eq(whatsappChats.remoteJid, remoteJid)
+              where: (whatsappChats, { and, eq }) => and(
+                eq(whatsappChats.remoteJid, remoteJid),
+                eq(whatsappChats.sessionId, session.id)
+              )
             });
 
             const lastMessageAt = chat.conversationTimestamp 
@@ -853,9 +813,12 @@ class WhatsAppService {
             chatName = await this.getBestContactName(remoteJid, undefined, contact);
           }
 
-          // Check if chat already exists
+          // Check if chat already exists (filter by sessionId to avoid conflicts with old sessions)
           const existingChat = await db.query.whatsappChats.findFirst({
-            where: eq(whatsappChats.remoteJid, remoteJid)
+            where: (whatsappChats, { and, eq }) => and(
+              eq(whatsappChats.remoteJid, remoteJid),
+              eq(whatsappChats.sessionId, session.id)
+            )
           });
 
           // Check if we have a candidate with this phone number
