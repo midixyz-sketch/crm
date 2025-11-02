@@ -583,6 +583,36 @@ class WhatsAppService {
   }
 
   /**
+   * Sanitize string for PostgreSQL - removes invalid UTF-8 characters
+   * Preserves empty strings and valid emojis, removes only unpaired surrogates
+   */
+  private sanitizeForDB(text: string | null | undefined): string | null {
+    if (text === null || text === undefined) return null;
+    if (text === '') return ''; // Preserve empty strings
+    
+    try {
+      // Convert to code points array, filter out unpaired surrogates, then reconstruct
+      const codePoints = Array.from(text);
+      const sanitized = codePoints
+        .filter((char) => {
+          const code = char.codePointAt(0);
+          if (code === undefined) return false;
+          // Keep everything except unpaired surrogates (which are invalid in UTF-8)
+          // Valid emoji use paired surrogates and will have code > 0xFFFF
+          return code <= 0xD7FF || code >= 0xE000; // Skip surrogate range
+        })
+        .join('');
+      
+      // Normalize to canonical form for consistent storage
+      return sanitized.normalize('NFC');
+    } catch (error) {
+      logger.warn(`Failed to sanitize text "${text?.substring(0, 50)}...", error: ${error}`);
+      // Fallback: try simple replacement of null bytes which PostgreSQL doesn't like
+      return text.replace(/\0/g, '');
+    }
+  }
+
+  /**
    * Handle incoming WhatsApp message
    */
   private async handleIncomingMessage(message: WAMessage): Promise<void> {
@@ -661,21 +691,21 @@ class WhatsAppService {
         where: eq(whatsappSessions.sessionId, this.state.sessionId!)
       });
 
-      // Save message to database
+      // Save message to database with sanitized text fields
       await db.insert(whatsappMessages).values({
         messageId,
         sessionId: session?.id || null,
         candidateId: candidate?.id || null,
         fromMe,
         remoteJid,
-        senderName,
+        senderName: this.sanitizeForDB(senderName),
         messageType,
-        messageText,
+        messageText: this.sanitizeForDB(messageText),
         mediaUrl,
-        fileName,
+        fileName: this.sanitizeForDB(fileName),
         mimeType,
         fileSize,
-        caption,
+        caption: this.sanitizeForDB(caption),
         timestamp,
         deliveryStatus: fromMe ? 'sent' : 'delivered', // Outgoing starts as 'sent', incoming is 'delivered'
         isRead: fromMe ? false : false,
@@ -936,9 +966,9 @@ class WhatsAppService {
               candidateId: candidate?.id || null,
               fromMe: direction,
               remoteJid,
-              senderName: msg.pushName || phoneNumber,
+              senderName: this.sanitizeForDB(msg.pushName || phoneNumber),
               messageType: 'text',
-              messageText,
+              messageText: this.sanitizeForDB(messageText),
               timestamp,
               isRead: direction,
             });
@@ -992,7 +1022,7 @@ class WhatsAppService {
         remoteJid: jid,
         senderName: 'Me',
         messageType: 'text',
-        messageText: text,
+        messageText: this.sanitizeForDB(text),
         timestamp: new Date(),
         deliveryStatus: 'sent', // Start with 'sent', will update to 'delivered' when we get receipt
         isRead: false,
