@@ -261,6 +261,65 @@ class WhatsAppService {
 
           // Don't delete chats on every connection - let natural sync handle updates
           logger.info('✅ WhatsApp connected - waiting for chats.set event to sync chats');
+          
+          // Manually fetch chats after 3 seconds if chats.set event doesn't fire
+          setTimeout(async () => {
+            try {
+              logger.info('🔄 Manually fetching all chats from WhatsApp...');
+              
+              // Fetch all participating groups
+              const groups = await socket.groupFetchAllParticipating();
+              const groupIds = Object.keys(groups);
+              logger.info(`Found ${groupIds.length} group chats`);
+              
+              // Import group chats
+              for (const id of groupIds) {
+                try {
+                  const group = groups[id];
+                  const phoneNumber = id.split('@')[0];
+                  
+                  // Check if we have a candidate with this phone number
+                  const candidate = await db.query.candidates.findFirst({
+                    where: eq(candidates.mobile, phoneNumber)
+                  });
+                  
+                  // Check if chat already exists
+                  const existingChat = await db.query.whatsappChats.findFirst({
+                    where: (whatsappChats, { and, eq }) => and(
+                      eq(whatsappChats.remoteJid, id),
+                      eq(whatsappChats.sessionId, currentSession.id)
+                    )
+                  });
+                  
+                  if (!existingChat) {
+                    await db.insert(whatsappChats).values({
+                      sessionId: currentSession.id,
+                      candidateId: candidate?.id || null,
+                      remoteJid: id,
+                      name: group.subject || id.split('@')[0],
+                      isGroup: true,
+                      lastMessageAt: group.creation ? new Date(group.creation * 1000) : new Date(),
+                      lastMessagePreview: '',
+                      unreadCount: 0,
+                    });
+                    logger.info(`✅ Imported group chat: ${group.subject}`);
+                    
+                    // Fetch profile picture in background
+                    this.updateChatProfilePicture(id).catch(err => 
+                      logger.error(`Failed to fetch profile pic for ${id}: ${err}`)
+                    );
+                  }
+                } catch (err) {
+                  logger.error(`Error importing group ${id}: ${err}`);
+                }
+              }
+              
+              logger.info('✅ Manual group chat fetch completed');
+              logger.info('ℹ️ Individual chats will be imported as messages arrive or via messaging-history.set event');
+            } catch (error) {
+              logger.error(`Error in manual chat fetch: ${error}`);
+            }
+          }, 3000);
         }
       });
 
@@ -278,91 +337,8 @@ class WhatsAppService {
         }
       });
 
-      // Handle chats sync - Import existing chats when connected
-      socket.ev.on('chats.set', async ({ chats }) => {
-        try {
-          logger.info(`📥 chats.set: Received ${chats.length} chats from WhatsApp`);
-          
-          // Log details about chat types
-          const groupChats = chats.filter(c => c.id.endsWith('@g.us'));
-          const individualChats = chats.filter(c => c.id.endsWith('@s.whatsapp.net'));
-          logger.info(`📊 Chat breakdown: ${groupChats.length} groups, ${individualChats.length} individual chats`);
-          
-          const session = await db.query.whatsappSessions.findFirst({
-            where: eq(whatsappSessions.sessionId, this.state.sessionId!)
-          });
-
-          if (!session) {
-            logger.error('No session found for chat sync');
-            return;
-          }
-
-          for (const chat of chats) {
-            try {
-              const remoteJid = chat.id;
-              const name = chat.name || remoteJid.split('@')[0];
-              const phoneNumber = remoteJid.split('@')[0];
-              
-              // Check if we have a candidate with this phone number
-              const candidate = await db.query.candidates.findFirst({
-                where: eq(candidates.mobile, phoneNumber)
-              });
-
-              // Check if chat already exists (filter by sessionId to avoid conflicts with old sessions)
-              const existingChat = await db.query.whatsappChats.findFirst({
-                where: (whatsappChats, { and, eq }) => and(
-                  eq(whatsappChats.remoteJid, remoteJid),
-                  eq(whatsappChats.sessionId, session.id)
-                )
-              });
-
-              const lastMessageAt = chat.conversationTimestamp 
-                ? new Date(Number(chat.conversationTimestamp) * 1000)
-                : new Date();
-
-              if (existingChat) {
-                await db.update(whatsappChats)
-                  .set({
-                    name,
-                    lastMessageAt,
-                    unreadCount: chat.unreadCount || 0,
-                    updatedAt: new Date()
-                  })
-                  .where(eq(whatsappChats.id, existingChat.id));
-                
-                // Update profile picture if not set
-                if (!existingChat.profilePicUrl) {
-                  this.updateChatProfilePicture(remoteJid).catch(err => 
-                    logger.error(`Failed to fetch profile pic for ${remoteJid}: ${err}`)
-                  );
-                }
-              } else {
-                await db.insert(whatsappChats).values({
-                  sessionId: session.id,
-                  candidateId: candidate?.id || null,
-                  remoteJid,
-                  name,
-                  isGroup: remoteJid.endsWith('@g.us'),
-                  lastMessageAt,
-                  lastMessagePreview: '',
-                  unreadCount: chat.unreadCount || 0,
-                });
-                
-                // Fetch profile picture in background
-                this.updateChatProfilePicture(remoteJid).catch(err => 
-                  logger.error(`Failed to fetch profile pic for ${remoteJid}: ${err}`)
-                );
-              }
-            } catch (err) {
-              logger.error(`Error syncing chat ${chat.id}: ${err}`);
-            }
-          }
-
-          logger.info(`Successfully synced ${chats.length} chats`);
-        } catch (error) {
-          logger.error(`Error in chats.set handler: ${error}`);
-        }
-      });
+      // Note: chats.set event doesn't exist in current Baileys version
+      // Using manual fetch instead (see connection.update handler)
 
       // Handle messaging history sync - Critical for importing ALL chats including individual ones
       socket.ev.on('messaging-history.set', async ({ chats, contacts, messages, isLatest }) => {
@@ -390,6 +366,8 @@ class WhatsAppService {
           if (!session) return;
 
           for (const chat of chats) {
+            if (!chat.id) continue; // Skip if no ID
+            
             const remoteJid = chat.id;
             const name = chat.name || remoteJid.split('@')[0];
             const phoneNumber = remoteJid.split('@')[0];
@@ -612,7 +590,7 @@ class WhatsAppService {
 
       // Get best available name for this contact
       const phoneNumber = remoteJid.split('@')[0];
-      const senderName = await this.getBestContactName(remoteJid, message.pushName);
+      const senderName = await this.getBestContactName(remoteJid, message.pushName || undefined);
       
       // Check if we have a candidate with this phone number
       const candidate = await db.query.candidates.findFirst({
@@ -624,10 +602,15 @@ class WhatsAppService {
         where: eq(whatsappSessions.sessionId, this.state.sessionId!)
       });
 
+      if (!session) {
+        logger.error('No active session found - cannot save message');
+        return;
+      }
+
       // Save message to database with sanitized text fields
       await db.insert(whatsappMessages).values({
         messageId,
-        sessionId: session?.id || null,
+        sessionId: session.id,
         candidateId: candidate?.id || null,
         fromMe,
         remoteJid,
@@ -648,7 +631,7 @@ class WhatsAppService {
       const existingChat = await db.query.whatsappChats.findFirst({
         where: (whatsappChats, { and, eq }) => and(
           eq(whatsappChats.remoteJid, remoteJid),
-          eq(whatsappChats.sessionId, session?.id || null)
+          eq(whatsappChats.sessionId, session.id)
         )
       });
 
@@ -679,10 +662,10 @@ class WhatsAppService {
         }
       } else {
         // Get best name for new chat
-        const chatName = await this.getBestContactName(remoteJid, message.pushName);
+        const chatName = await this.getBestContactName(remoteJid, message.pushName || undefined);
         
         await db.insert(whatsappChats).values({
-          sessionId: session?.id || null,
+          sessionId: session.id,
           candidateId: candidate?.id || null,
           remoteJid,
           name: chatName,
@@ -953,19 +936,21 @@ class WhatsAppService {
         where: eq(candidates.mobile, to.split('@')[0])
       });
 
-      await db.insert(whatsappMessages).values({
-        messageId: result.key.id!,
-        sessionId: session?.id || null,
-        candidateId: candidate?.id || null,
-        fromMe: true,
-        remoteJid: jid,
-        senderName: 'Me',
-        messageType: 'text',
-        messageText: this.sanitizeForDB(text),
-        timestamp: new Date(),
-        deliveryStatus: 'sent', // Start with 'sent', will update to 'delivered' when we get receipt
-        isRead: false,
-      });
+      if (result?.key?.id) {
+        await db.insert(whatsappMessages).values({
+          messageId: result.key.id,
+          sessionId: session?.id || null,
+          candidateId: candidate?.id || null,
+          fromMe: true,
+          remoteJid: jid,
+          senderName: 'Me',
+          messageType: 'text',
+          messageText: this.sanitizeForDB(text),
+          timestamp: new Date(),
+          deliveryStatus: 'sent', // Start with 'sent', will update to 'delivered' when we get receipt
+          isRead: false,
+        });
+      }
 
       return true;
     } catch (error) {
