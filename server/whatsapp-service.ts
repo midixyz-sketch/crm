@@ -202,7 +202,10 @@ class WhatsAppService {
           // Check if it's a conflict error
           const isConflict = lastDisconnect?.error?.message?.includes('conflict');
           
-          logger.info(`Connection closed. Status: ${statusCode}, Reconnecting: ${shouldReconnect}, Conflict: ${isConflict}`);
+          // Check if it's a 401 Unauthorized error (session invalid/logged out)
+          const isUnauthorized = statusCode === 401;
+          
+          logger.info(`Connection closed. Status: ${statusCode}, Reconnecting: ${shouldReconnect}, Conflict: ${isConflict}, Unauthorized: ${isUnauthorized}`);
 
           this.state.isConnected = false;
           this.state.qrCode = null;
@@ -220,8 +223,30 @@ class WhatsAppService {
             })
             .where(eq(whatsappSessions.sessionId, sessionId));
 
-          // Don't reconnect on conflict - it means another instance is running
-          if (shouldReconnect && !isConflict) {
+          // If 401 Unauthorized, delete the auth credentials and force fresh login
+          if (isUnauthorized) {
+            logger.warn('⚠️ Session unauthorized (401) - deleting auth credentials and forcing fresh QR login');
+            try {
+              const userAuthDir = path.join(this.authDir, userId);
+              if (fs.existsSync(userAuthDir)) {
+                fs.rmSync(userAuthDir, { recursive: true, force: true });
+                logger.info('✅ Deleted invalid auth credentials');
+              }
+              
+              // Delete session from database to force fresh start
+              await db.delete(whatsappSessions).where(eq(whatsappSessions.sessionId, sessionId));
+              logger.info('✅ Deleted database session');
+              
+              // Reinitialize with fresh QR code after 2 seconds
+              setTimeout(() => {
+                logger.info('🔄 Reinitializing WhatsApp with fresh QR code...');
+                this.initialize(userId);
+              }, 2000);
+            } catch (err) {
+              logger.error(`Error cleaning up after 401: ${err}`);
+            }
+          } else if (shouldReconnect && !isConflict) {
+            // Normal reconnection
             logger.info('Scheduling reconnection in 3 seconds...');
             setTimeout(() => this.initialize(userId), 3000);
           } else if (isConflict) {
